@@ -1,0 +1,27 @@
+{
+  "name": "minimal-repro",
+  "version": "1.0.0",
+  "description": "A minimal Electron application",
+  "main": "src/main.mjs",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "https://github.com/electron/minimal-repro",
+  "keywords": [
+    "Electron",
+    "quick",
+    "start",
+    "tutorial",
+    "demo"
+  ],
+  "author": "GitHub",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "electron": "^39.1.1",
+    "prettier": "^3.6.2"
+  },
+  "dependencies": {
+    "puppeteer": "^24.29.1",
+    "zod": "^4.1.12"
+  }
+}

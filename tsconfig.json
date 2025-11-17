@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "allowJs": true, // Allows JavaScript files to be part of the project
+    "checkJs": true, // Enables type-checking for JavaScript files
+    "noEmit": true,   //
+//    "target": "es2016",
+//    "module": "commonjs",
+//    "esModuleInterop": true,
+//    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*" // Adjust this to include the directories containing your JavaScript files
+  ]
+}

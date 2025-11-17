@@ -1,0 +1,53 @@
+import { LIBS } from "./libs.mjs";
+
+/**
+ *
+ * @type {null | import("puppeteer").Browser}
+ */
+let browser = null;
+
+const getBrowser = () => {
+  return browser;
+};
+
+const isDisconnected = () => {
+  return browser === null;
+};
+
+/**
+ *
+ * @param url {string}
+ * @returns {Promise<{browser: import("puppeteer").Browser, page: import("puppeteer").Page}>}
+ */
+const setUpBrowser = async (url) => {
+  if (!url) {
+    throw Error("URL must start with a valid url");
+  }
+
+  browser = await LIBS.puppeteer.launch({
+    headless: false,
+    args: ["--no-sandbox, --window-size"],
+    // This will make the webcontent fill entire browser-instance.
+    defaultViewport: null,
+  });
+
+  browser.once("disconnected", () => {
+    console.log("Disconnected!");
+    if (browser) {
+      browser.close();
+      browser = null;
+    }
+  });
+
+  const [page] = await browser.pages(true);
+
+  await page.goto(url);
+
+  return { browser, page };
+};
+
+export const PUP = {
+  setUpScraper: setUpBrowser,
+  getBrowser,
+  isDisconnected,
+};
