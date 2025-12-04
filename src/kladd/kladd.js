@@ -7,6 +7,11 @@ const shortenUrl = (url) => {
   return url.split("?")[0];
 };
 
+/**
+ *
+ * @param url {string}
+ * @returns {boolean}
+ */
 const excludeUrl = (url) => {
   if (typeof url !== "string") return true;
   if (url.endsWith(".js")) return true;

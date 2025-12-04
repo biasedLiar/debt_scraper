@@ -8,9 +8,15 @@
 import { div, button } from "./dom.mjs";
 import { si, digiPost } from "./data.mjs";
 import { PUP } from "./scraper.mjs";
+import { U } from "./U.mjs";
 
-const program = async () => {
-  const { browser, page } = await PUP.setUpScraper(digiPost.url);
+/**
+ *
+ * @param url {string}
+ * @returns {Promise<void>}
+ */
+const openPage = async (url) => {
+  const { browser, page } = await PUP.openPage(url);
 
   // @ts-ignore
   page.on("request", (r) => {
@@ -23,17 +29,24 @@ const program = async () => {
 
     try {
       const data = await r.text();
-      // console.log(data);
+      if (U.isJson(data)) {
+        console.log(data);
+      }
     } catch (e) {
-      // console.error(e);
+      console.error(e);
     }
   });
 };
 
 const di = div();
 di.innerText = "Hello World from dom!";
-const btn = button("Gå til si", (ev) => {
-  program();
+
+const siButton = button("Gå til si", (ev) => {
+  openPage(si.url);
+});
+const digipostButton = button("Digipost", (ev) => {
+  openPage(digiPost.url);
 });
 
-document.body.append(btn);
+document.body.append(siButton);
+document.body.append(digipostButton);
