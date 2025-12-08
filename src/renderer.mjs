@@ -10,6 +10,8 @@ import { si, digiPost } from "./data.mjs";
 import { PUP } from "./scraper.mjs";
 import { U } from "./U.mjs";
 
+const fs = require("fs");
+
 /**
  *
  * @param url {string}
@@ -29,8 +31,27 @@ const openPage = async (url) => {
 
     try {
       const data = await r.text();
+      var dateObj  = new Date();
+      const month   = (dateObj.getUTCMonth() + 1).toString().padStart(2,"0");;
+      const day     = dateObj.getUTCDate().toString().padStart(2,"0");
+      const year    = dateObj.getUTCFullYear();
+
+      const newDate = year + "_" + month + "_" + day;
+      var pageName = (await page.title()).replace(/\s+/g, '_').toLowerCase();
+      console.log(pageName);
+      console.log("./exports/" + newDate + "/" + pageName + ".json");
+
+
+      if (!fs.existsSync("./exports/" + newDate)){
+          fs.mkdirSync("./exports/" + newDate);
+      }
       if (U.isJson(data)) {
         console.log(data);
+        fs.writeFile("./exports/" + newDate + "/" + pageName + "/" + dateObj.getTime() + ".json", data, function(err) {
+          if (err) {
+              console.log(err);
+          }
+        });
       }
     } catch (e) {
       console.error(e);
