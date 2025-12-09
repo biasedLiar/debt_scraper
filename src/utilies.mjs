@@ -21,6 +21,10 @@ export const createFoldersAndGetName = (pageName) => {
     const day     = dateObj.getUTCDate().toString().padStart(2,"0");
     const year    = dateObj.getUTCFullYear();
 
+    if (!pageName){
+        pageName = "no_page_name";
+    }
+
     const newDate = year + "_" + month + "_" + day;
     
     if (!fs.existsSync("./exports")){
