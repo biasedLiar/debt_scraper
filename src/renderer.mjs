@@ -6,7 +6,7 @@
  * to expose Node.js functionality from the main process.
  */
 import { div, button, h1 } from "./dom.mjs";
-import { si, digiPost } from "./data.mjs";
+import { si, digiPost, kredinor, intrum, tfBank } from "./data.mjs";
 import { PUP } from "./scraper.mjs";
 import { U } from "./U.mjs";
 
@@ -64,15 +64,15 @@ const openPage = async (url) => {
 
 
 
-const siButton = button("Gå til SI", () => openPage(si.url));
-const digipostButton = button("Digipost", () => openPage(digiPost.url));
+
 const kredinorButton = button("Kredinor", () => openPage(kredinor.url));
 const intrumButton = button("Intrum", () => openPage(intrum.url) );
 const tfBankButton = button("tfBank", () => openPage(tfBank.url))
 const di = div();
 di.innerText = "Hello World from dom!";
 
-const heading = h1("Gjeld i Norge!!! ");
+const heading = h1("Gjeld i Norge ");
+const heading2 = h2("Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper")
 const siButton = button("Gå til si", (ev) => {
   openPage(si.url);
 });
@@ -80,5 +80,9 @@ const digipostButton = button("Digipost", (ev) => {
   openPage(digiPost.url);
 });
 document.body.append(heading);
+document.body.append(heading2);
 document.body.append(siButton);
 document.body.append(digipostButton);
+document.body.append(kredinorButton);
+document.body.append(intrumButton);
+document.body.append(tfBankButton);
