@@ -39,6 +39,14 @@ export const h1 = (text) => {
   h.className = "h1 m-2"
   return h;
 };
+
+export const h2 = (text) => {
+  const h = document.createElement("h2");
+  h.innerHTML = text;
+  h.className = "h2 m-2"
+  return h;
+};
+
 const input = document.createElement("input");
 const table = document.createElement("table");
 const tableHead = document.createElement("thead");

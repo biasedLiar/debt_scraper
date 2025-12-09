@@ -5,7 +5,7 @@
  * `contextIsolation` is turned on. Use the contextBridge API in `preload.js`
  * to expose Node.js functionality from the main process.
  */
-import { div, button, h1 } from "./dom.mjs";
+import { div, button, h1, h2 } from "./dom.mjs";
 import { si, digiPost, kredinor, intrum, tfBank } from "./data.mjs";
 import { PUP } from "./scraper.mjs";
 import { U } from "./U.mjs";
