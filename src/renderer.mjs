@@ -38,8 +38,6 @@ const openPage = async (url) => {
 
       const newDate = year + "_" + month + "_" + day;
       var pageName = (await page.title()).replace(/\s+/g, '_').toLowerCase();
-      console.log(pageName);
-      console.log("./exports/" + newDate + "/" + pageName + ".json");
 
 
       if (!fs.existsSync("./exports/" + newDate)){
