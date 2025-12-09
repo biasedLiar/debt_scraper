@@ -38,7 +38,9 @@ const openPage = async (url) => {
 
       const newDate = year + "_" + month + "_" + day;
       var pageName = (await page.title()).replace(/\s+/g, '_').toLowerCase();
-
+      if (!fs.existsSync("./exports")){
+          fs.mkdirSync("./exports");
+      }
 
       if (!fs.existsSync("./exports/" + newDate)){
           fs.mkdirSync("./exports/" + newDate);
