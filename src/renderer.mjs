@@ -8,6 +8,7 @@
 import { div, button, h1, h2 } from "./dom.mjs";
 import { si, digiPost, kredinor, intrum, tfBank } from "./data.mjs";
 import { PUP } from "./scraper.mjs";
+import { savePage, createFoldersAndGetName } from "./utilies.mjs";
 import { U } from "./U.mjs";
 
 const fs = require("fs");
@@ -29,6 +30,7 @@ const openPage = async (url) => {
     console.log(r.url());
     console.log(r.ok());
 
+<<<<<<< HEAD
     try {
       const data = await r.text();
       var dateObj = new Date();
@@ -70,6 +72,26 @@ const openPage = async (url) => {
       }
     } catch (e) {
       console.error("Error:", e);
+=======
+    
+    var pageName = (await page.title()).replace(/\s+/g, '_').toLowerCase();
+    if (savePage(pageName)){
+      try {
+        const filename = createFoldersAndGetName(pageName);
+  
+        const data = await r.text();
+        if (U.isJson(data)) {
+          console.log(data);
+          fs.writeFile(filename, data, function(err) {
+            if (err) {
+                console.log(err);
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Error:", e);
+      }
+>>>>>>> 2d6290bf0121ed6e0d5ae4c59f22a0e640aff4c5
     }
   });
 };
