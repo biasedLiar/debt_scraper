@@ -31,32 +31,42 @@ const openPage = async (url) => {
 
     try {
       const data = await r.text();
-      var dateObj  = new Date();
-      const month   = (dateObj.getUTCMonth() + 1).toString().padStart(2,"0");;
-      const day     = dateObj.getUTCDate().toString().padStart(2,"0");
-      const year    = dateObj.getUTCFullYear();
+      var dateObj = new Date();
+      const month = (dateObj.getUTCMonth() + 1).toString().padStart(2, "0");
+      const day = dateObj.getUTCDate().toString().padStart(2, "0");
+      const year = dateObj.getUTCFullYear();
 
       const newDate = year + "_" + month + "_" + day;
-      var pageName = (await page.title()).replace(/\s+/g, '_').toLowerCase();
-      if (!fs.existsSync("./exports")){
-          fs.mkdirSync("./exports");
+      var pageName = (await page.title()).replace(/\s+/g, "_").toLowerCase();
+      if (!fs.existsSync("./exports")) {
+        fs.mkdirSync("./exports");
       }
 
-      if (!fs.existsSync("./exports/" + newDate)){
-          fs.mkdirSync("./exports/" + newDate);
+      if (!fs.existsSync("./exports/" + newDate)) {
+        fs.mkdirSync("./exports/" + newDate);
       }
 
-      if (!fs.existsSync("./exports/" + newDate + "/" + pageName)){
-          fs.mkdirSync("./exports/" + newDate + "/" + pageName);
+      if (!fs.existsSync("./exports/" + newDate + "/" + pageName)) {
+        fs.mkdirSync("./exports/" + newDate + "/" + pageName);
       }
 
       if (U.isJson(data)) {
         console.log(data);
-        fs.writeFile("./exports/" + newDate + "/" + pageName + "/" + dateObj.getTime() + ".json", data, function(err) {
-          if (err) {
+        fs.writeFile(
+          "./exports/" +
+            newDate +
+            "/" +
+            pageName +
+            "/" +
+            dateObj.getTime() +
+            ".json",
+          data,
+          function (err) {
+            if (err) {
               console.log(err);
+            }
           }
-        });
+        );
       }
     } catch (e) {
       console.error("Error:", e);
@@ -64,17 +74,16 @@ const openPage = async (url) => {
   });
 };
 
-
-
-
 const kredinorButton = button("Kredinor", () => openPage(kredinor.url));
-const intrumButton = button("Intrum", () => openPage(intrum.url) );
-const tfBankButton = button("tfBank", () => openPage(tfBank.url))
+const intrumButton = button("Intrum", () => openPage(intrum.url));
+const tfBankButton = button("tfBank", () => openPage(tfBank.url));
 const di = div();
 di.innerText = "Hello World from dom!";
 
 const heading = h1("Gjeld i Norge ");
-const heading2 = h2("Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper")
+const heading2 = h2(
+  "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper"
+);
 const siButton = button("Gå til si", (ev) => {
   openPage(si.url);
 });

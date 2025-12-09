@@ -24,7 +24,7 @@ export const button = (text, onClick) => {
   const b = document.createElement("button");
   b.innerHTML = text;
   b.onclick = onClick;
-  b.className = "btn btn-primary"
+  b.className = "btn btn-primary";
   return b;
 };
 
@@ -36,14 +36,14 @@ export const button = (text, onClick) => {
 export const h1 = (text) => {
   const h = document.createElement("h1");
   h.innerHTML = text;
-  h.className = "h1 m-2"
+  h.className = "h1 m-2";
   return h;
 };
 
 export const h2 = (text) => {
   const h = document.createElement("h2");
   h.innerHTML = text;
-  h.className = "h2 m-2"
+  h.className = "h2 m-2";
   return h;
 };
 
