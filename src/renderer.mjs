@@ -30,18 +30,17 @@ const openPage = async (url) => {
     console.log(r.url());
     console.log(r.ok());
 
-    
-    var pageName = (await page.title()).replace(/\s+/g, '_').toLowerCase();
-    if (savePage(pageName)){
+    var pageName = (await page.title()).replace(/\s+/g, "_").toLowerCase();
+    if (savePage(pageName)) {
       try {
         const filename = createFoldersAndGetName(pageName);
-  
+
         const data = await r.text();
         if (U.isJson(data)) {
           console.log(data);
-          fs.writeFile(filename, data, function(err) {
+          fs.writeFile(filename, data, function (err) {
             if (err) {
-                console.log(err);
+              console.log(err);
             }
           });
         }
@@ -52,17 +51,16 @@ const openPage = async (url) => {
   });
 };
 
-
-
-
 const kredinorButton = button("Kredinor", () => openPage(kredinor.url));
-const intrumButton = button("Intrum", () => openPage(intrum.url) );
-const tfBankButton = button("tfBank", () => openPage(tfBank.url))
+const intrumButton = button("Intrum", () => openPage(intrum.url));
+const tfBankButton = button("tfBank", () => openPage(tfBank.url));
 const di = div();
 di.innerText = "Hello World from dom!";
 
 const heading = h1("Gjeld i Norge ");
-const heading2 = h2("Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper")
+const heading2 = h2(
+  "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper"
+);
 const siButton = button("Gå til si", (ev) => {
   openPage(si.url);
 });

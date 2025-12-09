@@ -40,14 +40,14 @@ const createJsonData = (url) => {
 
 const si = createTargetPage(
   "https://sismo.skatteetaten.no/person/",
-  "Statens Innkrevingssentral",
+  "Statens Innkrevingssentral"
 );
 
 si.apiData = [
   {
     url: z
       .url(
-        "https://skatt.skatteetaten.no/api/mii-skyldnerportal-om-meg-api/v1/basisinfo",
+        "https://skatt.skatteetaten.no/api/mii-skyldnerportal-om-meg-api/v1/basisinfo"
       )
       .includes("basisinfo"),
     data: z.json(),
@@ -56,7 +56,7 @@ si.apiData = [
     url: z
       .url()
       .startsWith(
-        "https://skatt.skatteetaten.no/api/mii-skyldnerportal-api/v1/utlegg",
+        "https://skatt.skatteetaten.no/api/mii-skyldnerportal-api/v1/utlegg"
       ),
     data: z.json(),
   },
@@ -64,7 +64,7 @@ si.apiData = [
     url: z
       .url()
       .startsWith(
-        "https://skatt.skatteetaten.no/api/mii-skyldnerportal-api/v1/krav",
+        "https://skatt.skatteetaten.no/api/mii-skyldnerportal-api/v1/krav"
       ),
     data: z.json(),
   },
@@ -72,7 +72,7 @@ si.apiData = [
     url: z
       .url()
       .startsWith(
-        "https://skatt.skatteetaten.no/api/mii-skyldnerportal-om-meg-api/v1//mineopplysninger",
+        "https://skatt.skatteetaten.no/api/mii-skyldnerportal-om-meg-api/v1//mineopplysninger"
       ),
     data: z.json(),
   },
@@ -80,7 +80,7 @@ si.apiData = [
     url: z
       .url()
       .startsWith(
-        "https://skatt.skatteetaten.no/api/mii-skyldnerportal-api/v1/krav/ferdige",
+        "https://skatt.skatteetaten.no/api/mii-skyldnerportal-api/v1/krav/ferdige"
       ),
     data: z.json(),
   },
@@ -88,7 +88,7 @@ si.apiData = [
     url: z
       .url()
       .startsWith(
-        "https://skatt.skatteetaten.no/api/mii-skyldnerportal-api/v1/betalingsordning",
+        "https://skatt.skatteetaten.no/api/mii-skyldnerportal-api/v1/betalingsordning"
       ),
     data: z.json(),
   },
@@ -115,11 +115,14 @@ digiPost.apiData = [
   },
 ];
 
-const kredinor = createTargetPage("https://www.kredinor.no/", "Kredinor")
+const kredinor = createTargetPage("https://www.kredinor.no/", "Kredinor");
 
-const intrum = createTargetPage("https://www.intrum.no/kundeservice/", "Intrum")
+const intrum = createTargetPage(
+  "https://www.intrum.no/kundeservice/",
+  "Intrum"
+);
 
-const tfBank = createTargetPage("https://tfbank.no/", "tfBank")
+const tfBank = createTargetPage("https://tfbank.no/", "tfBank");
 
 //This ensures these configuration objects cannot be modified
 Object.freeze(si);
@@ -128,4 +131,4 @@ Object.freeze(kredinor);
 Object.freeze(intrum);
 Object.freeze(tfBank);
 
-export { si, digiPost, kredinor, intrum, tfBank};
+export { si, digiPost, kredinor, intrum, tfBank };

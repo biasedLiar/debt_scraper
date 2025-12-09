@@ -8,37 +8,40 @@ const path = require("path");
  * @param {string} directory - The directory to search in
  * @returns {Array<any>} - Flattened array of all found values
  */
-export const extractFieldFromJsonFiles = (fieldName = 'krav', directory = 'scraped-data') => {
+export const extractFieldFromJsonFiles = (
+  fieldName = "krav",
+  directory = "scraped-data"
+) => {
   const dirPath = path.join(process.cwd(), directory);
-  
+
   if (!fs.existsSync(dirPath)) {
     console.log(`Directory '${directory}' not found`);
     return [];
   }
-  
+
   // Get all JSON files in the directory
   const files = fs.readdirSync(dirPath);
-  const jsonFiles = files.filter(file => file.endsWith('.json'));
-  
+  const jsonFiles = files.filter((file) => file.endsWith(".json"));
+
   const allValues = [];
-  
+
   for (const file of jsonFiles) {
     const jsonFilePath = path.join(dirPath, file);
-    
+
     try {
-      const content = fs.readFileSync(jsonFilePath, 'utf-8').trim();
-      
+      const content = fs.readFileSync(jsonFilePath, "utf-8").trim();
+
       // Parse the JSON - handle double-encoded JSON
       let data = JSON.parse(content);
-      
+
       // If data is a string, it's double-encoded, parse again
-      if (typeof data === 'string') {
+      if (typeof data === "string") {
         data = JSON.parse(data);
       }
-      
+
       // Recursively search for the field in the JSON structure
       const fieldValues = findField(data, fieldName);
-      
+
       // Flatten array values
       for (const value of fieldValues) {
         if (Array.isArray(value)) {
@@ -47,7 +50,6 @@ export const extractFieldFromJsonFiles = (fieldName = 'krav', directory = 'scrap
           allValues.push(value);
         }
       }
-      
     } catch (e) {
       if (e instanceof SyntaxError) {
         console.error(`JSON Error in ${file}:`, e.message);
@@ -58,7 +60,7 @@ export const extractFieldFromJsonFiles = (fieldName = 'krav', directory = 'scrap
       }
     }
   }
-  
+
   return allValues;
 };
 
@@ -70,7 +72,7 @@ export const extractFieldFromJsonFiles = (fieldName = 'krav', directory = 'scrap
  * @returns {Array<any>}
  */
 const findField = (obj, fieldName, results = []) => {
-  if (typeof obj === 'object' && obj !== null) {
+  if (typeof obj === "object" && obj !== null) {
     if (Array.isArray(obj)) {
       for (const item of obj) {
         findField(item, fieldName, results);
@@ -84,16 +86,16 @@ const findField = (obj, fieldName, results = []) => {
       }
     }
   }
-  
+
   return results;
 };
 
 // Example usage when run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const searchField = 'krav'; // Change this to any field name you want to search for
-  
+  const searchField = "krav"; // Change this to any field name you want to search for
+
   const data = extractFieldFromJsonFiles(searchField);
-  
+
   for (const item of data) {
     console.log(`\nFile: ${item.file}`);
     for (const value of item.values) {
