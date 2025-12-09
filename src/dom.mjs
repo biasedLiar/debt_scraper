@@ -24,7 +24,20 @@ export const button = (text, onClick) => {
   const b = document.createElement("button");
   b.innerHTML = text;
   b.onclick = onClick;
+  b.className = "btn btn-primary"
   return b;
+};
+
+/**
+ *
+ * @param text {string}
+ * @returns {HTMLHeadingElement}
+ */
+export const h1 = (text) => {
+  const h = document.createElement("h1");
+  h.innerHTML = text;
+  h.className = "h1 m-2"
+  return h;
 };
 const input = document.createElement("input");
 const table = document.createElement("table");

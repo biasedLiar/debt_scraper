@@ -5,7 +5,7 @@
  * `contextIsolation` is turned on. Use the contextBridge API in `preload.js`
  * to expose Node.js functionality from the main process.
  */
-import { div, button } from "./dom.mjs";
+import { div, button, h1 } from "./dom.mjs";
 import { si, digiPost } from "./data.mjs";
 import { PUP } from "./scraper.mjs";
 import { U } from "./U.mjs";
@@ -45,6 +45,11 @@ const openPage = async (url) => {
       if (!fs.existsSync("./exports/" + newDate)){
           fs.mkdirSync("./exports/" + newDate);
       }
+
+      if (!fs.existsSync("./exports/" + newDate + "/" + pageName)){
+          fs.mkdirSync("./exports/" + newDate + "/" + pageName);
+      }
+
       if (U.isJson(data)) {
         console.log(data);
         fs.writeFile("./exports/" + newDate + "/" + pageName + "/" + dateObj.getTime() + ".json", data, function(err) {
@@ -62,12 +67,13 @@ const openPage = async (url) => {
 const di = div();
 di.innerText = "Hello World from dom!";
 
+const heading = h1("Gjeld i Norge!!! ");
 const siButton = button("Gå til si", (ev) => {
   openPage(si.url);
 });
 const digipostButton = button("Digipost", (ev) => {
   openPage(digiPost.url);
 });
-
+document.body.append(heading);
 document.body.append(siButton);
 document.body.append(digipostButton);
