@@ -115,7 +115,17 @@ digiPost.apiData = [
   },
 ];
 
+const kredinor = createTargetPage("https://www.kredinor.no/", "Kredinor")
+
+const intrum = createTargetPage("https://www.intrum.no/kundeservice/", "Intrum")
+
+const tfBank = createTargetPage("https://tfbank.no/", "tfBank")
+
+//This ensures these configuration objects cannot be modified
 Object.freeze(si);
 Object.freeze(digiPost);
+Object.freeze(kredinor);
+Object.freeze(intrum);
+Object.freeze(tfBank);
 
-export { si, digiPost };
+export { si, digiPost, kredinor, intrum, tfBank};
