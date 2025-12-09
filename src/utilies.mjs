@@ -2,6 +2,11 @@
  * @param {string} [pageName]
  * @returns {boolean}
  */
+
+
+const fs = require("fs");
+
+
 export const savePage = (pageName) => {
     const unsavedPages = ["bankid", "id-porten"];
     console.log("'", unsavedPages[0], "'", " = '", pageName, "' --> ", (unsavedPages[0] === pageName));
