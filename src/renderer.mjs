@@ -57,7 +57,7 @@ const tfBankButton = button("tfBank", () => openPage(tfBank.url));
 const di = div();
 di.innerText = "Hello World from dom!";
 
-const heading = h1("Gjeld i Norge ");
+const heading = h1("Gjeldshjelperen");
 const heading2 = h2(
   "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper"
 );
