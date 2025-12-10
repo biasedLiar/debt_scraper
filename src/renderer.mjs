@@ -64,7 +64,7 @@ const heading = h1("Gjeldshjelperen");
 const heading2 = h2(
   "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper"
 );
-const nameInput = input("Skriv inn navnet ditt (f.eks: Alex)", "nameInput");
+const nameInput = input("Skriv inn navnet", "nameInput");
 const siButton = button("Gå til si", (ev) => {
   openPage(si.url);
 });
@@ -74,6 +74,7 @@ const digipostButton = button("Digipost", (ev) => {
 document.body.append(heading);
 document.body.append(heading2);
 document.body.append(nameInput);
+
 document.body.append(siButton);
 document.body.append(digipostButton);
 document.body.append(kredinorButton);
