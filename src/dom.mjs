@@ -47,7 +47,20 @@ export const h2 = (text) => {
   return h;
 };
 
-const input = document.createElement("input");
+/**
+ * @param {string} placeholder
+ * @param {string} id
+ * @returns {HTMLInputElement}
+ */
+export const input = (placeholder, id) => {
+  const inp = document.createElement("input");
+  inp.placeholder = placeholder;
+  inp.id = id;
+  inp.className = "form-control m-2";
+  return inp;
+};
+
+const inputElement = document.createElement("input");
 const table = document.createElement("table");
 const tableHead = document.createElement("thead");
 const tableBody = document.createElement("tbody");
