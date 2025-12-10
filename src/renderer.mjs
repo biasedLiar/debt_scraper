@@ -68,8 +68,19 @@ const nameInput = input("Skriv inn navnet", "nameInput");
 const siButton = button("Gå til si", (ev) => {
   openPage(si.url);
 });
-const digipostButton = button("Digipost", (ev) => {
-  openPage(digiPost.url);
+const digipostButton = button("Digipost", async (ev) => {
+  const { browser, page } = await PUP.openPage(digiPost.url);
+  
+  console.log(`Opened ${digiPost.name} at ${digiPost.url}`);
+  
+  // Wait for and click the login button
+  try {
+    await page.waitForSelector('button.dds-button.dds-button--primary.dds-button--size-large', { timeout: 5000 });
+    await page.click('button.dds-button.dds-button--primary.dds-button--size-large');
+    console.log('Clicked login button');
+  } catch (e) {
+    console.error('Could not find/click button:', e);
+  }
 });
 
 const buttonsContainer = div();
