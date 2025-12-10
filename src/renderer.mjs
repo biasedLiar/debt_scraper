@@ -5,7 +5,7 @@
  * `contextIsolation` is turned on. Use the contextBridge API in `preload.js`
  * to expose Node.js functionality from the main process.
  */
-import { div, button, h1, h2 } from "./dom.mjs";
+import { div, button, h1, h2, input } from "./dom.mjs";
 import { si, digiPost, kredinor, intrum, tfBank } from "./data.mjs";
 import { PUP } from "./scraper.mjs";
 import { savePage, createFoldersAndGetName } from "./utilies.mjs";
@@ -19,6 +19,9 @@ const fs = require("fs");
  * @returns {Promise<void>}
  */
 const openPage = async (url) => {
+  const nameInput = document.getElementById("nameInput");
+  const userName = nameInput ? nameInput.value.trim() || "Unknown" : "Unknown";
+
   const { browser, page } = await PUP.openPage(url);
 
   // @ts-ignore
@@ -33,7 +36,7 @@ const openPage = async (url) => {
     var pageName = (await page.title()).replace(/\s+/g, "_").toLowerCase();
     if (savePage(pageName)) {
       try {
-        const filename = createFoldersAndGetName(pageName);
+        const filename = createFoldersAndGetName(pageName, userName);
 
         const data = await r.text();
         if (U.isJson(data)) {
@@ -61,6 +64,7 @@ const heading = h1("Gjeld i Norge ");
 const heading2 = h2(
   "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper"
 );
+const nameInput = input("Skriv inn navnet ditt (f.eks: Alex)", "nameInput");
 const siButton = button("Gå til si", (ev) => {
   openPage(si.url);
 });
@@ -69,6 +73,7 @@ const digipostButton = button("Digipost", (ev) => {
 });
 document.body.append(heading);
 document.body.append(heading2);
+document.body.append(nameInput);
 document.body.append(siButton);
 document.body.append(digipostButton);
 document.body.append(kredinorButton);
