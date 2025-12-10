@@ -1,5 +1,6 @@
 /**
  * @param {CSSStyleDeclaration} [styles]
+ * @param {string} [class]
  * @returns {HTMLDivElement}
  */
 export const div = (styles) => {

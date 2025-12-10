@@ -50,6 +50,14 @@ export const createFoldersAndGetName = (pageName, name) => {
     fs.mkdirSync("./exports/" + name + "/" + newDate + "/" + pageName);
   }
   const filename =
-    "./exports/" + name + "/" + newDate + "/" + pageName + "/" + dateObj.getTime() + ".json";
+    "./exports/" +
+    name +
+    "/" +
+    newDate +
+    "/" +
+    pageName +
+    "/" +
+    dateObj.getTime() +
+    ".json";
   return filename;
 };

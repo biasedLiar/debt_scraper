@@ -71,12 +71,15 @@ const siButton = button("Gå til si", (ev) => {
 const digipostButton = button("Digipost", (ev) => {
   openPage(digiPost.url);
 });
+
+const buttonsContainer = div();
+buttonsContainer.append(siButton);
+buttonsContainer.append(digipostButton);
+buttonsContainer.append(kredinorButton);
+buttonsContainer.append(intrumButton);
+buttonsContainer.append(tfBankButton);
+
 document.body.append(heading);
 document.body.append(heading2);
 document.body.append(nameInput);
-
-document.body.append(siButton);
-document.body.append(digipostButton);
-document.body.append(kredinorButton);
-document.body.append(intrumButton);
-document.body.append(tfBankButton);
+document.body.append(buttonsContainer);
