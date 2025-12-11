@@ -77,6 +77,8 @@ export const input = (placeholder, id) => {
  * @param {DebtCollection} debtData
  */
 export const visualizeDebt = (debtData) => {
+  console.log("Visualizing debt data: ", debtData);
+
   const outerContainer = div({ class: "debt-container" });
 
   const innerContainer = div({ class: "debt-inner-container" });

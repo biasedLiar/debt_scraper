@@ -1,11 +1,12 @@
 
+const fs = require("fs");
+
+
 
 /**
  * @param {string} [pageName]
- * @returns {DebtCollection}
+ * @returns {{DebtCollection, DebtCollection}}
  */
-
-const fs = require("fs");
 
 export const read_json = (creditSite) => {
     const doucment = "C:\\Users\\ebaird\\VSCode\\gjeld-i-norge\\exports\\Kjetil\\2025_12_10\\tidligere_krav_-_statens_innkrevingssentral\\1765372278120.json";
@@ -14,9 +15,16 @@ export const read_json = (creditSite) => {
 
     const krav = data.krav;
 
-    const out_data = {
+    const debts_paid = {
         creditSite: creditSite,
         isCurrent: false,
+        totalAmount: 0,
+        debts: [],
+    } 
+
+    const debts_unpaid = {
+        creditSite: creditSite,
+        isCurrent: true,
         totalAmount: 0,
         debts: [],
     } 
@@ -25,18 +33,35 @@ export const read_json = (creditSite) => {
         const element = krav[i];
         // console.log(element);
         console.log("beløp: ", element.belop, "id: ", element.identifikator);
-        out_data.totalAmount += element.belop;
-        out_data.debts.push({
+        const krav_object = {
             id: element.identifikator,
             amount: element.belop,
             dueDate: element.forfall[0].forfallsdato,
             type: element.kravtype,
             typeText: element.kravtypetekst,
-        });
+        };
+
+        let isPaid = true;
+        for (let j = 0; j < element.forfall.length; j++) {
+            const forfall = element.forfall[j];
+            if (forfall.gjenstaaendeBeloep != 0) {
+                isPaid = false;
+                break
+            }
+        }
+
+        if (isPaid) {
+            debts_paid.totalAmount += element.belop; 
+            debts_paid.debts.push(krav_object);
+        } else {
+            out_data_paid_unpaid.totalAmount += element.belop; 
+            out_data_paid_unpaid.debts.push(krav_object);
+        }
     }
 
-    console.log("--------------");
-    console.log(out_data);
+    console.log("Paid data: ", debts_paid);
+    console.log("Unpaid data: ", debts_unpaid);
 
-    return out_data;
+
+    return {debts_paid, debts_unpaid};
 };

@@ -87,9 +87,16 @@ document.body.append(heading2);
 document.body.append(nameInput);
 document.body.append(buttonsContainer);
 
-const debts = read_json("Statens Innkrevingssentral");
+const {debts_paid, debts_unpaid} = read_json("Statens Innkrevingssentral");
+console.log("debtUnpaidVisualization: ", debts_unpaid);
 
-const debtVisualization = visualizeDebt(debts);
 
-document.body.append(debtVisualization);
+const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
+
+document.body.append(debtUnpaidVisualization);
+
+const debtsPaidVisualization = visualizeDebt(debts_paid);
+
+document.body.append(debtsPaidVisualization);
+
 
