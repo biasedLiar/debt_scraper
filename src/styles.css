@@ -40,3 +40,41 @@ input {
 .buttonDiv {
   background-color: red;
 }
+
+
+.debt-container {
+  border: 1px solid #ccc;
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 8px;
+  background-color:azure;
+
+  & .creditor-header{
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+
+  & .debt-amount{
+    font-weight: bold;
+    font-size: 40px;
+    margin-bottom: 10px;
+  }
+
+  
+  & .debt-small-header{
+    font-size: 13px;
+  }
+
+  & .debt-item {
+    border-top: 1px solid #eee;
+    padding: 10px 0;
+
+    &:first-child {
+      border-top: none;
+    }
+  }
+
+
+}
