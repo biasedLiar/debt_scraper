@@ -5,11 +5,12 @@
  * `contextIsolation` is turned on. Use the contextBridge API in `preload.js`
  * to expose Node.js functionality from the main process.
  */
-import { div, button, h1, h2, input } from "./dom.mjs";
+import { div, button, h1, h2, input, visualizeDebt } from "./dom.mjs";
 import { si, digiPost, kredinor, intrum, tfBank } from "./data.mjs";
 import { PUP } from "./scraper.mjs";
 import { savePage, createFoldersAndGetName } from "./utilies.mjs";
 import { U } from "./U.mjs";
+import { read_json } from "./json_reader.mjs";
 
 const fs = require("fs");
 
@@ -72,6 +73,8 @@ const digipostButton = button("Digipost", (ev) => {
   openPage(digiPost.url);
 });
 
+
+
 const buttonsContainer = div();
 buttonsContainer.append(siButton);
 buttonsContainer.append(digipostButton);
@@ -83,3 +86,17 @@ document.body.append(heading);
 document.body.append(heading2);
 document.body.append(nameInput);
 document.body.append(buttonsContainer);
+
+const {debts_paid, debts_unpaid} = read_json("Statens Innkrevingssentral");
+console.log("debtUnpaidVisualization: ", debts_unpaid);
+
+
+const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
+
+document.body.append(debtUnpaidVisualization);
+
+const debtsPaidVisualization = visualizeDebt(debts_paid);
+
+document.body.append(debtsPaidVisualization);
+
+
