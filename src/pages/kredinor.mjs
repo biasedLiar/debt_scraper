@@ -7,11 +7,15 @@ import { loginWithBankID } from "./bankid-login.mjs";
  * @param {string} nationalID - The national identity number to use for login
  * @returns {Promise<{browser: any, page: any}>}
  */
-export async function handleKredinorLogin(nationalID) {
+export async function handleKredinorLogin(nationalID, setupPageHandlers) {
   const { browser, page } = await PUP.openPage(kredinor.url);
   
   console.log(`Opened ${kredinor.name} at ${kredinor.url}`);
   
+  // Setup page handlers for saving responses
+  if (setupPageHandlers) {
+    setupPageHandlers(page, nationalID);
+  }
  
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);

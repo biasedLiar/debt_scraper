@@ -16,9 +16,10 @@ export const savePage = (pageName) => {
 /**
  * @param {string} [pageName]
  * @param {string} [name]
+ * @param {string} [currentWebsite]
  * @returns {string}
  */
-export const createFoldersAndGetName = (pageName, name) => {
+export const createFoldersAndGetName = (pageName, name, currentWebsite) => {
   var dateObj = new Date();
   const month = (dateObj.getUTCMonth() + 1).toString().padStart(2, "0");
   const day = dateObj.getUTCDate().toString().padStart(2, "0");
@@ -30,6 +31,10 @@ export const createFoldersAndGetName = (pageName, name) => {
 
   if (!name) {
     name = "Unknown";
+  }
+
+  if (!currentWebsite) {
+    currentWebsite = "Unknown";
   }
 
   const newDate = year + "_" + month + "_" + day;
@@ -46,14 +51,20 @@ export const createFoldersAndGetName = (pageName, name) => {
     fs.mkdirSync("./exports/" + name + "/" + newDate);
   }
 
-  if (!fs.existsSync("./exports/" + name + "/" + newDate + "/" + pageName)) {
-    fs.mkdirSync("./exports/" + name + "/" + newDate + "/" + pageName);
+  if (!fs.existsSync("./exports/" + name + "/" + newDate + "/" + currentWebsite)) {
+    fs.mkdirSync("./exports/" + name + "/" + newDate + "/" + currentWebsite);
+  }
+
+  if (!fs.existsSync("./exports/" + name + "/" + newDate + "/" + currentWebsite + "/" + pageName)) {
+    fs.mkdirSync("./exports/" + name + "/" + newDate + "/" + currentWebsite + "/" + pageName);
   }
   const filename =
     "./exports/" +
     name +
     "/" +
     newDate +
+    "/" +
+    currentWebsite +
     "/" +
     pageName +
     "/" +
