@@ -1,6 +1,6 @@
 import { PUP } from "../scraper.mjs";
 import { digiPost } from "../data.mjs";
-import { loginWithBankID } from "./statens-innkrevingssentral.mjs";
+import { loginWithBankID } from "./bankid-login.mjs";
 
 /**
  * Handles the Digipost login automation flow
