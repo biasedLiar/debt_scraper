@@ -11,6 +11,9 @@ import { PUP } from "./scraper.mjs";
 import { savePage, createFoldersAndGetName } from "./utilies.mjs";
 import { U } from "./U.mjs";
 import { handleDigipostLogin } from "./pages/digipost.mjs";
+import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
+import { handleKredinorLogin } from "./pages/kredinor.mjs";
+import { handleIntrumLogin } from "./pages/intrum.mjs";
 
 const fs = require("fs");
 
@@ -55,8 +58,7 @@ const openPage = async (url) => {
   });
 };
 
-const kredinorButton = button("Kredinor", () => openPage(kredinor.url));
-const intrumButton = button("Intrum", () => openPage(intrum.url));
+
 const tfBankButton = button("tfBank", () => openPage(tfBank.url));
 const di = div();
 di.innerText = "Hello World from dom!";
@@ -66,12 +68,24 @@ const heading2 = h2(
   "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper"
 );
 const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput");
-const siButton = button("Gå til si", (ev) => {
-  openPage(si.url);
+const siButton = button("Gå til si", async (ev) => {
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  await handleSILogin(nationalID);
 });
 const digipostButton = button("Digipost", async (ev) => {
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
   await handleDigipostLogin(nationalID);
+});
+
+const intrumButton = button("Intrum", async (ev) => {
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  await handleIntrumLogin(nationalID);
+});
+
+
+const kredinorButton = button("Kredinor", async (ev) => {
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  await handleKredinorLogin(nationalID);
 });
 
 const buttonsContainer = div();
