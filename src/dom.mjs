@@ -86,8 +86,8 @@ export const visualizeDebt = (debtData) => {
   const headerCompany = h2(`${debtData.creditSite} - ${debtData.isCurrent ? "Ubetalt" : "Betalt"}`, "creditor-header");
   innerContainer.appendChild(headerCompany);
   
-  const headerNumber = h2(`Sum gjeld:`, "debt-small-header");
-  const headerSubtext = h2(`${debtData.totalAmount} kr`, "debt-amount");
+  const headerNumber = h2(`Total:`, "debt-small-header");
+  const headerSubtext = h2(`${debtData.totalAmount.toLocaleString('no-NO')} kr`, "debt-amount");
   innerContainer.appendChild(headerNumber);
   innerContainer.appendChild(headerSubtext);
   
@@ -96,7 +96,7 @@ export const visualizeDebt = (debtData) => {
   debtData.debts.forEach((debt) => {
     const debtDiv = div({ class: "debt-item" });
     debtDiv.innerHTML = `
-            <h3>Sum: ${debt.amount} kr</h3>
+            <h3>Sum: ${debt.amount.toLocaleString('no-NO')} kr</h3>
             <p>Gjeld ID: ${debt.id}</p>
             <p>Betalingsfrist: ${debt.dueDate.substring(0, 10)}</p>
             <p>Type: ${debt.type} - ${debt.typeText}</p>

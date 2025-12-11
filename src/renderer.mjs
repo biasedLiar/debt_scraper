@@ -8,7 +8,7 @@
 import { div, button, h1, h2, input, visualizeDebt } from "./dom.mjs";
 import { tfBank } from "./data.mjs";
 import { PUP } from "./scraper.mjs";
-import { savePage, createFoldersAndGetName } from "./utilies.mjs";
+import { savePage, createFoldersAndGetName } from "./utilities.mjs";
 import { U } from "./U.mjs";
 import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
