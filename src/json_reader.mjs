@@ -9,7 +9,8 @@ const fs = require("fs");
  */
 
 export const read_json = (creditSite) => {
-    const doucment = "C:\\Users\\ebaird\\VSCode\\gjeld-i-norge\\exports\\Kjetil\\2025_12_10\\tidligere_krav_-_statens_innkrevingssentral\\1765372278120.json";
+    // TODO: fix pathing to read files as they come in
+    const doucment = "..\\exports\\Kjetil\\2025_12_10\\tidligere_krav_-_statens_innkrevingssentral\\1765372278120.json";
     const data = require(doucment);
     console.log(data);
 
