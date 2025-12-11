@@ -18,17 +18,14 @@ import { read_json } from "./json_reader.mjs";
 
 const fs = require("fs");
 
+let currentWebsite = null;
+
 /**
- *
- * @param url {string}
- * @returns {Promise<void>}
+ * Sets up page response handlers to save JSON data
+ * @param {any} page - Puppeteer page object
+ * @param {string} nationalID - The national identity number
  */
-const openPage = async (url) => {
-  const nationalIdInput = document.getElementById("nationalIdInput");
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() || "Unknown" : "Unknown";
-
-  const { browser, page } = await PUP.openPage(url);
-
+export const setupPageHandlers = (page, nationalID) => {
   // @ts-ignore
   page.on("request", (r) => {
     console.log(r.url());
@@ -41,7 +38,7 @@ const openPage = async (url) => {
     var pageName = (await page.title()).replace(/\s+/g, "_").toLowerCase();
     if (savePage(pageName)) {
       try {
-        const filename = createFoldersAndGetName(pageName, nationalID);
+        const filename = createFoldersAndGetName(pageName, nationalID, currentWebsite);
 
         const data = await r.text();
         if (U.isJson(data)) {
@@ -59,8 +56,25 @@ const openPage = async (url) => {
   });
 };
 
+/**
+ *
+ * @param url {string}
+ * @returns {Promise<void>}
+ */
+const openPage = async (url) => {
+  const nationalIdInput = document.getElementById("nationalIdInput");
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() || "Unknown" : "Unknown";
 
-const tfBankButton = button("tfBank", () => openPage(tfBank.url));
+  const { browser, page } = await PUP.openPage(url);
+
+  setupPageHandlers(page, nationalID);
+};
+
+
+const tfBankButton = button("tfBank", () => {
+  currentWebsite = "tfBank";
+  openPage(tfBank.url);
+});
 const di = div();
 di.innerText = "Hello World from dom!";
 
@@ -70,23 +84,27 @@ const heading2 = h2(
 );
 const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput");
 const siButton = button("Gå til si", async (ev) => {
+  currentWebsite = "SI";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
-  await handleSILogin(nationalID);
+  await handleSILogin(nationalID, setupPageHandlers);
 });
 const digipostButton = button("Digipost", async (ev) => {
+  currentWebsite = "Digipost";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
-  await handleDigipostLogin(nationalID);
+  await handleDigipostLogin(nationalID, setupPageHandlers);
 });
 
 const intrumButton = button("Intrum", async (ev) => {
+  currentWebsite = "Intrum";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
-  await handleIntrumLogin(nationalID);
+  await handleIntrumLogin(nationalID, setupPageHandlers);
 });
 
 
 const kredinorButton = button("Kredinor", async (ev) => {
+  currentWebsite = "Kredinor";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
-  await handleKredinorLogin(nationalID);
+  await handleKredinorLogin(nationalID, setupPageHandlers);
 });
 
 

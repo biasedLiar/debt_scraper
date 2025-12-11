@@ -7,10 +7,15 @@ import { loginWithBankID } from "./bankid-login.mjs";
  * @param {string} nationalID - The national identity number to use for login
  * @returns {Promise<{browser: any, page: any}>}
  */
-export async function handleDigipostLogin(nationalID) {
+export async function handleDigipostLogin(nationalID, setupPageHandlers) {
   const { browser, page } = await PUP.openPage(digiPost.url);
   
   console.log(`Opened ${digiPost.name} at ${digiPost.url}`);
+  
+  // Setup page handlers for saving responses
+  if (setupPageHandlers) {
+    setupPageHandlers(page, nationalID);
+  }
   
   // Wait for and click the login button
   try {
