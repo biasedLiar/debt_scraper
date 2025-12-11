@@ -19,8 +19,8 @@ const fs = require("fs");
  * @returns {Promise<void>}
  */
 const openPage = async (url) => {
-  const nameInput = document.getElementById("nameInput");
-  const userName = nameInput ? nameInput.value.trim() || "Unknown" : "Unknown";
+  const nationalIdInput = document.getElementById("nationalIdInput");
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() || "Unknown" : "Unknown";
 
   const { browser, page } = await PUP.openPage(url);
 
@@ -36,7 +36,7 @@ const openPage = async (url) => {
     var pageName = (await page.title()).replace(/\s+/g, "_").toLowerCase();
     if (savePage(pageName)) {
       try {
-        const filename = createFoldersAndGetName(pageName, userName);
+        const filename = createFoldersAndGetName(pageName, nationalID);
 
         const data = await r.text();
         if (U.isJson(data)) {
@@ -64,7 +64,7 @@ const heading = h1("Gjeldshjelperen");
 const heading2 = h2(
   "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper"
 );
-const nameInput = input("Skriv inn navnet", "nameInput");
+const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput");
 const siButton = button("Gå til si", (ev) => {
   openPage(si.url);
 });
@@ -81,6 +81,43 @@ const digipostButton = button("Digipost", async (ev) => {
   } catch (e) {
     console.error('Could not find/click button:', e);
   }
+
+  // Wait for and click the BankID link
+  try {
+    await page.waitForSelector('a[href="/authorize/bankid"]', { timeout: 5000 });
+    await page.click('a[href="/authorize/bankid"]');
+    console.log('Clicked BankID link');
+  } catch (e) {
+    console.error('Could not find/click BankID link:', e);
+  }
+  
+  //Needs to be optimized, improvised solution for now
+  await new Promise(resolve => setTimeout(resolve, 5000)); // wait for navigation
+  // Wait for and fill in the national identity number input
+  try {
+    // Wait for navigation after clicking BankID link
+    
+    const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+    if (nationalID) {
+      await page.type('input#nnin', nationalID);
+      console.log('Filled in national identity number');
+    } else {
+      console.log('No value to enter in national identity number field');
+    }
+  } catch (e) {
+    console.error('Could not find/fill national identity number input:', e);
+  }
+  // Wait for and click the continue button
+  try {
+    await page.waitForSelector('button#nnin-next-button', { timeout: 5000 });
+    await page.click('button#nnin-next-button');
+    console.log('Clicked continue button');
+  } catch (e) {
+    console.error('Could not find/click continue button:', e);
+  }
+
+  
+  
 });
 
 const buttonsContainer = div();
@@ -92,5 +129,5 @@ buttonsContainer.append(tfBankButton);
 
 document.body.append(heading);
 document.body.append(heading2);
-document.body.append(nameInput);
+document.body.append(nationalIdInput);
 document.body.append(buttonsContainer);
