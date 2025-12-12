@@ -9,7 +9,6 @@ const fs = require("fs");
 export const savePage = (pageName) => {
   const unsavedPages = ["bankid", "id-porten"];
   if (unsavedPages.includes(pageName)) {
-    console.log("Not saving page:", pageName);
     return false;
   }
     console.log("Saving page:", pageName);

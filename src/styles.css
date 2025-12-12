@@ -41,6 +41,11 @@ input {
   background-color: red;
 }
 
+.summary-container {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
 
 .debt-container {
   border: 1px solid #ccc;

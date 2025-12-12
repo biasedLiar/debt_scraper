@@ -124,13 +124,21 @@ document.body.append(buttonsContainer);
 const {debts_paid, debts_unpaid} = read_json("Statens Innkrevingssentral");
 console.log("debtUnpaidVisualization: ", debts_unpaid);
 
+const summaryDiv = div({ class: "summary-container" });
 
-const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
-
-document.body.append(debtUnpaidVisualization);
 
 const debtsPaidVisualization = visualizeDebt(debts_paid);
 
-document.body.append(debtsPaidVisualization);
+summaryDiv.append(debtsPaidVisualization);
+
+const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
+
+summaryDiv.append(debtUnpaidVisualization);
+
+
+document.body.append(summaryDiv);
+
+
+
 
 
