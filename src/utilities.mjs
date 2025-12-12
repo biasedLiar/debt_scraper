@@ -22,11 +22,7 @@ export const savePage = (pageName) => {
  * @param {string} [currentWebsite]
  * @returns {string}
  */
-<<<<<<< HEAD:src/utilies.mjs
-export const createFoldersAndGetName = (pageName, name, currentWebsite) => {
-=======
 export const createFoldersAndGetName = (pageName, name, currentWebsite, url, isJson=true) => {
->>>>>>> 322068ab2d10bcfa0d6c20240527af044c2016f3:src/utilities.mjs
   var dateObj = new Date();
   const month = (dateObj.getUTCMonth() + 1).toString().padStart(2, "0");
   const day = dateObj.getUTCDate().toString().padStart(2, "0");
@@ -60,13 +56,6 @@ export const createFoldersAndGetName = (pageName, name, currentWebsite, url, isJ
 
   if (!fs.existsSync("./exports/" + name + "/" + newDate + "/" + currentWebsite)) {
     fs.mkdirSync("./exports/" + name + "/" + newDate + "/" + currentWebsite);
-<<<<<<< HEAD:src/utilies.mjs
-  }
-
-  if (!fs.existsSync("./exports/" + name + "/" + newDate + "/" + currentWebsite + "/" + pageName)) {
-    fs.mkdirSync("./exports/" + name + "/" + newDate + "/" + currentWebsite + "/" + pageName);
-=======
->>>>>>> 322068ab2d10bcfa0d6c20240527af044c2016f3:src/utilities.mjs
   }
 
   if (!fs.existsSync("./exports/" + name + "/" + newDate + "/" + currentWebsite + "/" + pageName)) {
@@ -84,11 +73,6 @@ export const createFoldersAndGetName = (pageName, name, currentWebsite, url, isJ
     newDate +
     "/" +
     currentWebsite +
-<<<<<<< HEAD:src/utilies.mjs
-    "/" +
-    pageName +
-=======
->>>>>>> 322068ab2d10bcfa0d6c20240527af044c2016f3:src/utilities.mjs
     "/" +
     pageName +
     "/";

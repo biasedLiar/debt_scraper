@@ -39,11 +39,6 @@ export const setupPageHandlers = (page, nationalID) => {
     var pageName = (await page.title()).replace(/\s+/g, "_").toLowerCase();
     if (savePage(pageName)) {
       try {
-<<<<<<< HEAD
-        const filename = createFoldersAndGetName(pageName, nationalID, currentWebsite);
-
-=======
->>>>>>> 322068ab2d10bcfa0d6c20240527af044c2016f3
         const data = await r.text();
         const isJson = U.isJson(data);
 
@@ -77,16 +72,10 @@ const openPage = async (url) => {
 };
 
 
-<<<<<<< HEAD
 const tfBankButton = button("tfBank", async (ev) => {
   currentWebsite = "tfBank";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
   await handleTfBankLogin(nationalID, setupPageHandlers);
-=======
-const tfBankButton = button("tfBank", () => {
-  currentWebsite = "tfBank";
-  openPage(tfBank.url);
->>>>>>> 322068ab2d10bcfa0d6c20240527af044c2016f3
 });
 const di = div();
 di.innerText = "Hello World from dom!";
