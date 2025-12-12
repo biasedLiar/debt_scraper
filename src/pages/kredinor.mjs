@@ -1,6 +1,7 @@
 import { PUP } from "../scraper.mjs";
 import { kredinor } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
+const fs = require('fs/promises');
 
 /**
  * Handles the Digipost login automation flow
@@ -17,8 +18,22 @@ export async function handleKredinorLogin(nationalID, setupPageHandlers) {
     setupPageHandlers(page, nationalID);
   }
  
-  // Use shared BankID login flow
+  
   await loginWithBankID(page, nationalID);
+
+  // Wait for and extract debt information
+  await page.waitForSelector('.info-row-item-group');
+  const [debtAmount, activeCases] = await page.$$eval('.info-row-item-title', els => 
+    els.map(el => el.textContent.trim())
+  );
+  const dirPath = `exports/${nationalID}/Kredinor/debt_info`;
+  await fs.mkdir(dirPath, { recursive: true });
+  const filePath = `${dirPath}/debt.json`;
+  const data = { debtAmount, activeCases, timestamp: new Date().toISOString() };
+  await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+  console.log(`Debt amount: ${debtAmount}`);
+  console.log(`Active cases: ${activeCases}`);
+  console.log(`Saved to ${filePath}`);
 
   return { browser, page };
 }

@@ -14,6 +14,7 @@ import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
 import { handleIntrumLogin } from "./pages/intrum.mjs";
+import { handleTfBankLogin } from "./pages/tfbank.mjs";
 import { read_json } from "./json_reader.mjs";
 
 const fs = require("fs");
@@ -78,9 +79,10 @@ const openPage = async (url) => {
 };
 
 
-const tfBankButton = button("tfBank", () => {
+const tfBankButton = button("tfBank", async (ev) => {
   currentWebsite = "tfBank";
-  openPage(tfBank.url);
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  await handleTfBankLogin(nationalID, setupPageHandlers);
 });
 const di = div();
 di.innerText = "Hello World from dom!";
