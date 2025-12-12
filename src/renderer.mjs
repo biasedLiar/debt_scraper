@@ -8,7 +8,7 @@
 import { div, button, h1, h2, input, visualizeDebt } from "./dom.mjs";
 import { tfBank } from "./data.mjs";
 import { PUP } from "./scraper.mjs";
-import { savePage, createFoldersAndGetName } from "./utilities.mjs";
+import { savePage, createFoldersAndGetName, fileContainsNameOfUser } from "./utilities.mjs";
 import { U } from "./U.mjs";
 import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
@@ -19,6 +19,7 @@ import { read_json } from "./json_reader.mjs";
 const fs = require("fs");
 
 let currentWebsite = null;
+let userName = null;
 
 /**
  * Sets up page response handlers to save JSON data
@@ -42,13 +43,19 @@ export const setupPageHandlers = (page, nationalID) => {
         const isJson = U.isJson(data);
 
         const filename = createFoldersAndGetName(pageName, nationalID, currentWebsite, r.url(), isJson);
-
+        
         console.log("Response data length:", data);
         fs.writeFile(filename, data, function (err) {
           if (err) {
             console.log(err);
           }
         });
+
+        if (fileContainsNameOfUser(filename)) {
+          console.log("Found file with name of user:", filename);
+          userName = JSON.parse(data).navn;
+          console.log("Extracted user name:", userName);
+        }
       } catch (e) {
         console.error("Error:", e);
       }

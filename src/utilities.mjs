@@ -1,13 +1,12 @@
+const fs = require("fs");
+
 /**
  * @param {string} [pageName]
  * @returns {boolean}
  */
-
-
-const fs = require("fs");
-
 export const savePage = (pageName) => {
-  const unsavedPages = ["bankid", "id-porten"];
+  // const unsavedPages = ["bankid", "id-porten"];
+  const unsavedPages = [];
   if (unsavedPages.includes(pageName)) {
     return false;
   }
@@ -79,3 +78,12 @@ export const createFoldersAndGetName = (pageName, name, currentWebsite, url, isJ
   filename += isJson ? url_name + ".json" : "not_json/" + url_name + ".txt";
   return filename;
 };
+
+
+/**
+ * @param {string} [name]
+ * @returns {boolean}
+ */
+export function fileContainsNameOfUser(name) {
+  return name.includes("skatt.skatteetaten.no_api_mii_skyldnerportal_om_meg_api_v1_basisinfo.json");
+}
