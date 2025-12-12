@@ -45,7 +45,8 @@ const messageLinks = await page.$$eval('a.message-list-item__info[data-testid="d
 
 console.log(`Found ${messageLinks.length} messages`);
 
-//Not sure if this works rn
+/* WIP
+
 // Visit each message and extract information
 for (const message of messageLinks) {
     if (message.href) {
@@ -68,7 +69,7 @@ for (const message of messageLinks) {
         await PUP.saveToFile(content, `letters/${filename}.txt`);
         console.log(`Saved message to letters/${filename}.txt`);
     }
-}
+} */
   return { browser, page };
 
 
