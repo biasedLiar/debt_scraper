@@ -8,7 +8,7 @@
 import { div, button, h1, h2, input, visualizeDebt } from "./dom.mjs";
 import { tfBank } from "./data.mjs";
 import { PUP } from "./scraper.mjs";
-import { savePage, createFoldersAndGetName } from "./utilies.mjs";
+import { savePage, createFoldersAndGetName } from "./utilities.mjs";
 import { U } from "./U.mjs";
 import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
@@ -38,17 +38,17 @@ export const setupPageHandlers = (page, nationalID) => {
     var pageName = (await page.title()).replace(/\s+/g, "_").toLowerCase();
     if (savePage(pageName)) {
       try {
-        const filename = createFoldersAndGetName(pageName, nationalID, currentWebsite);
-
         const data = await r.text();
-        if (U.isJson(data)) {
-          console.log(data);
-          fs.writeFile(filename, data, function (err) {
-            if (err) {
-              console.log(err);
-            }
-          });
-        }
+        const isJson = U.isJson(data);
+
+        const filename = createFoldersAndGetName(pageName, nationalID, currentWebsite, r.url(), isJson);
+
+        console.log("Response data length:", data);
+        fs.writeFile(filename, data, function (err) {
+          if (err) {
+            console.log(err);
+          }
+        });
       } catch (e) {
         console.error("Error:", e);
       }
