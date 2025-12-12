@@ -38,17 +38,17 @@ export const setupPageHandlers = (page, nationalID) => {
     var pageName = (await page.title()).replace(/\s+/g, "_").toLowerCase();
     if (savePage(pageName)) {
       try {
-        const filename = createFoldersAndGetName(pageName, nationalID, currentWebsite);
-
         const data = await r.text();
-        if (U.isJson(data)) {
-          console.log(data);
-          fs.writeFile(filename, data, function (err) {
-            if (err) {
-              console.log(err);
-            }
-          });
-        }
+        const isJson = U.isJson(data);
+
+        const filename = createFoldersAndGetName(pageName, nationalID, currentWebsite, r.url(), isJson);
+
+        console.log("Response data length:", data);
+        fs.writeFile(filename, data, function (err) {
+          if (err) {
+            console.log(err);
+          }
+        });
       } catch (e) {
         console.error("Error:", e);
       }
