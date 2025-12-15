@@ -6,7 +6,6 @@
  * to expose Node.js functionality from the main process.
  */
 import { div, button, h1, h2, input, visualizeDebt } from "./dom.mjs";
-import { tfBank } from "./data.mjs";
 import { PUP } from "./scraper.mjs";
 import { savePage, createFoldersAndGetName, fileContainsNameOfUser, transferFilesAfterLogin } from "./utilities.mjs";
 import { U } from "./U.mjs";
@@ -15,10 +14,10 @@ import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
 import { handleIntrumLogin } from "./pages/intrum.mjs";
 import { handleTfBankLogin } from "./pages/tfbank.mjs";
-import { read_json, read_json_real } from "./json_reader.mjs";
+import { read_json } from "./json_reader.mjs";
 
 const fs = require("fs");
-
+ 
 let currentWebsite = null;
 let userName = null;
 
@@ -64,7 +63,7 @@ export const setupPageHandlers = (page, nationalID) => {
 
         if (isJson && JSON.parse(data).krav !== undefined) {
           console.log("Saved JSON response to:", filename);
-          const { debts_paid, debts_unpaid } = read_json_real(currentWebsite, JSON.parse(data).krav);
+          const { debts_paid, debts_unpaid } = read_json(currentWebsite, JSON.parse(data).krav);
           console.log("Debts paid:", debts_paid);
           console.log("Debts unpaid:", debts_unpaid);
 
@@ -154,9 +153,6 @@ document.body.append(heading);
 document.body.append(heading2);
 document.body.append(nationalIdInput);
 document.body.append(buttonsContainer);
-
-const {debts_paid, debts_unpaid} = read_json("Statens Innkrevingssentral");
-console.log("debtUnpaidVisualization: ", debts_unpaid);
 
 
 
