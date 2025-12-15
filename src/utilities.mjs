@@ -6,8 +6,7 @@ const path = require('path');
  * @returns {boolean}
  */
 export const savePage = (pageName) => {
-  // const unsavedPages = ["bankid", "id-porten"];
-  const unsavedPages = [];
+  const unsavedPages = ["bankid", "id-porten"];
   if (unsavedPages.includes(pageName)) {
     return false;
   }

@@ -15,7 +15,7 @@ import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
 import { handleIntrumLogin } from "./pages/intrum.mjs";
 import { handleTfBankLogin } from "./pages/tfbank.mjs";
-import { read_json } from "./json_reader.mjs";
+import { read_json, read_json_real } from "./json_reader.mjs";
 
 const fs = require("fs");
 
@@ -60,6 +60,27 @@ export const setupPageHandlers = (page, nationalID) => {
           console.log("Extracted user name:", userName);
           document.body.querySelector("h1").innerText = "Gjeldshjelper for " + userName;
           transferFilesAfterLogin(pageName, userName, currentWebsite, nationalID);
+        }
+
+        if (isJson && JSON.parse(data).krav !== undefined) {
+          console.log("Saved JSON response to:", filename);
+          const { debts_paid, debts_unpaid } = read_json_real(currentWebsite, JSON.parse(data).krav);
+          console.log("Debts paid:", debts_paid);
+          console.log("Debts unpaid:", debts_unpaid);
+
+          
+          const summaryDiv = div({ class: "summary-container" });
+
+          const debtsPaidVisualization = visualizeDebt(debts_paid);
+          if (debts_paid.totalAmount > 0){
+            summaryDiv.append(debtsPaidVisualization);
+          }
+          const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
+          if (debts_unpaid.totalAmount > 0){
+            summaryDiv.append(debtUnpaidVisualization);
+          }       
+        document.body.append(summaryDiv);
+          
         }
       } catch (e) {
         console.error("Error:", e);
@@ -117,7 +138,7 @@ const intrumButton = button("Intrum", async (ev) => {
 const kredinorButton = button("Kredinor", async (ev) => {
   currentWebsite = "Kredinor";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
-  await handleKredinorLogin(nationalID, setupPageHandlers);
+  await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
 });
 
 
@@ -136,20 +157,6 @@ document.body.append(buttonsContainer);
 
 const {debts_paid, debts_unpaid} = read_json("Statens Innkrevingssentral");
 console.log("debtUnpaidVisualization: ", debts_unpaid);
-
-const summaryDiv = div({ class: "summary-container" });
-
-
-const debtsPaidVisualization = visualizeDebt(debts_paid);
-
-summaryDiv.append(debtsPaidVisualization);
-
-const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
-
-summaryDiv.append(debtUnpaidVisualization);
-
-
-document.body.append(summaryDiv);
 
 
 
