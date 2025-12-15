@@ -8,7 +8,7 @@
 import { div, button, h1, h2, input, visualizeDebt } from "./dom.mjs";
 import { tfBank } from "./data.mjs";
 import { PUP } from "./scraper.mjs";
-import { savePage, createFoldersAndGetName, fileContainsNameOfUser } from "./utilities.mjs";
+import { savePage, createFoldersAndGetName, fileContainsNameOfUser, transferFilesAfterLogin } from "./utilities.mjs";
 import { U } from "./U.mjs";
 import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
@@ -43,7 +43,9 @@ export const setupPageHandlers = (page, nationalID) => {
         const data = await r.text();
         const isJson = U.isJson(data);
 
-        const filename = createFoldersAndGetName(pageName, nationalID, currentWebsite, r.url(), isJson);
+        const outerFolder = userName ? userName : nationalID;
+
+        const filename = createFoldersAndGetName(pageName, outerFolder, currentWebsite, r.url(), isJson);
         
         console.log("Response data length:", data);
         fs.writeFile(filename, data, function (err) {
@@ -54,8 +56,10 @@ export const setupPageHandlers = (page, nationalID) => {
 
         if (fileContainsNameOfUser(filename)) {
           console.log("Found file with name of user:", filename);
-          userName = JSON.parse(data).navn;
+          userName = JSON.parse(data).navn.replace(/[^a-zA-Z0-9]/g, "_");
           console.log("Extracted user name:", userName);
+          document.body.querySelector("h1").innerText = "Gjeldshjelper for " + userName;
+          transferFilesAfterLogin(pageName, userName, currentWebsite, nationalID);
         }
       } catch (e) {
         console.error("Error:", e);
@@ -89,7 +93,7 @@ di.innerText = "Hello World from dom!";
 
 const heading = h1("Gjeldshjelperen");
 const heading2 = h2(
-  "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper"
+  "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper", "main-subheading"
 );
 const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput");
 const siButton = button("Gå til si", async (ev) => {

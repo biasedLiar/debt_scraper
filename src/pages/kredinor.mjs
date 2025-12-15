@@ -1,6 +1,7 @@
 import { PUP } from "../scraper.mjs";
 import { kredinor } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
+import { createFoldersAndGetName } from "../utilities.mjs";
 const fs = require('fs/promises');
 
 /**
@@ -26,9 +27,8 @@ export async function handleKredinorLogin(nationalID, setupPageHandlers) {
   const [debtAmount, activeCases] = await page.$$eval('.info-row-item-title', els => 
     els.map(el => el.textContent.trim())
   );
-  const dirPath = `exports/${nationalID}/Kredinor/debt_info`;
-  await fs.mkdir(dirPath, { recursive: true });
-  const filePath = `${dirPath}/debt.json`;
+  const filePath = createFoldersAndGetName(kredinor.name, nationalID, "Kredinor", "ManuallyFoundDebt", isJson=true);
+  console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
   const data = { debtAmount, activeCases, timestamp: new Date().toISOString() };
   await fs.writeFile(filePath, JSON.stringify(data, null, 2));
   console.log(`Debt amount: ${debtAmount}`);
