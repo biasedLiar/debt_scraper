@@ -9,16 +9,20 @@ import { loginWithBankID } from "./bankid-login.mjs";
  */
 export async function handleIntrumLogin(nationalID, setupPageHandlers) {
   const { browser, page } = await PUP.openPage(intrum.url);
-  
+
   console.log(`Opened ${intrum.name} at ${intrum.url}`);
-  
+
   // Setup page handlers for saving responses
   if (setupPageHandlers) {
     setupPageHandlers(page, nationalID);
   }
- 
+
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
+
+  // Wait for page to load after login
+  await page.waitForLoadState('networkidle');
+  
 
   return { browser, page };
 }

@@ -42,7 +42,13 @@ export const setupPageHandlers = (page, nationalID) => {
         const data = await r.text();
         const isJson = U.isJson(data);
 
-        const filename = createFoldersAndGetName(pageName, nationalID, currentWebsite, r.url(), isJson);
+        const filename = createFoldersAndGetName(
+          pageName,
+          nationalID,
+          currentWebsite,
+          r.url(),
+          isJson
+        );
 
         console.log("Response data length:", data);
         fs.writeFile(filename, data, function (err) {
@@ -64,7 +70,9 @@ export const setupPageHandlers = (page, nationalID) => {
  */
 const openPage = async (url) => {
   const nationalIdInput = document.getElementById("nationalIdInput");
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() || "Unknown" : "Unknown";
+  const nationalID = nationalIdInput
+    ? nationalIdInput.value.trim() || "Unknown"
+    : "Unknown";
 
   const { browser, page } = await PUP.openPage(url);
 
@@ -72,11 +80,6 @@ const openPage = async (url) => {
 };
 
 
-const tfBankButton = button("tfBank", async (ev) => {
-  currentWebsite = "tfBank";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
-  await handleTfBankLogin(nationalID, setupPageHandlers);
-});
 const di = div();
 di.innerText = "Hello World from dom!";
 
@@ -85,31 +88,60 @@ const heading2 = h2(
   "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper"
 );
 const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput");
+
+
+const allButton = button("Kjør gjeldssjekk for alle (WIP)", async (ev) => {
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
+  
+  currentWebsite = "SI";
+  await handleSILogin(nationalID, setupPageHandlers);
+  await PUP.closeBrowser();
+  
+  /* currentWebsite = "Digipost";
+  await handleDigipostLogin(nationalID, setupPageHandlers);
+  await PUP.closeBrowser();
+   */
+  currentWebsite = "Kredinor";
+  await handleKredinorLogin(nationalID, setupPageHandlers);
+  await PUP.closeBrowser();
+  
+  currentWebsite = "Intrum";
+  await handleIntrumLogin(nationalID, setupPageHandlers);
+  await PUP.closeBrowser();
+  
+  currentWebsite = "tfBank";
+  await handleTfBankLogin(nationalID, setupPageHandlers);
+  await PUP.closeBrowser();
+});
+
+const tfBankButton = button("tfBank", async (ev) => {
+  currentWebsite = "tfBank";
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
+  await handleTfBankLogin(nationalID, setupPageHandlers);
+});
+
 const siButton = button("Gå til si", async (ev) => {
   currentWebsite = "SI";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   await handleSILogin(nationalID, setupPageHandlers);
 });
 const digipostButton = button("Digipost", async (ev) => {
   currentWebsite = "Digipost";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   await handleDigipostLogin(nationalID, setupPageHandlers);
 });
 
 const intrumButton = button("Intrum", async (ev) => {
   currentWebsite = "Intrum";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   await handleIntrumLogin(nationalID, setupPageHandlers);
 });
 
-
 const kredinorButton = button("Kredinor", async (ev) => {
   currentWebsite = "Kredinor";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   await handleKredinorLogin(nationalID, setupPageHandlers);
 });
-
-
 
 const buttonsContainer = div();
 buttonsContainer.append(siButton);
@@ -117,15 +149,14 @@ buttonsContainer.append(digipostButton);
 buttonsContainer.append(kredinorButton);
 buttonsContainer.append(intrumButton);
 buttonsContainer.append(tfBankButton);
-
+buttonsContainer.append(allButton);
 document.body.append(heading);
 document.body.append(heading2);
 document.body.append(nationalIdInput);
 document.body.append(buttonsContainer);
 
-const {debts_paid, debts_unpaid} = read_json("Statens Innkrevingssentral");
+const { debts_paid, debts_unpaid } = read_json("Statens Innkrevingssentral");
 console.log("debtUnpaidVisualization: ", debts_unpaid);
-
 
 const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
 
@@ -134,5 +165,3 @@ document.body.append(debtUnpaidVisualization);
 const debtsPaidVisualization = visualizeDebt(debts_paid);
 
 document.body.append(debtsPaidVisualization);
-
-

@@ -3,7 +3,6 @@
  * @returns {boolean}
  */
 
-
 const fs = require("fs");
 
 export const savePage = (pageName) => {
@@ -12,7 +11,7 @@ export const savePage = (pageName) => {
     console.log("Not saving page:", pageName);
     return false;
   }
-    console.log("Saving page:", pageName);
+  console.log("Saving page:", pageName);
   return true;
 };
 
@@ -22,7 +21,13 @@ export const savePage = (pageName) => {
  * @param {string} [currentWebsite]
  * @returns {string}
  */
-export const createFoldersAndGetName = (pageName, name, currentWebsite, url, isJson=true) => {
+export const createFoldersAndGetName = (
+  pageName,
+  name,
+  currentWebsite,
+  url,
+  isJson = true
+) => {
   var dateObj = new Date();
   const month = (dateObj.getUTCMonth() + 1).toString().padStart(2, "0");
   const day = dateObj.getUTCDate().toString().padStart(2, "0");
@@ -54,18 +59,67 @@ export const createFoldersAndGetName = (pageName, name, currentWebsite, url, isJ
     fs.mkdirSync("./exports/" + name + "/" + newDate);
   }
 
-  if (!fs.existsSync("./exports/" + name + "/" + newDate + "/" + currentWebsite)) {
+  if (
+    !fs.existsSync("./exports/" + name + "/" + newDate + "/" + currentWebsite)
+  ) {
     fs.mkdirSync("./exports/" + name + "/" + newDate + "/" + currentWebsite);
   }
 
-  if (!fs.existsSync("./exports/" + name + "/" + newDate + "/" + currentWebsite + "/" + pageName)) {
-    fs.mkdirSync("./exports/" + name + "/" + newDate + "/" + currentWebsite + "/" + pageName);
+  if (
+    !fs.existsSync(
+      "./exports/" +
+        name +
+        "/" +
+        newDate +
+        "/" +
+        currentWebsite +
+        "/" +
+        pageName
+    )
+  ) {
+    fs.mkdirSync(
+      "./exports/" +
+        name +
+        "/" +
+        newDate +
+        "/" +
+        currentWebsite +
+        "/" +
+        pageName
+    );
   }
 
-  if (!fs.existsSync("./exports/" + name + "/" + newDate + "/" + currentWebsite + "/" + pageName + "/" + "not_json")) {
-    fs.mkdirSync("./exports/" + name + "/" + newDate + "/" + currentWebsite + "/" + pageName + "/not_json");
+  if (
+    !fs.existsSync(
+      "./exports/" +
+        name +
+        "/" +
+        newDate +
+        "/" +
+        currentWebsite +
+        "/" +
+        pageName +
+        "/" +
+        "not_json"
+    )
+  ) {
+    fs.mkdirSync(
+      "./exports/" +
+        name +
+        "/" +
+        newDate +
+        "/" +
+        currentWebsite +
+        "/" +
+        pageName +
+        "/not_json"
+    );
   }
-  const url_name = url.replace("https://", "").replace(".json", "").replace(/[^a-zA-Z0-9.]/g, "_").toLowerCase();
+  const url_name = url
+    .replace("https://", "")
+    .replace(".json", "")
+    .replace(/[^a-zA-Z0-9.]/g, "_")
+    .toLowerCase();
   let filename =
     "./exports/" +
     name +

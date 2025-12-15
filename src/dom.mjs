@@ -1,5 +1,3 @@
-
-
 /**
  * @param {CSSStyleDeclaration} [styles]
  * @param {string} [class]
@@ -83,20 +81,26 @@ export const visualizeDebt = (debtData) => {
 
   const innerContainer = div({ class: "debt-inner-container" });
 
-  const headerCompany = h2(`${debtData.creditSite} - ${debtData.isCurrent ? "Ubetalt" : "Betalt"}`, "creditor-header");
+  const headerCompany = h2(
+    `${debtData.creditSite} - ${debtData.isCurrent ? "Ubetalt" : "Betalt"}`,
+    "creditor-header"
+  );
   innerContainer.appendChild(headerCompany);
-  
+
   const headerNumber = h2(`Total:`, "debt-small-header");
-  const headerSubtext = h2(`${debtData.totalAmount.toLocaleString('no-NO')} kr`, "debt-amount");
+  const headerSubtext = h2(
+    `${debtData.totalAmount.toLocaleString("no-NO")} kr`,
+    "debt-amount"
+  );
   innerContainer.appendChild(headerNumber);
   innerContainer.appendChild(headerSubtext);
-  
+
   outerContainer.appendChild(innerContainer);
 
   debtData.debts.forEach((debt) => {
     const debtDiv = div({ class: "debt-item" });
     debtDiv.innerHTML = `
-            <h3>Sum: ${debt.amount.toLocaleString('no-NO')} kr</h3>
+            <h3>Sum: ${debt.amount.toLocaleString("no-NO")} kr</h3>
             <p>Gjeld ID: ${debt.id}</p>
             <p>Betalingsfrist: ${debt.dueDate.substring(0, 10)}</p>
             <p>Type: ${debt.type} - ${debt.typeText}</p>
@@ -104,8 +108,7 @@ export const visualizeDebt = (debtData) => {
     outerContainer.appendChild(debtDiv);
   });
   return outerContainer;
-}
-
+};
 
 const inputElement = document.createElement("input");
 const table = document.createElement("table");

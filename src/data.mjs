@@ -94,10 +94,12 @@ si.apiData = [
   },
 ];
 
-const digiPost = createTargetPage("https://www.digipost.no/innlogging", "Digipost");
+const digiPost = createTargetPage(
+  "https://www.digipost.no/innlogging",
+  "Digipost"
+);
 
 digiPost.manifestUrl = "https://www.digipost.no/postkasse/manifest.json";
-
 
 digiPost.apiData = [
   {
@@ -117,7 +119,10 @@ digiPost.apiData = [
 ];
 
 // this website url is found in kredinors page
-const kredinor = createTargetPage("https://www.ident.nets.eu/its/index.html?forcepkivendor=no_bankid&acr_values=urn:bankid:bis&mid=KRAEAXIFGDWK&TARGET=https%3A%2F%2Fminside.kredinor.no%2F%3Flocale%3Dnb%26login&locale=nb-NO&status=https%3A%2F%2Flogin.kredinor.no%2Flogin%2Fstatus%3FreturnUrlbtoa%3DaHR0cHM6Ly9taW5zaWRlLmtyZWRpbm9yLm5vLz9sb2NhbGU9bmImbG9naW4-%26errorCode%3D", "Kredinor");
+const kredinor = createTargetPage(
+  "https://www.ident.nets.eu/its/index.html?forcepkivendor=no_bankid&acr_values=urn:bankid:bis&mid=KRAEAXIFGDWK&TARGET=https%3A%2F%2Fminside.kredinor.no%2F%3Flocale%3Dnb%26login&locale=nb-NO&status=https%3A%2F%2Flogin.kredinor.no%2Flogin%2Fstatus%3FreturnUrlbtoa%3DaHR0cHM6Ly9taW5zaWRlLmtyZWRpbm9yLm5vLz9sb2NhbGU9bmImbG9naW4-%26errorCode%3D",
+  "Kredinor"
+);
 
 //this wesite url is found in intrums page
 const intrum = createTargetPage(

@@ -9,43 +9,54 @@ import { loginWithBankID } from "./bankid-login.mjs";
  */
 export async function handleDigipostLogin(nationalID, setupPageHandlers) {
   const { browser, page } = await PUP.openPage(digiPost.url);
-  
+
   console.log(`Opened ${digiPost.name} at ${digiPost.url}`);
-  
+
   // Setup page handlers for saving responses
   if (setupPageHandlers) {
     setupPageHandlers(page, nationalID);
   }
-  
+
   // Wait for and click the login button
   try {
-    await page.waitForSelector('button.dds-button.dds-button--primary.dds-button--size-large', { timeout: 5000 });
-    await page.click('button.dds-button.dds-button--primary.dds-button--size-large');
-    console.log('Clicked login button');
+    await page.waitForSelector(
+      "button.dds-button.dds-button--primary.dds-button--size-large",
+      { timeout: 5000 }
+    );
+    await page.click(
+      "button.dds-button.dds-button--primary.dds-button--size-large"
+    );
+    console.log("Clicked login button");
   } catch (e) {
-    console.error('Could not find/click button:', e);
+    console.error("Could not find/click button:", e);
   }
 
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
+  // Wait for message list to load
+  await page.waitForSelector(
+    'a.message-list-item__info[data-testid="document-attachment"]',
+    { timeout: 10000 }
+  );
 
-// Wait for message list to load
-await page.waitForSelector('a.message-list-item__info[data-testid="document-attachment"]', { timeout: 10000 });
+  // Get all message links
+  const messageLinks = await page.$$eval(
+    'a.message-list-item__info[data-testid="document-attachment"]',
+    (links) =>
+      links.map((link) => ({
+        href: link.getAttribute("href"),
+        sender: link.querySelector(".message-creator p")?.textContent?.trim(),
+        subject: link
+          .querySelector(".message-subject-content span")
+          ?.textContent?.trim(),
+        date: link.querySelector("time")?.getAttribute("datetime"),
+      }))
+  );
 
-// Get all message links
-const messageLinks = await page.$$eval('a.message-list-item__info[data-testid="document-attachment"]', links => 
-    links.map(link => ({
-        href: link.getAttribute('href'),
-        sender: link.querySelector('.message-creator p')?.textContent?.trim(),
-        subject: link.querySelector('.message-subject-content span')?.textContent?.trim(),
-        date: link.querySelector('time')?.getAttribute('datetime')
-    }))
-);
+  console.log(`Found ${messageLinks.length} messages`);
 
-console.log(`Found ${messageLinks.length} messages`);
-
-/* WIP
+  /* WIP
 
 // Visit each message and extract information
 for (const message of messageLinks) {
@@ -71,6 +82,4 @@ for (const message of messageLinks) {
     }
 } */
   return { browser, page };
-
-
 }
