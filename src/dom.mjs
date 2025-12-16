@@ -120,7 +120,11 @@ export const visualizeDebt = (debtData) => {
 export const visualizeTotalDebts = (totalAmountString) => {
   const outerContainer = div({ class: `total-debt-container` });
 
+<<<<<<< HEAD
   const headerNumber = h1(`Registrert gjeld:`, "debt-small-header");
+=======
+  const headerNumber = h2(`Total gjeld:`, "debt-small-header");
+>>>>>>> ec3d0e123af4c6dd88f791bf97bfe0bd417660dc
   const headerSubtext = h2(totalAmountString, "total-debt-amount");
   outerContainer.appendChild(headerNumber);
   outerContainer.appendChild(headerSubtext);

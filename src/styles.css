@@ -64,6 +64,15 @@ input {
     }
    }
 
+   &.ubetalt {
+    background-color:#ffb8b8;
+    border-color: #ff3535;
+
+    & .debt-item {
+      border-color: #ff6161;
+    }
+   }
+
   & .creditor-header{
     font-size: 20px;
     font-weight: bold;
