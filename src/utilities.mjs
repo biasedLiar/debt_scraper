@@ -211,3 +211,4 @@ export function moveFiles(sourceDir, destDir) {
 export function fileContainsNameOfUser(name) {
   return name.includes("skatt.skatteetaten.no_api_mii_skyldnerportal_om_meg_api_v1_basisinfo.json");
 }
+

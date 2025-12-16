@@ -16,10 +16,12 @@ import { handleIntrumLogin } from "./pages/intrum.mjs";
 import { handleTfBankLogin } from "./pages/tfbank.mjs";
 import { read_json } from "./json_reader.mjs";
 
+
 const fs = require("fs");
  
 let currentWebsite = null;
 let userName = null;
+const offlineMode = true;
 
 /**
  * Sets up page response handlers to save JSON data
@@ -63,23 +65,41 @@ export const setupPageHandlers = (page, nationalID) => {
 
         if (isJson && JSON.parse(data).krav !== undefined) {
           console.log("Saved JSON response to:", filename);
-          const { debts_paid, debts_unpaid } = read_json(currentWebsite, JSON.parse(data).krav);
-          console.log("Debts paid:", debts_paid);
-          console.log("Debts unpaid:", debts_unpaid);
+          // const { debts_paid, debts_unpaid } = read_json(currentWebsite, JSON.parse(data).krav);
+          // console.log("Debts paid:", debts_paid);
+          // console.log("Debts unpaid:", debts_unpaid);
 
-          
-          const summaryDiv = div({ class: "summary-container" });
 
-          const debtsPaidVisualization = visualizeDebt(debts_paid);
+          // const debtsPaidVisualization = visualizeDebt(debts_paid);
+          // if (debts_paid.totalAmount > 0){
+          //   summaryDiv.append(debtsPaidVisualization);
+          // }
+          // const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
+          // if (debts_unpaid.totalAmount > 0){
+          //   summaryDiv.append(debtUnpaidVisualization);
+          // }       
+
+
+          const doucment = "..\\exports\\Kjetil\\2025_12_10\\tidligere_krav_-_statens_innkrevingssentral\\1765372278120.json";
+          const data = require(doucment);
+
+
+          const { debts_paid, debts_unpaid } = read_json("test", data.krav);
+
+          document.body.append(summaryDiv);
+
+          const debtsPaidVisualization2 = visualizeDebt(debts_paid);
           if (debts_paid.totalAmount > 0){
-            summaryDiv.append(debtsPaidVisualization);
+            summaryDiv.appendChild(debtsPaidVisualization2);
           }
-          const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
+          const debtUnpaidVisualization2 = visualizeDebt(debts_unpaid);
           if (debts_unpaid.totalAmount > 0){
-            summaryDiv.append(debtUnpaidVisualization);
-          }       
-        document.body.append(summaryDiv);
+            summaryDiv.appendChild(debtUnpaidVisualization2);
+          }  
+      
+
           
+       
         }
       } catch (e) {
         console.error("Error:", e);
@@ -156,5 +176,32 @@ document.body.append(buttonsContainer);
 
 
 
+const summaryDiv = div({ class: "summary-container" });
 
+if (offlineMode) {
+  const doucment = "..\\exports\\Kjetil\\2025_12_10\\tidligere_krav_-_statens_innkrevingssentral\\1765372278120.json";
+  const data = require(doucment);
+
+
+  const { debts_paid, debts_unpaid } = read_json("SI", data.krav);
+
+
+  const debtsPaidVisualization = visualizeDebt(debts_paid);
+  if (debts_paid.totalAmount > 0){
+    summaryDiv.append(debtsPaidVisualization);
+  }
+  const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
+  if (debts_unpaid.totalAmount > 0){
+    summaryDiv.append(debtUnpaidVisualization);
+  }       
+
+
+  
+  const doucment2 = "..\\exports\\Kjetil\\2025_12_10\\tidligere_krav_-_statens_innkrevingssentral\\1765372278120.json";
+  
+
+          
+}
+
+document.body.append(summaryDiv);
 
