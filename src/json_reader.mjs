@@ -89,7 +89,7 @@ export function convertlistsToJson(debtList, creditorList, saksnummerList, credi
     } 
 
     for (let i = 0; i < debtList.length; i++) {
-        const formattedDebt = parseInt(debtList[i].replace(/[^0-9,]/g, ''));
+        const formattedDebt = parseFloat(debtList[i].replace(/[^0-9,]/g, '').replace(',', '.'));
         const krav_object = {
             id: saksnummerList[i],
             amount: formattedDebt,
@@ -98,7 +98,7 @@ export function convertlistsToJson(debtList, creditorList, saksnummerList, credi
             typeText: null,
         };
 
-        debts_unpaid.totalAmount += debtList; 
+        debts_unpaid.totalAmount += formattedDebt; 
         debts_unpaid.debts.push(krav_object);
     }
 

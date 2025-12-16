@@ -14,7 +14,7 @@ import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
 import { handleIntrumLogin } from "./pages/intrum.mjs";
 import { handleTfBankLogin } from "./pages/tfbank.mjs";
-import { read_json } from "./json_reader.mjs";
+import { read_json, convertlistsToJson } from "./json_reader.mjs";
 
 
 const fs = require("fs");
@@ -196,9 +196,17 @@ if (offlineMode) {
   }       
 
 
-  
-  const doucment2 = "..\\exports\\Kjetil\\2025_12_10\\tidligere_krav_-_statens_innkrevingssentral\\1765372278120.json";
-  
+  const doucment2 = "..\\exports\\22088242312\\2025_12_15\\Kredinor\\Kredinor\\fulldebtdetails.json";
+  const { debtList, creditorList, saksnummerList } = require(doucment2);
+
+
+  const debts_unpaid2 = convertlistsToJson(debtList, creditorList, saksnummerList, "Kredinor");
+
+  console.log("Unpaid data 2: ", debts_unpaid2);
+  const debtUnpaidVisualization2 = visualizeDebt(debts_unpaid2);
+  if (debts_unpaid2.totalAmount > 0){
+    summaryDiv.append(debtUnpaidVisualization2);
+  }       
 
           
 }
