@@ -81,15 +81,12 @@ export const input = (placeholder, id) => {
  */
 export const visualizeDebt = (debtData) => {
   const paidStatus = debtData.isCurrent ? "Ubetalt" : "Betalt";
-  const paidStatus = debtData.isCurrent ? "Ubetalt" : "Betalt";
   console.log("Visualizing debt data: ", debtData);
 
-  const outerContainer = div({ class: `debt-container ${paidStatus.toLowerCase()}` });
   const outerContainer = div({ class: `debt-container ${paidStatus.toLowerCase()}` });
 
   const innerContainer = div({ class: "debt-inner-container" });
 
-  const headerCompany = h2(`${debtData.creditSite} - ${paidStatus}`, "creditor-header");
   const headerCompany = h2(`${debtData.creditSite} - ${paidStatus}`, "creditor-header");
   innerContainer.appendChild(headerCompany);
   
@@ -106,10 +103,7 @@ export const visualizeDebt = (debtData) => {
       debt.dueDate = "Ukjent";
     }
     const typeText = debt.typeText ? "- " + debt.typeText : "";
-    if (debt.dueDate === null) {
-      debt.dueDate = "Ukjent";
-    }
-    const typeText = debt.typeText ? "- " + debt.typeText : "";
+    
     debtDiv.innerHTML = `
             <h3>Sum: ${debt.amount.toLocaleString('no-NO')} kr</h3>
             <p>Gjeld ID: ${debt.id}</p>

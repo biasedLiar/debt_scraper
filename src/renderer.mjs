@@ -6,7 +6,6 @@
  * to expose Node.js functionality from the main process.
  */
 import { div, button, h1, h2, input, visualizeDebt, visualizeTotalDebts } from "./dom.mjs";
-import { div, button, h1, h2, input, visualizeDebt, visualizeTotalDebts } from "./dom.mjs";
 import { PUP } from "./scraper.mjs";
 import { savePage, createFoldersAndGetName, fileContainsNameOfUser, transferFilesAfterLogin } from "./utilities.mjs";
 import { U } from "./U.mjs";
@@ -17,20 +16,12 @@ import { handleIntrumLogin } from "./pages/intrum.mjs";
 import { handleTfBankLogin } from "./pages/tfbank.mjs";
 import { read_json, convertlistsToJson } from "./json_reader.mjs";
 
-import { read_json, convertlistsToJson } from "./json_reader.mjs";
 
 
 const fs = require("fs");
  
 let currentWebsite = null;
 let userName = null;
-let totalDebtAmount = 0;
-const offlineMode = true;
-
-const addToTotalDebtAmount = (amount) => {
-  totalDebtAmount += amount;
-  document.body.querySelector(".total-debt-amount").innerText = totalDebtAmount.toLocaleString('no-NO') + " kr";
-}
 let totalDebtAmount = 0;
 const showPaidDebts = true;
 const offlineMode = true;
