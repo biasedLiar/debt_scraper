@@ -65,7 +65,7 @@ export const setupPageHandlers = (page, nationalID) => {
           console.log("Found file with name of user:", filename);
           userName = JSON.parse(data).navn.replace(/[^a-zA-Z0-9]/g, "_");
           console.log("Extracted user name:", userName);
-          document.body.querySelector("h1").innerText = "Gjeldshjelper for " + userName;
+          document.body.querySelector("h1").innerText = "Gjeldshjelper for " + userName.replaceAll("_", " ");
           transferFilesAfterLogin(pageName, userName, currentWebsite, nationalID);
         }
 
@@ -168,7 +168,12 @@ const kredinorButton = button("Kredinor", async (ev) => {
   await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
 });
 
-
+// Add Enter key listener to nationalIdInput to trigger SI button
+nationalIdInput.addEventListener('keypress', (event) => {
+  if (event.key === 'Enter') {
+    siButton.click();
+  }
+});
 
 const buttonsContainer = div();
 buttonsContainer.append(siButton);
@@ -190,6 +195,7 @@ document.body.append(totalVis);
 const summaryDiv = div({ class: "summary-container" });
 
 if (offlineMode) {
+
   const doucment = "..\\exports\\Kjetil\\2025_12_10\\tidligere_krav_-_statens_innkrevingssentral\\1765372278120.json";
   const data = require(doucment);
 
