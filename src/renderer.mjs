@@ -5,8 +5,7 @@
  * `contextIsolation` is turned on. Use the contextBridge API in `preload.js`
  * to expose Node.js functionality from the main process.
  */
-import { div, button, h1, h2, input, visualizeDebt } from "./dom.mjs";
-import { tfBank } from "./data.mjs";
+import { div, button, h1, h2, input, visualizeDebt, visualizeTotalDebts } from "./dom.mjs";
 import { PUP } from "./scraper.mjs";
 import { savePage, createFoldersAndGetName, fileContainsNameOfUser, transferFilesAfterLogin } from "./utilities.mjs";
 import { U } from "./U.mjs";
@@ -15,12 +14,20 @@ import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
 import { handleIntrumLogin } from "./pages/intrum.mjs";
 import { handleTfBankLogin } from "./pages/tfbank.mjs";
-import { read_json } from "./json_reader.mjs";
+import { read_json, convertlistsToJson } from "./json_reader.mjs";
+
 
 const fs = require("fs");
-
+ 
 let currentWebsite = null;
 let userName = null;
+let totalDebtAmount = 0;
+const offlineMode = true;
+
+const addToTotalDebtAmount = (amount) => {
+  totalDebtAmount += amount;
+  document.body.querySelector(".total-debt-amount").innerText = totalDebtAmount.toLocaleString('no-NO') + " kr";
+}
 
 /**
  * Sets up page response handlers to save JSON data
@@ -60,6 +67,47 @@ export const setupPageHandlers = (page, nationalID) => {
           console.log("Extracted user name:", userName);
           document.body.querySelector("h1").innerText = "Gjeldshjelper for " + userName;
           transferFilesAfterLogin(pageName, userName, currentWebsite, nationalID);
+        }
+
+        if (isJson && JSON.parse(data).krav !== undefined) {
+          console.log("Saved JSON response to:", filename);
+          {
+            const { debts_paid, debts_unpaid } = read_json(currentWebsite, JSON.parse(data).krav);
+            console.log("Debts paid:", debts_paid);
+            console.log("Debts unpaid:", debts_unpaid);
+
+
+            const debtsPaidVisualization = visualizeDebt(debts_paid);
+            if (debts_paid.totalAmount > 0){
+              summaryDiv.append(debtsPaidVisualization);
+            }
+            const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
+            if (debts_unpaid.totalAmount > 0){
+              summaryDiv.append(debtUnpaidVisualization);
+            
+              addToTotalDebtAmount(debts_unpaid.totalAmount);
+            }      
+          }
+
+          
+          const doucment2 = "..\\exports\\22088242312\\2025_12_15\\Kredinor\\Kredinor\\fulldebtdetails.json";
+          const { debtList, creditorList, saksnummerList } = require(doucment2);
+
+
+          const debts_unpaid2 = convertlistsToJson(debtList, creditorList, saksnummerList, "Kredinor");
+
+          console.log("Unpaid data 2: ", debts_unpaid2);
+          const debtUnpaidVisualization2 = visualizeDebt(debts_unpaid2);
+          if (debts_unpaid2.totalAmount > 0){
+            summaryDiv.append(debtUnpaidVisualization2);
+            addToTotalDebtAmount(debts_unpaid2.totalAmount);
+            
+            console.log("Appending unpaid debts visualization2");
+          }         
+      
+
+          
+       
         }
       } catch (e) {
         console.error("Error:", e);
@@ -117,7 +165,7 @@ const intrumButton = button("Intrum", async (ev) => {
 const kredinorButton = button("Kredinor", async (ev) => {
   currentWebsite = "Kredinor";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
-  await handleKredinorLogin(nationalID, setupPageHandlers);
+  await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
 });
 
 
@@ -134,24 +182,48 @@ document.body.append(heading2);
 document.body.append(nationalIdInput);
 document.body.append(buttonsContainer);
 
-const {debts_paid, debts_unpaid} = read_json("Statens Innkrevingssentral");
-console.log("debtUnpaidVisualization: ", debts_unpaid);
+
+const totalVis = visualizeTotalDebts(totalDebtAmount.toLocaleString('no-NO') + " kr");
+document.body.append(totalVis);
+
 
 const summaryDiv = div({ class: "summary-container" });
 
+if (offlineMode) {
+  const doucment = "..\\exports\\Kjetil\\2025_12_10\\tidligere_krav_-_statens_innkrevingssentral\\1765372278120.json";
+  const data = require(doucment);
 
-const debtsPaidVisualization = visualizeDebt(debts_paid);
 
-summaryDiv.append(debtsPaidVisualization);
+  const { debts_paid, debts_unpaid } = read_json("SI", data.krav);
 
-const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
 
-summaryDiv.append(debtUnpaidVisualization);
+  const debtsPaidVisualization = visualizeDebt(debts_paid);
+  if (debts_paid.totalAmount > 0){
+    summaryDiv.append(debtsPaidVisualization);
+  }
+  const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
+  if (debts_unpaid.totalAmount > 0){
+    console.log("Appending unpaid debts visualization");
+    summaryDiv.append(debtUnpaidVisualization);
+    addToTotalDebtAmount(debts_unpaid.totalAmount);
+  }       
 
+
+  const doucment2 = "..\\exports\\22088242312\\2025_12_15\\Kredinor\\Kredinor\\fulldebtdetails.json";
+  const { debtList, creditorList, saksnummerList } = require(doucment2);
+
+
+  const debts_unpaid2 = convertlistsToJson(debtList, creditorList, saksnummerList, "Kredinor");
+
+  console.log("Unpaid data 2: ", debts_unpaid2);
+  const debtUnpaidVisualization2 = visualizeDebt(debts_unpaid2);
+  if (debts_unpaid2.totalAmount > 0){
+    summaryDiv.append(debtUnpaidVisualization2);
+    addToTotalDebtAmount(debts_unpaid2.totalAmount);
+    
+    console.log("Appending unpaid debts visualization2");
+  }                 
+}
 
 document.body.append(summaryDiv);
-
-
-
-
 

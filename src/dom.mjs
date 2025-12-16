@@ -77,13 +77,14 @@ export const input = (placeholder, id) => {
  * @param {DebtCollection} debtData
  */
 export const visualizeDebt = (debtData) => {
+  const paidStatus = debtData.isCurrent ? "Ubetalt" : "Betalt";
   console.log("Visualizing debt data: ", debtData);
 
-  const outerContainer = div({ class: "debt-container" });
+  const outerContainer = div({ class: `debt-container ${paidStatus.toLowerCase()}` });
 
   const innerContainer = div({ class: "debt-inner-container" });
 
-  const headerCompany = h2(`${debtData.creditSite} - ${debtData.isCurrent ? "Ubetalt" : "Betalt"}`, "creditor-header");
+  const headerCompany = h2(`${debtData.creditSite} - ${paidStatus}`, "creditor-header");
   innerContainer.appendChild(headerCompany);
   
   const headerNumber = h2(`Total:`, "debt-small-header");
@@ -95,14 +96,31 @@ export const visualizeDebt = (debtData) => {
 
   debtData.debts.forEach((debt) => {
     const debtDiv = div({ class: "debt-item" });
+    if (debt.dueDate === null) {
+      debt.dueDate = "Ukjent";
+    }
+    const typeText = debt.typeText ? "- " + debt.typeText : "";
     debtDiv.innerHTML = `
             <h3>Sum: ${debt.amount.toLocaleString('no-NO')} kr</h3>
             <p>Gjeld ID: ${debt.id}</p>
             <p>Betalingsfrist: ${debt.dueDate.substring(0, 10)}</p>
-            <p>Type: ${debt.type} - ${debt.typeText}</p>
+            <p>Type: ${debt.type} ${typeText}</p>
         `;
     outerContainer.appendChild(debtDiv);
   });
+  return outerContainer;
+};
+
+/**
+ * @param {string} totalAmountString
+ */
+export const visualizeTotalDebts = (totalAmountString) => {
+  const outerContainer = div({ class: `total-debt-container` });
+
+  const headerNumber = h2(`Total gjeld:`, "debt-small-header");
+  const headerSubtext = h2(totalAmountString, "total-debt-amount");
+  outerContainer.appendChild(headerNumber);
+  outerContainer.appendChild(headerSubtext);
   return outerContainer;
 }
 

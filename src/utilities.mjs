@@ -6,8 +6,7 @@ const path = require('path');
  * @returns {boolean}
  */
 export const savePage = (pageName) => {
-  // const unsavedPages = ["bankid", "id-porten"];
-  const unsavedPages = [];
+  const unsavedPages = ["bankid", "id-porten"];
   if (unsavedPages.includes(pageName)) {
     return false;
   }
@@ -212,3 +211,4 @@ export function moveFiles(sourceDir, destDir) {
 export function fileContainsNameOfUser(name) {
   return name.includes("skatt.skatteetaten.no_api_mii_skyldnerportal_om_meg_api_v1_basisinfo.json");
 }
+
