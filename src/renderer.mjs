@@ -22,11 +22,50 @@ const fs = require("fs");
 let currentWebsite = null;
 let userName = null;
 let totalDebtAmount = 0;
+const showPaidDebts = true;
 const offlineMode = true;
 
-const addToTotalDebtAmount = (amount) => {
-  totalDebtAmount += amount;
-  document.body.querySelector(".total-debt-amount").innerText = totalDebtAmount.toLocaleString('no-NO') + " kr";
+const foundUnpaidDebts = {
+  foundCreditors: [],
+  totalAmount: 0, 
+  debts: {}
+}
+
+const foundPaidDebts = {
+  foundCreditors: [],
+  totalAmount: 0, 
+  debts: {}
+}
+
+
+/**
+ * @param {DebtCollection} debtData
+ */
+const foundDebtBlock = (debtData) => {
+  if (debtData.totalAmount <= 0) {
+    return;
+  }
+  
+  if (!foundUnpaidDebts.foundCreditors.includes(debtData.creditSite) && debtData.isCurrent) {
+    foundUnpaidDebts.foundCreditors.push(debtData.creditSite);
+    foundUnpaidDebts.totalAmount += debtData.totalAmount;
+    foundUnpaidDebts.debts[debtData.creditSite] = debtData;
+
+    const debtUnpaidVisualization = visualizeDebt(debtData);
+    summaryDiv.append(debtUnpaidVisualization);
+    
+    document.body.querySelector(".total-debt-amount").innerText = foundUnpaidDebts.totalAmount.toLocaleString('no-NO') + " kr";
+  }
+
+  if (!foundPaidDebts.foundCreditors.includes(debtData.creditSite) && !debtData.isCurrent) {
+    foundPaidDebts.foundCreditors.push(debtData.creditSite);
+    foundPaidDebts.totalAmount += debtData.totalAmount;
+    foundPaidDebts.debts[debtData.creditSite] = debtData;
+    if (showPaidDebts) {
+      const debtPaidVisualization = visualizeDebt(debtData);
+      summaryDiv.append(debtPaidVisualization);
+    }
+  }
 }
 
 /**
@@ -49,9 +88,7 @@ export const setupPageHandlers = (page, nationalID) => {
       try {
         const data = await r.text();
         const isJson = U.isJson(data);
-
         const outerFolder = userName ? userName : nationalID;
-
         const filename = createFoldersAndGetName(pageName, outerFolder, currentWebsite, r.url(), isJson);
         
         console.log("Response data length:", data);
@@ -62,52 +99,23 @@ export const setupPageHandlers = (page, nationalID) => {
         });
 
         if (fileContainsNameOfUser(filename)) {
-          console.log("Found file with name of user:", filename);
           userName = JSON.parse(data).navn.replace(/[^a-zA-Z0-9]/g, "_");
-          console.log("Extracted user name:", userName);
           document.body.querySelector("h1").innerText = "Gjeldshjelper for " + userName.replaceAll("_", " ");
           transferFilesAfterLogin(pageName, userName, currentWebsite, nationalID);
         }
 
         if (isJson && JSON.parse(data).krav !== undefined) {
-          console.log("Saved JSON response to:", filename);
-          {
-            const { debts_paid, debts_unpaid } = read_json(currentWebsite, JSON.parse(data).krav);
-            console.log("Debts paid:", debts_paid);
-            console.log("Debts unpaid:", debts_unpaid);
-
-
-            const debtsPaidVisualization = visualizeDebt(debts_paid);
-            if (debts_paid.totalAmount > 0){
-              summaryDiv.append(debtsPaidVisualization);
-            }
-            const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
-            if (debts_unpaid.totalAmount > 0){
-              summaryDiv.append(debtUnpaidVisualization);
-            
-              addToTotalDebtAmount(debts_unpaid.totalAmount);
-            }      
-          }
-
           
-          const doucment2 = "..\\exports\\22088242312\\2025_12_15\\Kredinor\\Kredinor\\fulldebtdetails.json";
-          const { debtList, creditorList, saksnummerList } = require(doucment2);
-
-
-          const debts_unpaid2 = convertlistsToJson(debtList, creditorList, saksnummerList, "Kredinor");
-
-          console.log("Unpaid data 2: ", debts_unpaid2);
-          const debtUnpaidVisualization2 = visualizeDebt(debts_unpaid2);
-          if (debts_unpaid2.totalAmount > 0){
-            summaryDiv.append(debtUnpaidVisualization2);
-            addToTotalDebtAmount(debts_unpaid2.totalAmount);
-            
-            console.log("Appending unpaid debts visualization2");
-          }         
+          const { debts_paid, debts_unpaid } = read_json(currentWebsite, JSON.parse(data).krav);
+          foundDebtBlock(debts_unpaid);
+          foundDebtBlock(debts_paid);
       
-
-          
-       
+          if (offlineMode) {
+            const doucment2 = "..\\exports\\22088242312\\2025_12_15\\Kredinor\\Kredinor\\fulldebtdetails.json";
+            const { debtList, creditorList, saksnummerList } = require(doucment2);
+            const debts_unpaid2 = convertlistsToJson(debtList, creditorList, saksnummerList, "Kredinor");
+            foundDebtBlock(debts_unpaid2);       
+          }
         }
       } catch (e) {
         console.error("Error:", e);
@@ -144,6 +152,7 @@ const heading2 = h2(
   "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper", "main-subheading"
 );
 const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput");
+
 const siButton = button("Gå til si", async (ev) => {
   currentWebsite = "SI";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
@@ -187,48 +196,25 @@ document.body.append(heading2);
 document.body.append(nationalIdInput);
 document.body.append(buttonsContainer);
 
+nationalIdInput.focus();
 
-const totalVis = visualizeTotalDebts(totalDebtAmount.toLocaleString('no-NO') + " kr");
-document.body.append(totalVis);
+const totalVisualization = visualizeTotalDebts(totalDebtAmount.toLocaleString('no-NO') + " kr");
+document.body.append(totalVisualization);
 
 
 const summaryDiv = div({ class: "summary-container" });
 
 if (offlineMode) {
-
   const doucment = "..\\exports\\Kjetil\\2025_12_10\\tidligere_krav_-_statens_innkrevingssentral\\1765372278120.json";
   const data = require(doucment);
-
-
   const { debts_paid, debts_unpaid } = read_json("SI", data.krav);
-
-
-  const debtsPaidVisualization = visualizeDebt(debts_paid);
-  if (debts_paid.totalAmount > 0){
-    summaryDiv.append(debtsPaidVisualization);
-  }
-  const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
-  if (debts_unpaid.totalAmount > 0){
-    console.log("Appending unpaid debts visualization");
-    summaryDiv.append(debtUnpaidVisualization);
-    addToTotalDebtAmount(debts_unpaid.totalAmount);
-  }       
-
+  foundDebtBlock(debts_unpaid);
+  foundDebtBlock(debts_paid);    
 
   const doucment2 = "..\\exports\\22088242312\\2025_12_15\\Kredinor\\Kredinor\\fulldebtdetails.json";
   const { debtList, creditorList, saksnummerList } = require(doucment2);
-
-
-  const debts_unpaid2 = convertlistsToJson(debtList, creditorList, saksnummerList, "Kredinor");
-
-  console.log("Unpaid data 2: ", debts_unpaid2);
-  const debtUnpaidVisualization2 = visualizeDebt(debts_unpaid2);
-  if (debts_unpaid2.totalAmount > 0){
-    summaryDiv.append(debtUnpaidVisualization2);
-    addToTotalDebtAmount(debts_unpaid2.totalAmount);
-    
-    console.log("Appending unpaid debts visualization2");
-  }                 
+  const debts_unpaid2 = convertlistsToJson(debtList, creditorList, saksnummerList, "Ikke-kredinor");
+  foundDebtBlock(debts_unpaid2);             
 }
 
 document.body.append(summaryDiv);
