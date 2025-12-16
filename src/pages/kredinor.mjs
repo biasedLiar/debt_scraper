@@ -27,13 +27,7 @@ export async function handleKredinorLogin(nationalID, setupPageHandlers) {
   const [debtAmount, activeCases] = await page.$$eval('.info-row-item-title', els => 
     els.map(el => el.textContent.trim())
   );
-
-  
-  console.log( " ERROR HERE: ")
   const filePath = createFoldersAndGetName(kredinor.name, nationalID, "Kredinor", "ManuallyFoundDebt", true);
-  
-  
-  //const filePath = `${dirPath}/debt.json`;
   console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
   const data = { debtAmount, activeCases, timestamp: new Date().toISOString() };
   await fs.writeFile(filePath, JSON.stringify(data, null, 2));

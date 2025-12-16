@@ -79,7 +79,6 @@ const openPage = async (url) => {
   setupPageHandlers(page, nationalID);
 };
 
-
 const di = div();
 di.innerText = "Hello World from dom!";
 
@@ -89,28 +88,67 @@ const heading2 = h2(
 );
 const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput");
 
+const waitForUserInput = () => {
+  return new Promise((resolve) => {
+    let continueBtn;
+    
+    const cleanup = () => {
+      if (continueBtn && document.body.contains(continueBtn)) {
+        document.body.removeChild(continueBtn);
+      }
+      document.removeEventListener('keydown', keypressHandler);
+      resolve();
+    };
+    
+    const keypressHandler = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        cleanup();
+      }
+    };
+    
+    continueBtn = button("Klikk for å fortsette", cleanup);
+    
+    document.addEventListener('keydown', keypressHandler);
+    continueBtn.style.position = 'fixed';
+    continueBtn.style.top = '50%';
+    continueBtn.style.left = '50%';
+    continueBtn.style.transform = 'translate(-50%, -50%)';
+    continueBtn.style.zIndex = '9999';
+    continueBtn.style.padding = '20px 40px';
+    continueBtn.style.fontSize = '18px';
+    document.body.appendChild(continueBtn);
+  });
+};
 
 const allButton = button("Kjør gjeldssjekk for alle (WIP)", async (ev) => {
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
+
   
   currentWebsite = "SI";
   await handleSILogin(nationalID, setupPageHandlers);
+  await waitForUserInput();
   await PUP.closeBrowser();
   
-  /* currentWebsite = "Digipost";
+  currentWebsite = "Digipost";
   await handleDigipostLogin(nationalID, setupPageHandlers);
-  await PUP.closeBrowser();
-   */
+  await waitForUserInput();
+  await PUP.closeBrowser(); 
+
+  
   currentWebsite = "Kredinor";
   await handleKredinorLogin(nationalID, setupPageHandlers);
+  await waitForUserInput();
   await PUP.closeBrowser();
-  
+
   currentWebsite = "Intrum";
   await handleIntrumLogin(nationalID, setupPageHandlers);
+  await waitForUserInput();
   await PUP.closeBrowser();
-  
+
   currentWebsite = "tfBank";
   await handleTfBankLogin(nationalID, setupPageHandlers);
+  await waitForUserInput();
   await PUP.closeBrowser();
 });
 
