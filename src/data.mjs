@@ -132,11 +132,23 @@ const intrum = createTargetPage(
 
 const tfBank = createTargetPage("https://tfbank.no/", "tfBank");
 
+const praGroup = createTargetPage(
+  "https://mypage.pragroup.no/?_gl=1*r6djbg*_ga*MTMyNTkwMzIyMS4xNzY1ODkwNjU2*_ga_C5NWZ202KR*czE3NjU4OTA2NTYkbzEkZzEkdDE3NjU4OTIxNTckajYwJGwwJGgw",
+  "PRA Group"
+);
+
+const zolva = createTargetPage(
+  "https://portal.zolva.no/minside/Login",
+  "Zolva AS"
+);
+
 //This ensures these configuration objects cannot be modified
 Object.freeze(si);
 Object.freeze(digiPost);
 Object.freeze(kredinor);
 Object.freeze(intrum);
 Object.freeze(tfBank);
+Object.freeze(praGroup);
+Object.freeze(zolva);
 
-export { si, digiPost, kredinor, intrum, tfBank };
+export { si, digiPost, kredinor, intrum, tfBank, praGroup, zolva };

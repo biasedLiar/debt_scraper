@@ -14,7 +14,7 @@ export async function loginWithBankID(page, nationalID) {
   }
   
   //Needs to be optimized, improvised solution for now
-  await new Promise(resolve => setTimeout(resolve, 5000)); // wait for navigation
+  await new Promise(resolve => setTimeout(resolve, 3000)); // wait for navigation
   
   // Wait for and fill in the national identity number input
   try {

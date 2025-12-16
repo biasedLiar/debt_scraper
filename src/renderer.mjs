@@ -6,7 +6,6 @@
  * to expose Node.js functionality from the main process.
  */
 import { div, button, h1, h2, input, visualizeDebt } from "./dom.mjs";
-import { tfBank } from "./data.mjs";
 import { PUP } from "./scraper.mjs";
 import { savePage, createFoldersAndGetName } from "./utilities.mjs";
 import { U } from "./U.mjs";
@@ -15,6 +14,8 @@ import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
 import { handleIntrumLogin } from "./pages/intrum.mjs";
 import { handleTfBankLogin } from "./pages/tfbank.mjs";
+import { handlePraGroupLogin } from "./pages/pra-group.mjs";  
+import { handleZolvaLogin } from "./pages/zolva-as.mjs";
 import { read_json } from "./json_reader.mjs";
 
 const fs = require("fs");
@@ -158,6 +159,12 @@ const tfBankButton = button("tfBank", async (ev) => {
   await handleTfBankLogin(nationalID, setupPageHandlers);
 });
 
+const praGroupButton = button("PRA Group", async (ev) => {
+  currentWebsite = "PRA Group";
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
+  await handlePraGroupLogin(nationalID, setupPageHandlers);
+});
+
 const siButton = button("Gå til si", async (ev) => {
   currentWebsite = "SI";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
@@ -181,12 +188,20 @@ const kredinorButton = button("Kredinor", async (ev) => {
   await handleKredinorLogin(nationalID, setupPageHandlers);
 });
 
+const zolvaButton = button("Zolva AS", async (ev) => {
+  currentWebsite = "Zolva AS";
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
+  await handleZolvaLogin(nationalID, setupPageHandlers);
+});
+
 const buttonsContainer = div();
 buttonsContainer.append(siButton);
 buttonsContainer.append(digipostButton);
 buttonsContainer.append(kredinorButton);
 buttonsContainer.append(intrumButton);
 buttonsContainer.append(tfBankButton);
+buttonsContainer.append(praGroupButton);
+buttonsContainer.append(zolvaButton);
 buttonsContainer.append(allButton);
 document.body.append(heading);
 document.body.append(heading2);
