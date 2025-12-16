@@ -57,7 +57,7 @@ input {
 
    &.ubetalt {
     background-color:#ffb8b8;
-    border-color: #ff6161;
+    border-color: #ff3535;
 
     & .debt-item {
       border-color: #ff6161;
@@ -99,6 +99,19 @@ input {
   & p {
     font-size: 13px;
   }
+}
 
 
+.total-debt-container {
+  border: 5px solid #ff3535;
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 8px;
+  // background-color:floralwhite;
+
+  & .total-debt-amount{
+    font-weight: bold;
+    font-size: 50px;
+    margin-bottom: 10px;
+  }
 }

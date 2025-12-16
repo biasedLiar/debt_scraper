@@ -5,7 +5,7 @@
  * `contextIsolation` is turned on. Use the contextBridge API in `preload.js`
  * to expose Node.js functionality from the main process.
  */
-import { div, button, h1, h2, input, visualizeDebt } from "./dom.mjs";
+import { div, button, h1, h2, input, visualizeDebt, visualizeTotalDebts } from "./dom.mjs";
 import { PUP } from "./scraper.mjs";
 import { savePage, createFoldersAndGetName, fileContainsNameOfUser, transferFilesAfterLogin } from "./utilities.mjs";
 import { U } from "./U.mjs";
@@ -21,7 +21,13 @@ const fs = require("fs");
  
 let currentWebsite = null;
 let userName = null;
+let totalDebtAmount = 0;
 const offlineMode = true;
+
+const addToTotalDebtAmount = (amount) => {
+  totalDebtAmount += amount;
+  document.body.querySelector(".total-debt-amount").innerText = totalDebtAmount.toLocaleString('no-NO') + " kr";
+}
 
 /**
  * Sets up page response handlers to save JSON data
@@ -65,37 +71,39 @@ export const setupPageHandlers = (page, nationalID) => {
 
         if (isJson && JSON.parse(data).krav !== undefined) {
           console.log("Saved JSON response to:", filename);
-          // const { debts_paid, debts_unpaid } = read_json(currentWebsite, JSON.parse(data).krav);
-          // console.log("Debts paid:", debts_paid);
-          // console.log("Debts unpaid:", debts_unpaid);
+          {
+            const { debts_paid, debts_unpaid } = read_json(currentWebsite, JSON.parse(data).krav);
+            console.log("Debts paid:", debts_paid);
+            console.log("Debts unpaid:", debts_unpaid);
 
 
-          // const debtsPaidVisualization = visualizeDebt(debts_paid);
-          // if (debts_paid.totalAmount > 0){
-          //   summaryDiv.append(debtsPaidVisualization);
-          // }
-          // const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
-          // if (debts_unpaid.totalAmount > 0){
-          //   summaryDiv.append(debtUnpaidVisualization);
-          // }       
-
-
-          const doucment = "..\\exports\\Kjetil\\2025_12_10\\tidligere_krav_-_statens_innkrevingssentral\\1765372278120.json";
-          const data = require(doucment);
-
-
-          const { debts_paid, debts_unpaid } = read_json("test", data.krav);
-
-          document.body.append(summaryDiv);
-
-          const debtsPaidVisualization2 = visualizeDebt(debts_paid);
-          if (debts_paid.totalAmount > 0){
-            summaryDiv.appendChild(debtsPaidVisualization2);
+            const debtsPaidVisualization = visualizeDebt(debts_paid);
+            if (debts_paid.totalAmount > 0){
+              summaryDiv.append(debtsPaidVisualization);
+            }
+            const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
+            if (debts_unpaid.totalAmount > 0){
+              summaryDiv.append(debtUnpaidVisualization);
+            
+              addToTotalDebtAmount(debts_unpaid.totalAmount);
+            }      
           }
-          const debtUnpaidVisualization2 = visualizeDebt(debts_unpaid);
-          if (debts_unpaid.totalAmount > 0){
-            summaryDiv.appendChild(debtUnpaidVisualization2);
-          }  
+
+          
+          const doucment2 = "..\\exports\\22088242312\\2025_12_15\\Kredinor\\Kredinor\\fulldebtdetails.json";
+          const { debtList, creditorList, saksnummerList } = require(doucment2);
+
+
+          const debts_unpaid2 = convertlistsToJson(debtList, creditorList, saksnummerList, "Kredinor");
+
+          console.log("Unpaid data 2: ", debts_unpaid2);
+          const debtUnpaidVisualization2 = visualizeDebt(debts_unpaid2);
+          if (debts_unpaid2.totalAmount > 0){
+            summaryDiv.append(debtUnpaidVisualization2);
+            addToTotalDebtAmount(debts_unpaid2.totalAmount);
+            
+            console.log("Appending unpaid debts visualization2");
+          }         
       
 
           
@@ -175,6 +183,9 @@ document.body.append(nationalIdInput);
 document.body.append(buttonsContainer);
 
 
+const totalVis = visualizeTotalDebts(totalDebtAmount.toLocaleString('no-NO') + " kr");
+document.body.append(totalVis);
+
 
 const summaryDiv = div({ class: "summary-container" });
 
@@ -192,7 +203,9 @@ if (offlineMode) {
   }
   const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
   if (debts_unpaid.totalAmount > 0){
+    console.log("Appending unpaid debts visualization");
     summaryDiv.append(debtUnpaidVisualization);
+    addToTotalDebtAmount(debts_unpaid.totalAmount);
   }       
 
 
@@ -206,9 +219,10 @@ if (offlineMode) {
   const debtUnpaidVisualization2 = visualizeDebt(debts_unpaid2);
   if (debts_unpaid2.totalAmount > 0){
     summaryDiv.append(debtUnpaidVisualization2);
-  }       
-
-          
+    addToTotalDebtAmount(debts_unpaid2.totalAmount);
+    
+    console.log("Appending unpaid debts visualization2");
+  }                 
 }
 
 document.body.append(summaryDiv);
