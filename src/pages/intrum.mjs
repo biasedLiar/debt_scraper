@@ -4,7 +4,7 @@ import { loginWithBankID } from "./bankid-login.mjs";
 
 
 //Denne funksjonen trenger mest sannsynlig noen timeouts e.l for å vente på at nettsiden oppdaterer seg
-// Ikke testet enda, fordi vi ikke har hatt gjeld på intrum
+// Ikke testet enda, fordi vi ikke har hatt gjeld på intrum / mulighet til å teste med noen med gjeld
 
 
 /**
