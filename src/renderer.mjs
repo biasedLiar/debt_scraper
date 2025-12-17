@@ -24,7 +24,7 @@ const fs = require("fs");
 const showPaidDebts = true;
 
 // Set to true to enable offline mode for testing
-const offlineMode = true;
+const offlineMode = false;
 const offlineSIFile = "";
 const offlineKredinorFile = "";
 
