@@ -24,8 +24,9 @@ const fs = require("fs");
 const showPaidDebts = true;
 
 // Set to true to enable offline mode for testing
-const offlineMode = false;
-
+const offlineMode = true;
+const offlineSIFile = "";
+const offlineKredinorFile = "";
 
  
 let currentWebsite = null;
@@ -118,7 +119,7 @@ export const setupPageHandlers = (page, nationalID) => {
           displayDebtData(debts_paid);
       
           if (offlineMode) {
-            const doucment2 = "..\\exports\\22088242312\\2025_12_15\\Kredinor\\Kredinor\\fulldebtdetails.json";
+            const doucment2 = offlineKredinorFile;
             const { debtList, creditorList, saksnummerList } = require(doucment2);
             const debts_unpaid2 = convertListsToJson(debtList, creditorList, saksnummerList, "Kredinor");
             displayDebtData(debts_unpaid2);       
@@ -214,13 +215,13 @@ document.body.append(totalVisualization);
 const summaryDiv = div({ class: "summary-container" });
 
 if (offlineMode) {
-  const doucment = "..\\exports\\Kjetil\\2025_12_10\\tidligere_krav_-_statens_innkrevingssentral\\1765372278120.json";
+  const doucment = offlineSIFile
   const data = require(doucment);
   const { debts_paid, debts_unpaid } = read_json("SI", data.krav);
   displayDebtData(debts_unpaid);
   displayDebtData(debts_paid);    
 
-  const doucment2 = "..\\exports\\22088242312\\2025_12_15\\Kredinor\\Kredinor\\fulldebtdetails.json";
+  const doucment2 = offlineKredinorFile
   const { debtList, creditorList, saksnummerList } = require(doucment2);
   const debts_unpaid2 = convertListsToJson(debtList, creditorList, saksnummerList, "Ikke-kredinor");
   displayDebtData(debts_unpaid2);             
