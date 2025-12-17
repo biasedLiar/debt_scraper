@@ -2,6 +2,11 @@ import { PUP } from "../scraper.mjs";
 import { intrum } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 
+
+//Denne funksjonen trenger mest sannsynlig noen timeouts e.l for å vente på at nettsiden oppdaterer seg
+// Ikke testet enda, fordi vi ikke har hatt gjeld på intrum
+
+
 /**
  * Handles the Digipost login automation flow
  * @param {string} nationalID - The national identity number to use for login
