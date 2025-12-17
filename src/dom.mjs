@@ -109,7 +109,6 @@ export const visualizeDebt = (debtData) => {
             <p>Gjeld ID: ${debt.id}</p>
             <p>Betalingsfrist: ${debt.dueDate.substring(0, 10)}</p>
             <p>Type: ${debt.type} ${typeText}</p>
-            <p>Type: ${debt.type} ${typeText}</p>
         `;
     outerContainer.appendChild(debtDiv);
   });

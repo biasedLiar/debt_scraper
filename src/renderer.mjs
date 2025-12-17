@@ -19,12 +19,18 @@ import { read_json, convertlistsToJson } from "./json_reader.mjs";
 
 
 const fs = require("fs");
+
+// Set to true to show paid debts as well
+const showPaidDebts = true;
+
+// Set to true to enable offline mode for testing
+const offlineMode = true;
+
+
  
 let currentWebsite = null;
 let userName = null;
 let totalDebtAmount = 0;
-const showPaidDebts = true;
-const offlineMode = true;
 
 const foundUnpaidDebts = {
   foundCreditors: [],
@@ -100,7 +106,7 @@ export const setupPageHandlers = (page, nationalID) => {
         });
 
         if (fileContainsNameOfUser(filename)) {
-          userName = JSON.parse(data).navn.replace(/[^a-zA-Z0-9]/g, "_");
+          userName = JSON.parse(data).navn.replace(/[^a-zA-Z0-9æøåÆØÅ]/g, "_");
           document.body.querySelector("h1").innerText = "Gjeldshjelper for " + userName.replaceAll("_", " ");
           transferFilesAfterLogin(pageName, userName, currentWebsite, nationalID);
         }
@@ -127,7 +133,7 @@ export const setupPageHandlers = (page, nationalID) => {
 
 /**
  *
- * @param url {string}
+ * @param {string} url
  * @returns {Promise<void>}
  */
 const openPage = async (url) => {
@@ -145,6 +151,7 @@ const tfBankButton = button("tfBank", async (ev) => {
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
   await handleTfBankLogin(nationalID, setupPageHandlers);
 });
+
 const di = div();
 di.innerText = "Hello World from dom!";
 
