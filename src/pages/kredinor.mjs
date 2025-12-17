@@ -15,21 +15,27 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   
   console.log(`Opened ${kredinor.name} at ${kredinor.url}`);
 
+  console.log("Starting Kredinor login process, at step 1");  
+
   const userName = getUserName();
   
   // Setup page handlers for saving responses
   if (setupPageHandlers) {
     setupPageHandlers(page, nationalID);
   }
+  console.log("Starting Kredinor login process, at step 2");  
   
   await loginWithBankID(page, nationalID);
+  console.log("Starting Kredinor login process, at step 3");  
 
   // Not sure how long page needs to wait, so erred on side of caution
   await new Promise(resolve => setTimeout(resolve, 15000)); 
+  console.log("Starting Kredinor login process, at step 4");  
   await page.waitForSelector('.info-row-item-group');
   const [debtAmount, activeCases] = await page.$$eval('.info-row-item-title', els => 
     els.map(el => el.textContent.trim())
   );
+  console.log("Starting Kredinor login process, at step 5");  
 
 
   const folderName = userName ? userName : nationalID;
@@ -40,6 +46,26 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   console.log(`Debt amount: ${debtAmount}`);
   console.log(`Active cases: ${activeCases}`);
   console.log(`Saved to ${filePath}`);
+
+  
+  const newPagePromise = browser.waitForTarget(target => target.opener() === page);
+
+
+
+  const pdfFilePath = createFoldersAndGetName(kredinor.name, folderName, "Kredinor", "downloadedPDF", false);
+  await page._client().send('Page.setDownloadBehavior', {behavior: 'allow', 
+    downloadPath: pdfFilePath});
+  
+  const button = await page.$('.pdf-attachment-btn');
+  await button.click();
+
+  
+  const newPageTarget = await newPagePromise;
+  const newPage = await newPageTarget.page();
+
+  
+
+  
 
   const debtList =  await page.$$eval('.total-amount-value', els => 
     els.map(el => el.textContent.trim())
