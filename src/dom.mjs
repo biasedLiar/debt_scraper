@@ -36,10 +36,13 @@ export const button = (text, onClick) => {
  * @param text {string}
  * @returns {HTMLHeadingElement}
  */
-export const h1 = (text) => {
+export const h1 = (text, className) => {
   const h = document.createElement("h1");
   h.innerHTML = text;
   h.className = "h1 m-2";
+  if (className) {
+    h.className += " " + className;
+  }
   return h;
 };
 
@@ -100,6 +103,7 @@ export const visualizeDebt = (debtData) => {
       debt.dueDate = "Ukjent";
     }
     const typeText = debt.typeText ? "- " + debt.typeText : "";
+    
     debtDiv.innerHTML = `
             <h3>Sum: ${debt.amount.toLocaleString('no-NO')} kr</h3>
             <p>Gjeld ID: ${debt.id}</p>
@@ -117,7 +121,7 @@ export const visualizeDebt = (debtData) => {
 export const visualizeTotalDebts = (totalAmountString) => {
   const outerContainer = div({ class: `total-debt-container` });
 
-  const headerNumber = h2(`Total gjeld:`, "debt-small-header");
+  const headerNumber = h1(`Registrert gjeld:`, "debt-small-header");
   const headerSubtext = h2(totalAmountString, "total-debt-amount");
   outerContainer.appendChild(headerNumber);
   outerContainer.appendChild(headerSubtext);
