@@ -66,15 +66,18 @@ export const h2 = (text, className) => {
 /**
  * @param {string} placeholder
  * @param {string} id
+ * @param {string} [type]
  * @returns {HTMLInputElement}
  */
-export const input = (placeholder, id) => {
+export const input = (placeholder, id, type="text") => {
   const inp = document.createElement("input");
   inp.placeholder = placeholder;
   inp.id = id;
   inp.className = "form-control m-2";
+  inp.type = type;
   return inp;
 };
+
 
 /**
  * @param {DebtCollection} debtData

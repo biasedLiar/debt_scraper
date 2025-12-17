@@ -14,7 +14,7 @@ import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
 import { handleIntrumLogin } from "./pages/intrum.mjs";
 import { handleTfBankLogin } from "./pages/tfbank.mjs";
-import { read_json, convertlistsToJson } from "./json_reader.mjs";
+import { read_json, convertListsToJson } from "./json_reader.mjs";
 
 
 
@@ -24,7 +24,7 @@ const fs = require("fs");
 const showPaidDebts = true;
 
 // Set to true to enable offline mode for testing
-const offlineMode = true;
+const offlineMode = false;
 
 
  
@@ -48,7 +48,7 @@ const foundPaidDebts = {
 /**
  * @param {DebtCollection} debtData
  */
-const foundDebtBlock = (debtData) => {
+const displayDebtData = (debtData) => {
   if (debtData.totalAmount <= 0) {
     return;
   }
@@ -114,14 +114,14 @@ export const setupPageHandlers = (page, nationalID) => {
         if (isJson && JSON.parse(data).krav !== undefined) {
           
           const { debts_paid, debts_unpaid } = read_json(currentWebsite, JSON.parse(data).krav);
-          foundDebtBlock(debts_unpaid);
-          foundDebtBlock(debts_paid);
+          displayDebtData(debts_unpaid);
+          displayDebtData(debts_paid);
       
           if (offlineMode) {
             const doucment2 = "..\\exports\\22088242312\\2025_12_15\\Kredinor\\Kredinor\\fulldebtdetails.json";
             const { debtList, creditorList, saksnummerList } = require(doucment2);
-            const debts_unpaid2 = convertlistsToJson(debtList, creditorList, saksnummerList, "Kredinor");
-            foundDebtBlock(debts_unpaid2);       
+            const debts_unpaid2 = convertListsToJson(debtList, creditorList, saksnummerList, "Kredinor");
+            displayDebtData(debts_unpaid2);       
           }
         }
       } catch (e) {
@@ -159,7 +159,7 @@ const heading = h1("Gjeldshjelperen");
 const heading2 = h2(
   "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper", "main-subheading"
 );
-const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput");
+const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput", "number");
 
 const siButton = button("Gå til si", async (ev) => {
   currentWebsite = "SI";
@@ -217,13 +217,13 @@ if (offlineMode) {
   const doucment = "..\\exports\\Kjetil\\2025_12_10\\tidligere_krav_-_statens_innkrevingssentral\\1765372278120.json";
   const data = require(doucment);
   const { debts_paid, debts_unpaid } = read_json("SI", data.krav);
-  foundDebtBlock(debts_unpaid);
-  foundDebtBlock(debts_paid);    
+  displayDebtData(debts_unpaid);
+  displayDebtData(debts_paid);    
 
   const doucment2 = "..\\exports\\22088242312\\2025_12_15\\Kredinor\\Kredinor\\fulldebtdetails.json";
   const { debtList, creditorList, saksnummerList } = require(doucment2);
-  const debts_unpaid2 = convertlistsToJson(debtList, creditorList, saksnummerList, "Ikke-kredinor");
-  foundDebtBlock(debts_unpaid2);             
+  const debts_unpaid2 = convertListsToJson(debtList, creditorList, saksnummerList, "Ikke-kredinor");
+  displayDebtData(debts_unpaid2);             
 }
 
 document.body.append(summaryDiv);

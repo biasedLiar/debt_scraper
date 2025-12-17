@@ -71,7 +71,7 @@ export const read_json = (creditSite, krav) => {
  * @param {string} [creditSite]
  * @returns {DebtCollection}
  */
-export function convertlistsToJson(debtList, creditorList, saksnummerList, creditSite) {
+export function convertListsToJson(debtList, creditorList, saksnummerList, creditSite) {
 
     if (Math.max(debtList.length, creditorList.length, saksnummerList.length) !== 
         Math.min(debtList.length, creditorList.length, saksnummerList.length)) {
