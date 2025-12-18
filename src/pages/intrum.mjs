@@ -4,11 +4,6 @@ import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
 const fs = require('fs/promises');
 
-
-
-// veldig lang timeout før første fordi man må trykke på logg inn fordi det konsekvent skjer en feil når man logger inn, hvor man må logge inn på nytt
-// noen minor bugs med lagring, men lagrer all infoen den skal
-
 /**
  * Handles the Intrum login automation flow
  * @param {string} nationalID - The national identity number to use for login
@@ -24,26 +19,22 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
     setupPageHandlers(page, nationalID);
   }
 
+
+  try {
+      // Click the "Logg inn" button with id="signicatOIDC"
+      await page.waitForSelector('#signicatOIDC', { timeout: 10000 });
+      await page.click('#signicatOIDC');
+      console.log('Clicked "Logg inn" button');
+    } catch (error) {
+      console.error('Error clicking "Logg inn" button:', error);
+      throw error;
+    }
+
+
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
-
-  // // Click the "Logg inn" button
-  //   await page.waitForSelector('span.button-text', { timeout: 10000 });
-    
-  //   const loginButtons = await page.$$('span.button-text');
-  //   for (const button of loginButtons) {
-  //     const text = await button.evaluate(el => el.textContent.trim());
-  //     if (text === 'Logg inn') {
-  //       const clickableElement = await button.evaluateHandle(el => el.closest('button, a, [role="button"]'));
-  //       await clickableElement.click();
-  //       console.log('Clicked "Logg inn" button');
-  //       break;
-  //     }
-  //   }
-    
-    
-  // This is going to be shortened after the login issues are fixed
+  // Usikker på hvor lang tid som trengs, finnes nok bedre løsninger også
   await new Promise(r => setTimeout(r, 30000));
 
    await page.waitForSelector('.case-container, .debt-case, [class*="case"]', { timeout: 10000 }).catch(() => {

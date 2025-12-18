@@ -18,7 +18,16 @@ export async function handleKredinorLogin(nationalID, setupPageHandlers) {
   if (setupPageHandlers) {
     setupPageHandlers(page, nationalID);
   }
- 
+
+  try {
+    await page.waitForSelector('button.login-button', { timeout: 10000 });
+    await page.click('button.login-button');
+  } catch (error) {
+    console.error('Error clicking login button:', error.message);
+    throw new Error('Failed to find or click login button');
+  }
+  
+  
   
   await loginWithBankID(page, nationalID);
 

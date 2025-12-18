@@ -120,20 +120,20 @@ digiPost.apiData = [
 
 // this website url is found in kredinors page
 const kredinor = createTargetPage(
-  "https://www.ident.nets.eu/its/index.html?forcepkivendor=no_bankid&acr_values=urn:bankid:bis&mid=KRAEAXIFGDWK&TARGET=https%3A%2F%2Fminside.kredinor.no%2F%3Flocale%3Dnb%26login&locale=nb-NO&status=https%3A%2F%2Flogin.kredinor.no%2Flogin%2Fstatus%3FreturnUrlbtoa%3DaHR0cHM6Ly9taW5zaWRlLmtyZWRpbm9yLm5vLz9sb2NhbGU9bmImbG9naW4-%26errorCode%3D",
+  "https://minside.kredinor.no",
   "Kredinor"
 );
 
 //this wesite url is found in intrums page
 const intrum = createTargetPage(
-  "https://mine-sider.app.signicat.com/auth/open/connect/authorize?ui_locales=nb&scope=openid nin profile&acr_values=idp:nbid nbid_idp:BID&response_type=code&client_id=prod-poised-cake-655&redirect_uri=https://identity.lindorff.com/Tupas/NO/SignicatOIDC/Verify&state=20251210170959021115_idp:nbid nbid_idp:BID",
+  "https://minesider.intrum.no/",
   "Intrum"
 );
 
 const tfBank = createTargetPage("https://tfbank.no/", "tfBank");
 
 const praGroup = createTargetPage(
-  "https://mypage.pragroup.no/?_gl=1*r6djbg*_ga*MTMyNTkwMzIyMS4xNzY1ODkwNjU2*_ga_C5NWZ202KR*czE3NjU4OTA2NTYkbzEkZzEkdDE3NjU4OTIxNTckajYwJGwwJGgw",
+  "https://mypage.pragroup.no/",
   "PRA Group"
 );
 
