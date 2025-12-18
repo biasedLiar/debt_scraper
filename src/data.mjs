@@ -124,7 +124,7 @@ const kredinor = createTargetPage(
   "Kredinor"
 );
 
-//this wesite url is found in intrums page
+//this website url is found in intrums page
 const intrum = createTargetPage(
   "https://minesider.intrum.no/",
   "Intrum"
