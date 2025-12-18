@@ -14,7 +14,7 @@ import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
 import { handleIntrumLogin } from "./pages/intrum.mjs";
 import { handleTfBankLogin } from "./pages/tfbank.mjs";
-import { handlePraGroupLogin } from "./pages/pra-group.mjs";  
+import { handlePraGroupLogin } from "./pages/pra-group.mjs";
 import { handleZolvaLogin } from "./pages/zolva-as.mjs";
 import { read_json } from "./json_reader.mjs";
 

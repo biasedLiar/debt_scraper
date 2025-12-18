@@ -1,5 +1,3 @@
-
-
 import { PUP } from "../scraper.mjs";
 import { praGroup } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
