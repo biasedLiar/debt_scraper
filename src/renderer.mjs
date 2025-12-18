@@ -188,6 +188,18 @@ const kredinorButton = button("Kredinor", async (ev) => {
   await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
 });
 
+
+const praGroupButton = button("PRA Group", async (ev) => {
+  currentWebsite = "PRA Group";
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  await handlePraGroupLogin(nationalID, setupPageHandlers);
+});
+const zolvaButton = button("Zolva AS", async (ev) => { 
+  currentWebsite = "Zolva AS";
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  await handleZolvaLogin(nationalID, setupPageHandlers);
+});
+
 // Add Enter key listener to nationalIdInput to trigger SI button
 nationalIdInput.addEventListener('keypress', (event) => {
   if (event.key === 'Enter') {
@@ -203,7 +215,6 @@ buttonsContainer.append(intrumButton);
 buttonsContainer.append(tfBankButton);
 buttonsContainer.append(praGroupButton);
 buttonsContainer.append(zolvaButton);
-buttonsContainer.append(allButton);
 document.body.append(heading);
 document.body.append(heading2);
 document.body.append(nationalIdInput);

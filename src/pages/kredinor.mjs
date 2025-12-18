@@ -22,6 +22,17 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     setupPageHandlers(page, nationalID);
   }
 
+
+// Accept cookies first
+  try {
+    await page.waitForSelector('button.coi-banner__accept', { timeout: 5000 });
+    await page.click('button.coi-banner__accept');
+    console.log('Accepted cookies');
+    await new Promise(r => setTimeout(r, 1000)); // Wait for cookie banner to close
+  } catch (error) {
+    console.log('Cookie banner not found or already accepted:', error.message);
+  }
+  
   try {
     await page.waitForSelector('button.login-button', { timeout: 10000 });
     await page.click('button.login-button');
