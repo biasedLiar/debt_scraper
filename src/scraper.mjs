@@ -36,13 +36,26 @@ const openPage = async (url) => {
     });
   }
 
-  const [page] = await browser.pages(true);
+  const [page] = await browser.pages();
 
   await page.goto(url);
 
   return { browser, page };
 };
 
+/**
+ * Closes the current browser and resets the browser variable
+ * @returns {Promise<void>}
+ */
+const closeBrowser = async () => {
+  if (browser) {
+    await browser.close();
+    browser = null;
+    console.log("Browser closed and reset");
+  }
+};
+
 export const PUP = {
   openPage,
+  closeBrowser,
 };

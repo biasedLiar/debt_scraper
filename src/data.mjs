@@ -94,10 +94,12 @@ si.apiData = [
   },
 ];
 
-const digiPost = createTargetPage("https://www.digipost.no/innlogging", "Digipost");
+const digiPost = createTargetPage(
+  "https://www.digipost.no/innlogging",
+  "Digipost"
+);
 
 digiPost.manifestUrl = "https://www.digipost.no/postkasse/manifest.json";
-
 
 digiPost.apiData = [
   {
@@ -117,15 +119,28 @@ digiPost.apiData = [
 ];
 
 // this website url is found in kredinors page
-const kredinor = createTargetPage("https://www.ident.nets.eu/its/index.html?forcepkivendor=no_bankid&acr_values=urn:bankid:bis&mid=KRAEAXIFGDWK&TARGET=https%3A%2F%2Fminside.kredinor.no%2F%3Flocale%3Dnb%26login&locale=nb-NO&status=https%3A%2F%2Flogin.kredinor.no%2Flogin%2Fstatus%3FreturnUrlbtoa%3DaHR0cHM6Ly9taW5zaWRlLmtyZWRpbm9yLm5vLz9sb2NhbGU9bmImbG9naW4-%26errorCode%3D", "Kredinor");
+const kredinor = createTargetPage(
+  "https://minside.kredinor.no",
+  "Kredinor"
+);
 
-//this wesite url is found in intrums page
+//this website url is found in intrums page
 const intrum = createTargetPage(
-  "https://mine-sider.app.signicat.com/auth/open/connect/authorize?ui_locales=nb&scope=openid nin profile&acr_values=idp:nbid nbid_idp:BID&response_type=code&client_id=prod-poised-cake-655&redirect_uri=https://identity.lindorff.com/Tupas/NO/SignicatOIDC/Verify&state=20251210170959021115_idp:nbid nbid_idp:BID",
+  "https://minesider.intrum.no/",
   "Intrum"
 );
 
 const tfBank = createTargetPage("https://tfbank.no/", "tfBank");
+
+const praGroup = createTargetPage(
+  "https://mypage.pragroup.no/",
+  "PRA Group"
+);
+
+const zolva = createTargetPage(
+  "https://portal.zolva.no/minside/Login",
+  "Zolva AS"
+);
 
 //This ensures these configuration objects cannot be modified
 Object.freeze(si);
@@ -133,5 +148,7 @@ Object.freeze(digiPost);
 Object.freeze(kredinor);
 Object.freeze(intrum);
 Object.freeze(tfBank);
+Object.freeze(praGroup);
+Object.freeze(zolva);
 
-export { si, digiPost, kredinor, intrum, tfBank };
+export { si, digiPost, kredinor, intrum, tfBank, praGroup, zolva };

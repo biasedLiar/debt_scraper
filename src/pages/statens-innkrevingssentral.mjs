@@ -1,6 +1,6 @@
-import { si } from '../data.mjs';
-import { PUP } from '../scraper.mjs';
-import { loginWithBankID } from './bankid-login.mjs';
+import { si } from "../data.mjs";
+import { PUP } from "../scraper.mjs";
+import { loginWithBankID } from "./bankid-login.mjs";
 
 /**
  * Handles the Statens Innkrevingssentral login automation flow
@@ -9,16 +9,25 @@ import { loginWithBankID } from './bankid-login.mjs';
  */
 export async function handleSILogin(nationalID, setupPageHandlers) {
   const { browser, page } = await PUP.openPage(si.url);
-  
+
   console.log(`Opened ${si.name} at ${si.url}`);
-  
+
   // Setup page handlers for saving responses
   if (setupPageHandlers) {
     setupPageHandlers(page, nationalID);
   }
-  
+
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
-  return { browser, page }; 
+  // Find and log the debt amount
+  const debtElement = await page.$('span.ce26PEIo');
+  if (debtElement) {
+    const debtText = await page.evaluate(el => el.textContent, debtElement);
+    console.log('Debt amount:', debtText);
+  } else {
+    console.log('Debt element not found');
+  }
+
+  return { browser, page };
 }
