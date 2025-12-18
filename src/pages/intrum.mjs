@@ -163,9 +163,10 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
 
   const detailedInfoFilePath = createFoldersAndGetName(intrum.name, nationalID, "Intrum", "DetailedDebtInfo", true);
   const detailedData = { allDetailedInfo, timestamp: new Date().toISOString() };
-  await fs.writeFile(detailedInfoFilePath, JSON.stringify(detailedData, null, 2));
-
-
-
+  try {
+    await fs.writeFile(detailedInfoFilePath, JSON.stringify(detailedData, null, 2));
+  } catch (error) {
+    console.error(`Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`, error);
+  }
   return { browser, page };
 }
