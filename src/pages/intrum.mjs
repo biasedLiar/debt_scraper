@@ -1,14 +1,16 @@
 import { PUP } from "../scraper.mjs";
 import { intrum } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
+import { createFoldersAndGetName } from "../utilities.mjs";
+const fs = require('fs/promises');
 
 
-//Denne funksjonen trenger mest sannsynlig noen timeouts e.l for å vente på at nettsiden oppdaterer seg
-// Ikke testet enda, fordi vi ikke har hatt gjeld på intrum / mulighet til å teste med noen med gjeld
 
+// veldig lang timeout før første fordi man må trykke på logg inn fordi det konsekvent skjer en feil når man logger inn, hvor man må logge inn på nytt
+// noen minor bugs med lagring, men lagrer all infoen den skal
 
 /**
- * Handles the Digipost login automation flow
+ * Handles the Intrum login automation flow
  * @param {string} nationalID - The national identity number to use for login
  * @returns {Promise<{browser: any, page: any}>}
  */
@@ -25,14 +27,34 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
-  // need to check and extract debt information here
 
-  // check these:
-  // Extract debt information from the page
+  // // Click the "Logg inn" button
+  //   await page.waitForSelector('span.button-text', { timeout: 10000 });
+    
+  //   const loginButtons = await page.$$('span.button-text');
+  //   for (const button of loginButtons) {
+  //     const text = await button.evaluate(el => el.textContent.trim());
+  //     if (text === 'Logg inn') {
+  //       const clickableElement = await button.evaluateHandle(el => el.closest('button, a, [role="button"]'));
+  //       await clickableElement.click();
+  //       console.log('Clicked "Logg inn" button');
+  //       break;
+  //     }
+  //   }
+    
+    
+  // This is going to be shortened after the login issues are fixed
+  await new Promise(r => setTimeout(r, 30000));
+
+   await page.waitForSelector('.case-container, .debt-case, [class*="case"]', { timeout: 10000 }).catch(() => {
+    console.log('No debt cases found or page took too long to load');
+  });
+
+
   const debtCases = await page.evaluate(() => {
     const cases = [];
     
-    // Find all case containers (adjust selector based on actual page structure)
+    // Find all case containers
     const caseElements = document.querySelectorAll('.case-container, .debt-case, [class*="case"]');
     
     caseElements.forEach(caseEl => {
@@ -69,7 +91,15 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
 
   const filePath = createFoldersAndGetName(intrum.name, nationalID, "Intrum", "ManuallyFoundDebt", true);
   const data = { debtCases, timestamp: new Date().toISOString() };
-  await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+  console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
+
+  try {
+     await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+  } catch (error) {
+    console.error('Error writing debt data from Intrum to file:', error);
+  }
+ 
+
   // Find all "Detaljer på sak" buttons and process each one
   const detailsButtons = await page.$$('span.button-text');
   const detailsButtonsToClick = [];
@@ -86,6 +116,8 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
   const allDetailedInfo = [];
   
 
+  await new Promise(r => setTimeout(r, 15000));
+
   for (let i = 0; i < detailsButtonsToClick.length; i++) {
     console.log(`Processing case ${i + 1}/${detailsButtonsToClick.length}`);
     
@@ -94,7 +126,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
       const clickableElement = await detailsButtonsToClick[i].evaluateHandle(el => el.closest('button, a, [role="button"]'));
       await clickableElement.click();
 
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise(r => setTimeout(r, 4000));
 
       const detailedInfo = await page.evaluate(() => {
         const details = {};
@@ -119,7 +151,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
       
 
       await page.goBack();
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 4000));
       
       if (i < detailsButtonsToClick.length - 1) {
         const newButtons = await page.$$('span.button-text');

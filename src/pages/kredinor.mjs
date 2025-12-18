@@ -23,6 +23,9 @@ export async function handleKredinorLogin(nationalID, setupPageHandlers) {
   await loginWithBankID(page, nationalID);
 
   // Wait for and extract debt information
+  // Wait for the page to load
+  await new Promise(r => setTimeout(r, 15000));
+
   await page.waitForSelector('.info-row-item-group');
   const [debtAmount, activeCases] = await page.$$eval('.info-row-item-title', els => 
     els.map(el => el.textContent.trim())
