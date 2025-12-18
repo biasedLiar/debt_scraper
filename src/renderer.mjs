@@ -5,9 +5,9 @@
  * `contextIsolation` is turned on. Use the contextBridge API in `preload.js`
  * to expose Node.js functionality from the main process.
  */
-import { div, button, h1, h2, input, visualizeDebt } from "./dom.mjs";
+import { div, button, h1, h2, input, visualizeDebt, visualizeTotalDebts } from "./dom.mjs";
 import { PUP } from "./scraper.mjs";
-import { savePage, createFoldersAndGetName } from "./utilities.mjs";
+import { savePage, createFoldersAndGetName, fileContainsNameOfUser, transferFilesAfterLogin } from "./utilities.mjs";
 import { U } from "./U.mjs";
 import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
@@ -20,7 +20,61 @@ import { read_json } from "./json_reader.mjs";
 
 const fs = require("fs");
 
+// Set to true to show paid debts as well
+const showPaidDebts = true;
+
+// Set to true to enable offline mode for testing
+const offlineMode = false;
+const offlineSIFile = "";
+const offlineKredinorFile = "";
+
+ 
 let currentWebsite = null;
+let userName = null;
+let totalDebtAmount = 0;
+
+const foundUnpaidDebts = {
+  foundCreditors: [],
+  totalAmount: 0, 
+  debts: {}
+}
+
+const foundPaidDebts = {
+  foundCreditors: [],
+  totalAmount: 0, 
+  debts: {}
+}
+
+
+/**
+ * @param {DebtCollection} debtData
+ */
+const displayDebtData = (debtData) => {
+  if (debtData.totalAmount <= 0) {
+    return;
+  }
+  
+  if (!foundUnpaidDebts.foundCreditors.includes(debtData.creditSite) && debtData.isCurrent) {
+    foundUnpaidDebts.foundCreditors.push(debtData.creditSite);
+    foundUnpaidDebts.totalAmount += debtData.totalAmount;
+    foundUnpaidDebts.debts[debtData.creditSite] = debtData;
+
+    const debtUnpaidVisualization = visualizeDebt(debtData);
+    summaryDiv.append(debtUnpaidVisualization);
+    
+    document.body.querySelector(".total-debt-amount").innerText = foundUnpaidDebts.totalAmount.toLocaleString('no-NO') + " kr";
+  }
+
+  if (!foundPaidDebts.foundCreditors.includes(debtData.creditSite) && !debtData.isCurrent) {
+    foundPaidDebts.foundCreditors.push(debtData.creditSite);
+    foundPaidDebts.totalAmount += debtData.totalAmount;
+    foundPaidDebts.debts[debtData.creditSite] = debtData;
+    if (showPaidDebts) {
+      const debtPaidVisualization = visualizeDebt(debtData);
+      summaryDiv.append(debtPaidVisualization);
+    }
+  }
+}
 
 /**
  * Sets up page response handlers to save JSON data
@@ -42,21 +96,35 @@ export const setupPageHandlers = (page, nationalID) => {
       try {
         const data = await r.text();
         const isJson = U.isJson(data);
-
-        const filename = createFoldersAndGetName(
-          pageName,
-          nationalID,
-          currentWebsite,
-          r.url(),
-          isJson
-        );
-
+        const outerFolder = userName ? userName : nationalID;
+        const filename = createFoldersAndGetName(pageName, outerFolder, currentWebsite, r.url(), isJson);
+        
         console.log("Response data length:", data);
         fs.writeFile(filename, data, function (err) {
           if (err) {
             console.log(err);
           }
         });
+
+        if (fileContainsNameOfUser(filename)) {
+          userName = JSON.parse(data).navn.replace(/[^a-zA-Z0-9æøåÆØÅ]/g, "_");
+          document.body.querySelector("h1").innerText = "Gjeldshjelper for " + userName.replaceAll("_", " ");
+          transferFilesAfterLogin(pageName, userName, currentWebsite, nationalID);
+        }
+
+        if (isJson && JSON.parse(data).krav !== undefined) {
+          
+          const { debts_paid, debts_unpaid } = read_json(currentWebsite, JSON.parse(data).krav);
+          displayDebtData(debts_unpaid);
+          displayDebtData(debts_paid);
+      
+          if (offlineMode) {
+            const doucment2 = offlineKredinorFile;
+            const { debtList, creditorList, saksnummerList } = require(doucment2);
+            const debts_unpaid2 = convertListsToJson(debtList, creditorList, saksnummerList, "Kredinor");
+            displayDebtData(debts_unpaid2);       
+          }
+        }
       } catch (e) {
         console.error("Error:", e);
       }
@@ -66,7 +134,7 @@ export const setupPageHandlers = (page, nationalID) => {
 
 /**
  *
- * @param url {string}
+ * @param {string} url
  * @returns {Promise<void>}
  */
 const openPage = async (url) => {
@@ -80,90 +148,21 @@ const openPage = async (url) => {
   setupPageHandlers(page, nationalID);
 };
 
+
+const tfBankButton = button("tfBank", async (ev) => {
+  currentWebsite = "tfBank";
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  await handleTfBankLogin(nationalID, setupPageHandlers);
+});
+
 const di = div();
 di.innerText = "Hello World from dom!";
 
 const heading = h1("Gjeldshjelperen");
 const heading2 = h2(
-  "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper"
+  "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper", "main-subheading"
 );
-const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput");
-
-const waitForUserInput = () => {
-  return new Promise((resolve) => {
-    let continueBtn;
-    
-    const cleanup = () => {
-      if (continueBtn && document.body.contains(continueBtn)) {
-        document.body.removeChild(continueBtn);
-      }
-      document.removeEventListener('keydown', keypressHandler);
-      resolve();
-    };
-    
-    const keypressHandler = (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        cleanup();
-      }
-    };
-    
-    continueBtn = button("Klikk for å fortsette", cleanup);
-    
-    document.addEventListener('keydown', keypressHandler);
-    continueBtn.style.position = 'fixed';
-    continueBtn.style.top = '50%';
-    continueBtn.style.left = '50%';
-    continueBtn.style.transform = 'translate(-50%, -50%)';
-    continueBtn.style.zIndex = '9999';
-    continueBtn.style.padding = '20px 40px';
-    continueBtn.style.fontSize = '18px';
-    document.body.appendChild(continueBtn);
-  });
-};
-
-const allButton = button("Kjør gjeldssjekk for alle (WIP)", async (ev) => {
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-
-  
-  currentWebsite = "SI";
-  await handleSILogin(nationalID, setupPageHandlers);
-  await waitForUserInput();
-  await PUP.closeBrowser();
-  
-  currentWebsite = "Digipost";
-  await handleDigipostLogin(nationalID, setupPageHandlers);
-  await waitForUserInput();
-  await PUP.closeBrowser(); 
-
-  
-  currentWebsite = "Kredinor";
-  await handleKredinorLogin(nationalID, setupPageHandlers);
-  await waitForUserInput();
-  await PUP.closeBrowser();
-
-  currentWebsite = "Intrum";
-  await handleIntrumLogin(nationalID, setupPageHandlers);
-  await waitForUserInput();
-  await PUP.closeBrowser();
-
-  currentWebsite = "tfBank";
-  await handleTfBankLogin(nationalID, setupPageHandlers);
-  await waitForUserInput();
-  await PUP.closeBrowser();
-});
-
-const tfBankButton = button("tfBank", async (ev) => {
-  currentWebsite = "tfBank";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-  await handleTfBankLogin(nationalID, setupPageHandlers);
-});
-
-const praGroupButton = button("PRA Group", async (ev) => {
-  currentWebsite = "PRA Group";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-  await handlePraGroupLogin(nationalID, setupPageHandlers);
-});
+const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput", "number");
 
 const siButton = button("Gå til si", async (ev) => {
   currentWebsite = "SI";
@@ -184,14 +183,16 @@ const intrumButton = button("Intrum", async (ev) => {
 
 const kredinorButton = button("Kredinor", async (ev) => {
   currentWebsite = "Kredinor";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-  await handleKredinorLogin(nationalID, setupPageHandlers);
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
+  await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
 });
 
-const zolvaButton = button("Zolva AS", async (ev) => {
-  currentWebsite = "Zolva AS";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-  await handleZolvaLogin(nationalID, setupPageHandlers);
+// Add Enter key listener to nationalIdInput to trigger SI button
+nationalIdInput.addEventListener('keypress', (event) => {
+  if (event.key === 'Enter') {
+    siButton.click();
+  }
 });
 
 const buttonsContainer = div();
@@ -208,13 +209,26 @@ document.body.append(heading2);
 document.body.append(nationalIdInput);
 document.body.append(buttonsContainer);
 
-const { debts_paid, debts_unpaid } = read_json("Statens Innkrevingssentral");
-console.log("debtUnpaidVisualization: ", debts_unpaid);
+nationalIdInput.focus();
 
-const debtUnpaidVisualization = visualizeDebt(debts_unpaid);
+const totalVisualization = visualizeTotalDebts(totalDebtAmount.toLocaleString('no-NO') + " kr");
+document.body.append(totalVisualization);
 
-document.body.append(debtUnpaidVisualization);
 
-const debtsPaidVisualization = visualizeDebt(debts_paid);
+const summaryDiv = div({ class: "summary-container" });
 
-document.body.append(debtsPaidVisualization);
+if (offlineMode) {
+  const doucment = offlineSIFile
+  const data = require(doucment);
+  const { debts_paid, debts_unpaid } = read_json("SI", data.krav);
+  displayDebtData(debts_unpaid);
+  displayDebtData(debts_paid);    
+
+  const doucment2 = offlineKredinorFile
+  const { debtList, creditorList, saksnummerList } = require(doucment2);
+  const debts_unpaid2 = convertListsToJson(debtList, creditorList, saksnummerList, "Ikke-kredinor");
+  displayDebtData(debts_unpaid2);             
+}
+
+document.body.append(summaryDiv);
+

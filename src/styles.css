@@ -16,6 +16,7 @@ h1 {
   color: darkslategray;
 }
 
+
 .btn {
   font-size: 16px;
   padding: 10px 20px;
@@ -37,9 +38,26 @@ input {
   font-size: 16px;
 }
 
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
 .buttonDiv {
   background-color: red;
 }
+
+.summary-container {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+
 
 .debt-container {
   border: 1px solid #ccc;
@@ -48,7 +66,25 @@ input {
   border-radius: 8px;
   background-color: azure;
 
-  & .creditor-header {
+   &.ubetalt {
+    background-color:#ffb8b8;
+    border-color: #ff3535;
+
+    & .debt-item {
+      border-color: #ff6161;
+    }
+   }
+
+   &.ubetalt {
+    background-color:#ffb8b8;
+    border-color: #ff3535;
+
+    & .debt-item {
+      border-color: #ff6161;
+    }
+   }
+
+  & .creditor-header{
     font-size: 20px;
     font-weight: bold;
     margin-bottom: 10px;
@@ -80,5 +116,19 @@ input {
 
   & p {
     font-size: 13px;
+  }
+}
+
+
+.total-debt-container {
+  border: 5px solid mediumslateblue;
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 8px;
+
+  & .total-debt-amount{
+    font-weight: bold;
+    font-size: 50px;
+    margin-bottom: 10px;
   }
 }

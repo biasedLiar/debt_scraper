@@ -34,51 +34,48 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
-  await new Promise((r) => setTimeout(r, 5000)); // wait for 5 seconds
-  // Get all message links
-  const messageLinks = await page.$$eval(
-    'a.message-list-item__info[data-testid="document-attachment"]',
-    (links) =>
-      links.map((link) => ({
-        href: link.getAttribute("href"),
-        sender: link.querySelector(".message-creator p")?.textContent?.trim(),
-        subject: link
-          .querySelector(".message-subject-content span")
-          ?.textContent?.trim(),
-        date: link.querySelector("time")?.getAttribute("datetime"),
-      }))
-  );
 
-  console.log(`Found ${messageLinks.length} messages`);
+// Wait for message list to load
+await page.waitForSelector('a.message-list-item__info[data-testid="document-attachment"]', { timeout: 10000 });
 
-  // Visit each message and extract information
-  for (const message of messageLinks) {
+// Get all message links
+const messageLinks = await page.$$eval('a.message-list-item__info[data-testid="document-attachment"]', links => 
+    links.map(link => ({
+        href: link.getAttribute('href'),
+        sender: link.querySelector('.message-creator p')?.textContent?.trim(),
+        subject: link.querySelector('.message-subject-content span')?.textContent?.trim(),
+        date: link.querySelector('time')?.getAttribute('datetime')
+    }))
+);
+
+console.log(`Found ${messageLinks.length} messages`);
+
+/* WIP
+
+// Visit each message and extract information
+for (const message of messageLinks) {
     if (message.href) {
-      console.log(`Opening message: ${message.subject} from ${message.sender}`);
-      await page.goto(`${digiPost.url}${message.href}`, {
-        waitUntil: "networkidle2",
-      });
+        console.log(`Opening message: ${message.subject} from ${message.sender}`);
+        await page.goto(`${digiPost.url}${message.href}`, { waitUntil: 'networkidle2' });
+        
+        // Wait for message content to load
+        await page.waitForTimeout(2000);
+        
+        // TODO: Extract message content here
+        // Get message content
+        const content = await page.evaluate(() => {
+            return document.body.innerText;
+        });
 
-      // Wait for message content to load
-      await new Promise((r) => setTimeout(r, 2000));
+        // Create filename from sender and subject
+        const filename = `${nationalID}_${message.sender}_${message.subject}_${message.date}`.replace(/[^a-z0-9]/gi, '_');
 
-      // TODO: Extract message content here
-      // Get message content
-      const content = await page.evaluate(() => {
-        return document.body.innerText;
-      });
-
-      // Create filename from sender and subject
-      const filename =
-        `${nationalID}_${message.sender}_${message.subject}_${message.date}`.replace(
-          /[^a-z0-9]/gi,
-          "_"
-        );
-
-      // Save to letters subfolder
-      await PUP.saveToFile(content, `letters/${filename}.txt`);
-      console.log(`Saved message to letters/${filename}.txt`);
+        // Save to letters subfolder
+        await PUP.saveToFile(content, `letters/${filename}.txt`);
+        console.log(`Saved message to letters/${filename}.txt`);
     }
-  }
+} */
   return { browser, page };
+
+
 }

@@ -9,14 +9,14 @@ import { loginWithBankID } from "./bankid-login.mjs";
  */
 export async function handleTfBankLogin(nationalID, setupPageHandlers) {
   const { browser, page } = await PUP.openPage(tfBank.url);
-
+  
   console.log(`Opened ${tfBank.name} at ${tfBank.url}`);
-
+  
   // Setup page handlers for saving responses
   if (setupPageHandlers) {
     setupPageHandlers(page, nationalID);
   }
-
+ 
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
