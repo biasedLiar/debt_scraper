@@ -1,43 +1,129 @@
-# Økonomi-hjelperen
+# Gjeld i Norge - Debt Overview Tool
 
-**Få hjelp til å få oversikt over din egen gjeldssituasjon og finne veien videre.**
+An Electron-based desktop application that helps Norwegian citizens get an overview of their debt situation by automating data collection from various debt collection agencies and creditors.
 
-> [!NOTE]
-> This repro was renamed from `electron-quick-start` to clarify its purpose as a repro template. If you're looking to boostrap a new Electron app, check out the [Electron Forge](https://www.electronforge.io/) docs instead to get started!
+## Overview
 
-Creating a minimal reproduction (or "minimal repro") is essential when troubleshooting Electron apps. By stripping away everything except the code needed to demonstrate a specific behavior or bug, it becomes easier for others to understand, debug, and fix issues. This focused approach saves time and ensures that everyone involved is looking at exactly the same problem without distractions.
+This application uses Puppeteer to automate browser interactions and collect debt information from multiple Norwegian creditor and debt collection websites. It saves API responses and generates a consolidated view of both current and paid debts.
 
-A basic Electron application contains:
+### Supported Creditors
 
-- `package.json` - Points to the app's main file and lists its details and dependencies.
-- `main.mjs` - Starts the app and creates a browser window to render HTML. This is the app's **main process**.
-- `index.html` - A web page to render. This is the app's **renderer process**.
-- `preload.js` - A content script that runs before the renderer process loads.
+The application currently supports the following Norwegian creditor/debt collection services:
 
-You can learn more about each of these components in depth within the [Tutorial](https://electronjs.org/docs/latest/tutorial/tutorial-prerequisites).
+- **Statens Innkrevingssentral (SI)** - Government collection agency
+- **Intrum** - Debt collection company
+- **Kredinor** - Debt collection company  
+- **PRA Group** - In progress
+- **Digipost** - Digital mailbox service - In progress
+- **tfBank** - Financial services - In progress
+- **Zolva AS** - Debt collection company - In progress
 
-## To Use
+## Features
 
-To clone and run this repository you'll need [Git](https://git-scm.com) and [Node.js](https://nodejs.org/en/download/) (which comes with [npm](http://npmjs.com)) installed on your computer. From your command line:
+- **Automated Login**: Guides users through BankID authentication for various creditor websites
+- **Data Export**: Saves all collected data as JSON files organized by user and date
+- **Debt Visualization**: Displays total debt amounts and detailed information per creditor
+- **Paid Debt Tracking**: Can optionally show both current and paid debts
+
+## Project Structure
+
+```
+src/
+  ├── main.mjs              # Electron main process
+  ├── renderer.mjs          # Main UI logic and orchestration
+  ├── scraper.mjs           # Puppeteer browser automation
+  ├── data.mjs              # Configuration for target websites
+  ├── json_reader.mjs       # Parse and process collected JSON data
+  ├── dom.mjs               # UI rendering utilities
+  ├── utilities.mjs         # File operations and data management
+  ├── pages/                # Login handlers and puppeteer operations specialized for each website
+  │   ├── intrum.mjs
+  │   ├── kredinor.mjs
+  │   ├── statens-innkrevingssentral.mjs
+  │   └── ...
+  └── index.html            # Main application window
+
+exports/                    # Collected data organized by user/date/creditor
+```
+
+## Installation
 
 ```bash
-# Clone this repository
-git clone https://github.com/electron/minimal-repro
-# Go into the repository
-cd minimal-repro
 # Install dependencies
 npm install
-# Run the app
+
+# Run the application
 npm start
 ```
 
-Note: If you're using Linux Bash for Windows, [see this guide](https://www.howtogeek.com/261575/how-to-run-graphical-linux-desktop-applications-from-windows-10s-bash-shell/) or use `node` from the command prompt.
+### Requirements
 
-## Resources for Learning Electron
+- Node.js (recent version with ES modules support)
+- Git
+- Windows/macOS/Linux
 
-- [electronjs.org/docs](https://electronjs.org/docs) - all of Electron's documentation
-- [Electron Fiddle](https://electronjs.org/fiddle) - Electron Fiddle, an app to test small Electron experiments
-- [Electron Forge](https://www.electronforge.io/) - Looking to bootstrap a new Electron app? Check out the Electron Forge docs to get started
+## How It Works
+
+1. **User Initiates Login**: User clicks on a creditor button in the UI
+2. **Browser Automation**: Application opens an automated browser window via Puppeteer
+3. **BankID Authentication**: User completes login with their BankID credentials
+4. **Data Interception**: Application finds data on the website through scraping
+5. **Data Processing**: JSON data is parsed and organized by creditor
+6. **Visualization**: Debt information is displayed in the application UI
+
+
+
+## Data Storage
+
+All collected data is stored in the `exports/` directory with the following structure:
+
+```
+exports/
+  └── [name]/
+      └── [date]/
+          └── [Creditor Name]/
+              ├── [page-name]/
+                  └── data
+
+
+## Configuration
+
+Key configuration options in the source code:
+
+- `showPaidDebts` (renderer.mjs): Toggle display of paid debts
+- `offlineMode` (renderer.mjs): Enable testing with saved data
+- Target website URLs are defined in `data.mjs`
+
+## Privacy & Security
+
+>  **Important**: This application handles sensitive financial data. 
+> - Data is stored locally on your machine
+> - No data is transmitted to external servers 
+> - Do not share exported JSON files as they contain personal information
+
+## Data Validation
+
+The application uses **Zod** schemas to ensure all saved data maintains a consistent format:
+
+- All manually collected debt data is validated before saving
+- Invalid data is saved with an `_unvalidated` suffix for debugging
+- Validation errors are logged with detailed information about what failed
+- Schemas are defined in [src/schemas.mjs](src/schemas.mjs)
+
+### Validated Data Formats
+
+- **Intrum**: Manual debt cases with case numbers, amounts, and creditor names
+- **Kredinor**: Debt amounts, active cases, and detailed debt lists
+- All files include ISO 8601 timestamps for tracking when data was collected
+
+## Development
+
+The application is built with:
+
+- **Electron** - Desktop application framework
+- **Puppeteer** - Browser automation
+- **Zod** - Schema validation for data consistency and type safety
+- **ES Modules** - Modern JavaScript module system
 
 ## License
 
