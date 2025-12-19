@@ -2,6 +2,7 @@ import { PUP } from "../scraper.mjs";
 import { intrum } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
+import { saveValidatedJSON, IntrumManualDebtSchema } from "../schemas.mjs";
 const fs = require('fs/promises');
 
 /**
@@ -85,7 +86,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
   console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
 
   try {
-     await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+     await saveValidatedJSON(filePath, data, IntrumManualDebtSchema);
   } catch (error) {
     console.error('Error writing debt data from Intrum to file:', error);
   }
@@ -164,6 +165,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
   const detailedInfoFilePath = createFoldersAndGetName(intrum.name, nationalID, "Intrum", "DetailedDebtInfo", true);
   const detailedData = { allDetailedInfo, timestamp: new Date().toISOString() };
   try {
+    // Note: not updated to use schema validation yet due to some bugs
     await fs.writeFile(detailedInfoFilePath, JSON.stringify(detailedData, null, 2));
   } catch (error) {
     console.error(`Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`, error);
