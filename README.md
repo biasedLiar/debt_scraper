@@ -1,130 +1,122 @@
-# Gjeld i Norge - Debt Overview Tool
+# Gjeld i Norge - Gjeldsoverisk
 
-An Electron-based desktop application that helps Norwegian citizens get an overview of their debt situation by automating data collection from various debt collection agencies and creditors.
+En Electron-basert skrivebordsapplikasjon som hjelper norske borgere med å få oversikt over sin gjeldssituasjon ved å automatisere datainnsamling fra ulike inkassobyråer og kreditorer.
 
-## Overview
+## Oversikt
 
-This application uses Puppeteer to automate browser interactions and collect debt information from multiple Norwegian creditor and debt collection websites. It saves API responses and generates a consolidated view of both current and paid debts.
+Denne applikasjonen bruker Puppeteer til å automatisere nettleserinteraksjoner og samle inn gjeldsinformasjon fra flere norske kreditor- og inkassonettsteder. Tjenesten gir deg en enkel oppsummering av din innsamlede gjeld hos kreditorer i Norge. 
 
-### Supported Creditors
 
-The application currently supports the following Norwegian creditor/debt collection services:
+### Støttede Kreditorer
 
-- **Statens Innkrevingssentral (SI)** - Government collection agency
-- **Intrum** - Debt collection company
-- **Kredinor** - Debt collection company  
-- **PRA Group** - In progress
-- **Digipost** - Digital mailbox service - In progress
-- **tfBank** - Financial services - In progress
-- **Zolva AS** - Debt collection company - In progress
+Applikasjonen støtter for øyeblikket følgende norske kreditor-/inkassotjenester (Dette er ikke en komplett liste, kun det som for øyeblikket er under utvikling):
 
-## Features
 
-- **Automated Login**: Guides users through BankID authentication for various creditor websites
-- **Data Export**: Saves all collected data as JSON files organized by user and date
-- **Debt Visualization**: Displays total debt amounts and detailed information per creditor
-- **Paid Debt Tracking**: Can optionally show both current and paid debts
+- **Statens Innkrevingssentral (SI)** - Statlig innkrevingsbyrå
+- **Intrum** - Inkassoselskap
+- **Kredinor** - Inkassoselskap
+- **PRA Group** - Under arbeid
+- **Digipost** - Digital postkassetjeneste - Under arbeid
+- **tfBank** - Finansielle tjenester - Under arbeid
+- **Zolva AS** - Inkassoselskap - Under arbeid
 
-## Project Structure
+## Funksjoner
+
+- **Automatisert Innlogging**: Fødselsnummer blir tastet automatisk for brukeren når en må logge inn med BankIDd
+- **Dataeksport**: Lagrer all innsamlet data som JSON-filer organisert etter bruker og dato
+- **Gjeldsvisualisering**: Viser totale gjeldsbeløp og detaljert informasjon per kreditor
+- **Sporing av Betalt Gjeld**: Kan valgfritt vise både gjeldende og betalte gjeld
+
+## Prosjektstruktur
 
 ```
 src/
-  ├── main.mjs              # Electron main process
-  ├── renderer.mjs          # Main UI logic and orchestration
-  ├── scraper.mjs           # Puppeteer browser automation
-  ├── data.mjs              # Configuration for target websites
-  ├── json_reader.mjs       # Parse and process collected JSON data
-  ├── dom.mjs               # UI rendering utilities
-  ├── utilities.mjs         # File operations and data management
-  ├── pages/                # Login handlers and puppeteer operations specialized for each website
+  ├── main.mjs              # Electron hovedprosess
+  ├── renderer.mjs          # Hoved-UI-logikk og orkestrering
+  ├── scraper.mjs           # Puppeteer nettleserautomatisering
+  ├── data.mjs              # Konfigurasjon for målnettsteder
+  ├── json_reader.mjs       # Parse og behandle innsamlede JSON-data
+  ├── dom.mjs               # Hjelpeverktøy for UI-rendering
+  ├── utilities.mjs         # Filoperasjoner og datahåndtering
+  ├── pages/                # puppeteer-operasjoner spesialisert for hvert nettsted
   │   ├── intrum.mjs
   │   ├── kredinor.mjs
   │   ├── statens-innkrevingssentral.mjs
   │   └── ...
-  └── index.html            # Main application window
+  └── index.html            # Hovedapplikasjonsvindu
 
-exports/                    # Collected data organized by user/date/creditor
+exports/                    # Innsamlede data organisert etter bruker/dato/kreditor
 ```
 
-## Installation
+## Installasjon
 
 ```bash
-# Install dependencies
+# Installer avhengigheter
 npm install
 
-# Run the application
+# Kjør applikasjonen
 npm start
 ```
 
-### Requirements
+### Krav
 
-- Node.js (recent version with ES modules support)
+- Node.js (nyere versjon med støtte for ES-moduler)
 - Git
 - Windows/macOS/Linux
 
-## How It Works
+## Hvordan Det Fungerer
 
-1. **User Initiates Login**: User clicks on a creditor button in the UI
-2. **Browser Automation**: Application opens an automated browser window via Puppeteer
-3. **BankID Authentication**: User completes login with their BankID credentials
-4. **Data Interception**: Application finds data on the website through scraping
-5. **Data Processing**: JSON data is parsed and organized by creditor
-6. **Visualization**: Debt information is displayed in the application UI
-
-
-
-## Data Storage
-
-All collected data is stored in the `exports/` directory with the following structure:
-
-```
-exports/
-  └── [name]/
-      └── [date]/
-          └── [Creditor Name]/
-              ├── [page-name]/
-                  └── data
+1. **Bruker Starter Innlogging**: Bruker klikker på en kreditorknapp i brukergrensesnittet
+2. **Nettleserautomatisering**: Applikasjonen åpner et automatisert nettleservindu via Puppeteer
+3. **BankID-Autentisering**: Bruker fullfører innlogging med BankId
+4. **Data-innsamling**: Applikasjonen finner data på nettstedet gjennom skraping
+5. **Databehandling**: JSON-data blir parset og organisert etter kreditor
+6. **Visualisering**: Gjeldsinformasjon vises i applikasjonens brukergrensesnitt
 
 
-## Configuration
 
-Key configuration options in the source code:
 
-- `showPaidDebts` (renderer.mjs): Toggle display of paid debts
-- `offlineMode` (renderer.mjs): Enable testing with saved data
-- Target website URLs are defined in `data.mjs`
 
-## Privacy & Security
 
->  **Important**: This application handles sensitive financial data. 
-> - Data is stored locally on your machine
-> - No data is transmitted to external servers 
-> - Do not share exported JSON files as they contain personal information
+## Konfigurasjon
 
-## Data Validation
+Konfigurasjonsalternativer i kildekoden:
 
-The application uses **Zod** schemas to ensure all saved data maintains a consistent format:
+- `showPaidDebts` (renderer.mjs): Veksle visning av betalte gjeld
+- `offlineMode` (renderer.mjs): Aktiver testing med lagrede data
+- Mål-nettsted-URL-er er definert i `data.mjs`
 
-- All manually collected debt data is validated before saving
-- Invalid data is saved with an `_unvalidated` suffix for debugging
-- Validation errors are logged with detailed information about what failed
-- Schemas are defined in [src/schemas.mjs](src/schemas.mjs)
+## Personvern og Sikkerhet
 
-### Validated Data Formats
+>  **Viktig**: Denne applikasjonen håndterer sensitive økonomiske data. 
+> - Data lagres lokalt på din maskin
+> - Ingen data sendes til eksterne servere
+> - Ikke del eksporterte JSON-filer da de inneholder personlig informasjon
 
-- **Intrum**: Manual debt cases with case numbers, amounts, and creditor names
-- **Kredinor**: Debt amounts, active cases, and detailed debt lists
-- All files include ISO 8601 timestamps for tracking when data was collected
+## Datavalidering
 
-## Development
+Applikasjonen bruker **Zod**-skjemaer for å sikre at alle lagrede data opprettholder et konsistent format:
 
-The application is built with:
+- All manuelt innsamlet gjeldsdata valideres før lagring
+- Ugyldig data lagres med et `_unvalidated`-suffiks for feilsøking
+- Valideringsfeil logges med detaljert informasjon om hva som feilet
+- Skjemaer er definert i [src/schemas.mjs](src/schemas.mjs)
 
-- **Electron** - Desktop application framework
-- **Puppeteer** - Browser automation
-- **Zod** - Schema validation for data consistency and type safety
-- **ES Modules** - Modern JavaScript module system
+### Validerte Dataformater
 
-## License
+- **Intrum**: Manuelle gjeldssaker med saksnumre, beløp og kreditornavn
+- **Kredinor**: Gjeldsbeløp, aktive saker og detaljerte gjeldslister
+- Alle filer inkluderer ISO 8601-tidsstempler for sporing av når data ble samlet inn
+
+## Utvikling
+
+Applikasjonen er bygget med:
+
+- **Electron** - Rammeverk for skrivebordsapplikasjoner
+- **Puppeteer** - Nettleserautomatisering
+- **Zod** - Skjemavalidering for datakonsistens og typesikkerhet
+- **ES-moduler** - Moderne JavaScript-modulsystem
+
+## Lisens
 
 [CC0 1.0 (Public Domain)](LICENSE.md)
