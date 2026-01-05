@@ -17,10 +17,10 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers) {
     setupPageHandlers(page, nationalID);
   }
 
-await new Promise((r) => setTimeout(r, 3000)); // wait for 3 seconds
+
   // Wait for and click the login button
   try {
-    await page.waitForSelector("#loginButtonId", { timeout: 5000 });
+    await page.waitForSelector("#loginButtonId", { timeout: 5000, visible: true });
     await page.click("#loginButtonId");
     console.log("Clicked BankID login button");
   } catch (e) {
@@ -30,7 +30,7 @@ await new Promise((r) => setTimeout(r, 3000)); // wait for 3 seconds
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
-  await new Promise((r) => setTimeout(r, 5000)); // wait for 5 seconds
+ 
 
   return { browser, page };
 }

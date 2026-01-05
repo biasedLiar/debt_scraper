@@ -26,10 +26,9 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
 
 // Accept cookies first
   try {
-    await page.waitForSelector('button.coi-banner__accept', { timeout: 5000 });
+    await page.waitForSelector('button.coi-banner__accept', { timeout: 5000, visible: true });
     await page.click('button.coi-banner__accept');
     console.log('Accepted cookies');
-    await new Promise(r => setTimeout(r, 1000)); // Wait for cookie banner to close
   } catch (error) {
     console.log('Cookie banner not found or already accepted:', error.message);
   }
@@ -46,11 +45,11 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   
   await loginWithBankID(page, nationalID);
 
-  // Wait for and extract debt information
-  // Wait for the page to load
-  await new Promise(r => setTimeout(r, 15000));
+ 
 
-  await page.waitForSelector('.info-row-item-group');
+  await page.waitForSelector('.info-row-item-group', { timeout: 10000, visible: true }).catch(() => {
+    console.log('No debt information found or page took too long to load');
+  });
   const [debtAmount, activeCases] = await page.$$eval('.info-row-item-title', els => 
     els.map(el => el.textContent.trim())
   );

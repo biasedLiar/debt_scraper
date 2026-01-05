@@ -35,10 +35,8 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
-  // Usikker på hvor lang tid som trengs, finnes nok bedre løsninger også
-  await new Promise(r => setTimeout(r, 30000));
 
-   await page.waitForSelector('.case-container, .debt-case, [class*="case"]', { timeout: 10000 }).catch(() => {
+   await page.waitForSelector('.case-container, .debt-case, [class*="case"]', { timeout: 10000, visible: true }).catch(() => {
     console.log('No debt cases found or page took too long to load');
   });
 
@@ -108,7 +106,6 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
   const allDetailedInfo = [];
   
 
-  await new Promise(r => setTimeout(r, 15000));
 
   for (let i = 0; i < detailsButtonsToClick.length; i++) {
     console.log(`Processing case ${i + 1}/${detailsButtonsToClick.length}`);
@@ -118,6 +115,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
       const clickableElement = await detailsButtonsToClick[i].evaluateHandle(el => el.closest('button, a, [role="button"]'));
       await clickableElement.click();
 
+      //litt usikker på beste løsning her
       await new Promise(r => setTimeout(r, 4000));
 
       const detailedInfo = await page.evaluate(() => {
