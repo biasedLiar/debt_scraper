@@ -110,6 +110,7 @@ export const setupPageHandlers = (page, nationalID) => {
         if (fileContainsNameOfUser(filename)) {
           userName = JSON.parse(data).navn.replace(/[^a-zA-Z0-9æøåÆØÅ]/g, "_");
           const h1Element = document.body.querySelector("h1");
+          //This is important for visit all websites, do not remove
           if (h1Element) {
             h1Element.innerText = "Gjeldshjelper for " + userName.replaceAll("_", " ");
           }
@@ -244,15 +245,15 @@ const visitAllButton = button("Visit All Websites", async (ev) => {
       const scrapingPromise = new Promise((resolve) => {
         scrapingCompleteCallback = resolve;
         
-        // Also set a timeout fallback in case scraping doesn't complete
+        // timeout fallback in case scraping doesn't complete
         setTimeout(() => {
           console.log(`Timeout reached for ${site.name}, moving on...`);
           resolve();
-        }, 60000); // 60 second max wait per site
+        }, 30000); // 30s max wait time
       });
       
-      // Open the website
-      const { browser, page } = await site.handler();
+      // Open the website and do the scraping
+      await site.handler();
       
       // Wait for scraping to complete (signaled by the callback)
       console.log(`Waiting for ${site.name} scraping to complete...`);
@@ -290,7 +291,7 @@ const visitAllButton = button("Visit All Websites", async (ev) => {
 // Add Enter key listener to nationalIdInput to trigger SI button
 nationalIdInput.addEventListener('keypress', (event) => {
   if (event.key === 'Enter') {
-    siButton.click();
+    visitAllButton.click();
   }
 });
 
