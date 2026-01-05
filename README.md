@@ -14,7 +14,7 @@ Applikasjonen støtter for øyeblikket følgende norske kreditor-/inkassotjenest
 
 - **Statens Innkrevingssentral (SI)** - Statlig innkrevingsbyrå
 - **Intrum** - Inkassoselskap
-- **Kredinor** - Inkassoselskap
+- **Kredinor** - Inkassoselskap 
 - **PRA Group** - Under arbeid
 - **Digipost** - Digital postkassetjeneste - Under arbeid
 - **tfBank** - Finansielle tjenester - Under arbeid

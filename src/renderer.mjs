@@ -32,6 +32,7 @@ const offlineKredinorFile = "";
 let currentWebsite = null;
 let userName = null;
 let totalDebtAmount = 0;
+let scrapingCompleteCallback = null; // Callback to signal scraping is done
 
 const foundUnpaidDebts = {
   foundCreditors: [],
@@ -108,7 +109,10 @@ export const setupPageHandlers = (page, nationalID) => {
 
         if (fileContainsNameOfUser(filename)) {
           userName = JSON.parse(data).navn.replace(/[^a-zA-Z0-9æøåÆØÅ]/g, "_");
-          document.body.querySelector("h1").innerText = "Gjeldshjelper for " + userName.replaceAll("_", " ");
+          const h1Element = document.body.querySelector("h1");
+          if (h1Element) {
+            h1Element.innerText = "Gjeldshjelper for " + userName.replaceAll("_", " ");
+          }
           transferFilesAfterLogin(pageName, userName, currentWebsite, nationalID);
         }
 
@@ -123,6 +127,12 @@ export const setupPageHandlers = (page, nationalID) => {
             const { debtList, creditorList, saksnummerList } = require(doucment2);
             const debts_unpaid2 = convertListsToJson(debtList, creditorList, saksnummerList, "Kredinor");
             displayDebtData(debts_unpaid2);       
+          }
+          
+          // Signal that scraping is complete for this website
+          if (scrapingCompleteCallback) {
+            console.log("Scraping complete, signaling callback...");
+            setTimeout(() => scrapingCompleteCallback(), 2000); // Small delay to ensure all data is processed
           }
         }
       } catch (e) {
@@ -185,7 +195,7 @@ const kredinorButton = button("Kredinor", async (ev) => {
   currentWebsite = "Kredinor";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
   await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
-  await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
+  //await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
 });
 
 
@@ -200,6 +210,83 @@ const zolvaButton = button("Zolva AS", async (ev) => {
   await handleZolvaLogin(nationalID, setupPageHandlers);
 });
 
+const visitAllButton = button("Visit All Websites", async (ev) => {
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
+  
+  if (!nationalID) {
+    alert("Please enter national ID first");
+    return;
+  }
+
+  // Disable button during execution
+  ev.target.disabled = true;
+  ev.target.innerText = "Visiting websites...";
+
+  const websites = [
+    { name: "SI", handler: () => handleSILogin(nationalID, setupPageHandlers) },
+    { name: "Kredinor", handler: () => handleKredinorLogin(nationalID, ()=>userName, setupPageHandlers) },
+    { name: "Intrum", handler: () => handleIntrumLogin(nationalID, setupPageHandlers) },
+    { name: "Digipost", handler: () => handleDigipostLogin(nationalID, setupPageHandlers) },
+    { name: "tfBank", handler: () => handleTfBankLogin(nationalID, setupPageHandlers) },
+    { name: "PRA Group", handler: () => handlePraGroupLogin(nationalID, setupPageHandlers) },
+    { name: "Zolva AS", handler: () => handleZolvaLogin(nationalID, setupPageHandlers) }
+  ];
+
+  try {
+    for (let i = 0; i < websites.length; i++) {
+      const site = websites[i];
+      currentWebsite = site.name;
+      
+      ev.target.innerText = `Visiting ${site.name} (${i + 1}/${websites.length})...`;
+      console.log(`Starting visit to ${site.name}`);
+      
+      // Create a promise that will be resolved when scraping is complete
+      const scrapingPromise = new Promise((resolve) => {
+        scrapingCompleteCallback = resolve;
+        
+        // Also set a timeout fallback in case scraping doesn't complete
+        setTimeout(() => {
+          console.log(`Timeout reached for ${site.name}, moving on...`);
+          resolve();
+        }, 60000); // 60 second max wait per site
+      });
+      
+      // Open the website
+      const { browser, page } = await site.handler();
+      
+      // Wait for scraping to complete (signaled by the callback)
+      console.log(`Waiting for ${site.name} scraping to complete...`);
+      await scrapingPromise;
+      
+      // Reset callback
+      scrapingCompleteCallback = null;
+      
+      // Close the browser automatically
+      console.log(`Closing ${site.name} browser...`);
+      await PUP.closeBrowser();
+      
+      // Small delay between websites
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+    
+    alert("Finished visiting all websites!");
+  } catch (error) {
+    console.error("Error during website visits:", error);
+    alert("An error occurred. Check console for details.");
+    // Clean up
+    scrapingCompleteCallback = null;
+    try {
+      await PUP.closeBrowser();
+    } catch (e) {
+      console.error("Error closing browser:", e);
+    }
+  } finally {
+    // Re-enable button
+    ev.target.disabled = false;
+    ev.target.innerText = "Visit All Websites";
+  }
+});
+
 // Add Enter key listener to nationalIdInput to trigger SI button
 nationalIdInput.addEventListener('keypress', (event) => {
   if (event.key === 'Enter') {
@@ -208,6 +295,7 @@ nationalIdInput.addEventListener('keypress', (event) => {
 });
 
 const buttonsContainer = div();
+buttonsContainer.append(visitAllButton);
 buttonsContainer.append(siButton);
 buttonsContainer.append(digipostButton);
 buttonsContainer.append(kredinorButton);
