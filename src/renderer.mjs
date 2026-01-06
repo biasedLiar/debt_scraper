@@ -20,6 +20,51 @@ import { read_json } from "./json_reader.mjs";
 
 const fs = require("fs");
 
+/**
+ * Validates Norwegian national ID (fødselsnummer)
+ * @param {string} nationalID - The national ID to validate
+ * @returns {{valid: boolean, error?: string}}
+ */
+const validateNationalID = (nationalID) => {
+  const trimmed = nationalID.trim();
+  
+  if (!trimmed) {
+    return { valid: false, error: "Fødselsnummer er påkrevd" };
+  }
+  
+  if (trimmed.length !== 11) {
+    return { valid: false, error: "Fødselsnummer må være nøyaktig 11 siffer" };
+  }
+  
+  return { valid: true };
+};
+
+/**
+ * Shows validation error message to user
+ * @param {string} message - Error message to display
+ */
+const showValidationError = (message) => {
+  const existingError = document.querySelector('.validation-error');
+  if (existingError) {
+    existingError.remove();
+  }
+  
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'validation-error';
+  errorDiv.textContent = message;
+  errorDiv.style.color = 'red';
+  errorDiv.style.marginLeft = '0.5rem';
+  errorDiv.style.fontSize = '0.9rem';
+  
+  nationalIdInput.style.borderColor = 'red';
+  nationalIdInput.insertAdjacentElement('afterend', errorDiv);
+  
+  setTimeout(() => {
+    errorDiv.remove();
+    nationalIdInput.style.borderColor = '';
+  }, 4000);
+};
+
 // Set to true to show paid debts as well
 const showPaidDebts = true;
 
@@ -163,6 +208,11 @@ const openPage = async (url) => {
 const tfBankButton = button("tfBank", async (ev) => {
   currentWebsite = "tfBank";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const validation = validateNationalID(nationalID);
+  if (!validation.valid) {
+    showValidationError(validation.error);
+    return;
+  }
   await handleTfBankLogin(nationalID, setupPageHandlers);
 });
 
@@ -178,44 +228,74 @@ const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput", "nu
 const siButton = button("Gå til si", async (ev) => {
   currentWebsite = "SI";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
+  const validation = validateNationalID(nationalID);
+  if (!validation.valid) {
+    showValidationError(validation.error);
+    return;
+  }
   await handleSILogin(nationalID, setupPageHandlers);
 });
 const digipostButton = button("Digipost", async (ev) => {
   currentWebsite = "Digipost";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
+  const validation = validateNationalID(nationalID);
+  if (!validation.valid) {
+    showValidationError(validation.error);
+    return;
+  }
   await handleDigipostLogin(nationalID, setupPageHandlers);
 });
 
 const intrumButton = button("Intrum", async (ev) => {
   currentWebsite = "Intrum";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
+  const validation = validateNationalID(nationalID);
+  if (!validation.valid) {
+    showValidationError(validation.error);
+    return;
+  }
   await handleIntrumLogin(nationalID, setupPageHandlers);
 });
 
 const kredinorButton = button("Kredinor", async (ev) => {
   currentWebsite = "Kredinor";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const validation = validateNationalID(nationalID);
+  if (!validation.valid) {
+    showValidationError(validation.error);
+    return;
+  }
   await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
-  //await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
 });
 
 
 const praGroupButton = button("PRA Group", async (ev) => {
   currentWebsite = "PRA Group";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const validation = validateNationalID(nationalID);
+  if (!validation.valid) {
+    showValidationError(validation.error);
+    return;
+  }
   await handlePraGroupLogin(nationalID, setupPageHandlers);
 });
 const zolvaButton = button("Zolva AS", async (ev) => { 
   currentWebsite = "Zolva AS";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const validation = validateNationalID(nationalID);
+  if (!validation.valid) {
+    showValidationError(validation.error);
+    return;
+  }
   await handleZolvaLogin(nationalID, setupPageHandlers);
 });
 
 const visitAllButton = button("Visit All Websites", async (ev) => {
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   
-  if (!nationalID) {
-    alert("Please enter national ID first");
+  const validation = validateNationalID(nationalID);
+  if (!validation.valid) {
+    showValidationError(validation.error);
     return;
   }
 
