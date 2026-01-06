@@ -1,4 +1,5 @@
-# Gjeld i Norge - Gjeldsoverisk
+# Gjeld i Norge - Gjeldsoversikt
+
 
 En Electron-basert skrivebordsapplikasjon som hjelper norske borgere med å få oversikt over sin gjeldssituasjon ved å automatisere datainnsamling fra ulike inkassobyråer og kreditorer.
 
