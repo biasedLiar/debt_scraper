@@ -3,8 +3,6 @@
 
 En Electron-basert skrivebordsapplikasjon som hjelper norske borgere med å få oversikt over sin gjeldssituasjon ved å automatisere datainnsamling fra ulike inkassobyråer og kreditorer.
 
-En Electron-basert skrivebordsapplikasjon som hjelper norske borgere med å få oversikt over sin gjeldssituasjon ved å automatisere datainnsamling fra ulike inkassobyråer og kreditorer.
-
 ## Oversikt
 
 Denne applikasjonen bruker Puppeteer til å automatisere nettleserinteraksjoner og samle inn gjeldsinformasjon fra flere norske kreditor- og inkassonettsteder. Tjenesten gir deg en enkel oppsummering av din innsamlede gjeld hos kreditorer i Norge. 

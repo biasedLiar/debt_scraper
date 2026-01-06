@@ -1,18 +1,18 @@
 {
-  "name": "minimal-repro",
+  "name": "debt_scraper",
   "version": "1.0.0",
-  "description": "A minimal Electron application",
+  "description": "A simple Electron application to scrape debt data.",
   "main": "src/main.mjs",
   "scripts": {
     "start": "electron ."
   },
-  "repository": "https://github.com/electron/minimal-repro",
+  "repository": "https://github.com/biasedLiar/debt_scraper",
   "keywords": [
     "Electron",
-    "quick",
-    "start",
-    "tutorial",
-    "demo"
+    "debt",
+    "scraper",
+    "puppeteer",
+    "zod"
   ],
   "author": "GitHub",
   "license": "CC0-1.0",
