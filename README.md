@@ -2,6 +2,8 @@
 
 En Electron-basert skrivebordsapplikasjon som hjelper norske borgere med å få oversikt over sin gjeldssituasjon ved å automatisere datainnsamling fra ulike inkassobyråer og kreditorer.
 
+En Electron-basert skrivebordsapplikasjon som hjelper norske borgere med å få oversikt over sin gjeldssituasjon ved å automatisere datainnsamling fra ulike inkassobyråer og kreditorer.
+
 ## Oversikt
 
 Denne applikasjonen bruker Puppeteer til å automatisere nettleserinteraksjoner og samle inn gjeldsinformasjon fra flere norske kreditor- og inkassonettsteder. Tjenesten gir deg en enkel oppsummering av din innsamlede gjeld hos kreditorer i Norge. 
@@ -14,27 +16,26 @@ Applikasjonen støtter for øyeblikket følgende norske kreditor-/inkassotjenest
 
 - **Statens Innkrevingssentral (SI)** - Statlig innkrevingsbyrå
 - **Intrum** - Inkassoselskap
-- **Kredinor** - Inkassoselskap 
+- **Kredinor** - Inkassoselskap
 - **PRA Group** - Under arbeid
-- **Digipost** - Digital postkassetjeneste - Under arbeid
-- **tfBank** - Finansielle tjenester - Under arbeid
-- **Zolva AS** - Inkassoselskap - Under arbeid
+- **Digipost** - Digital postkassetjeneste - Under utvikling
+- **tfBank** - Finansielle tjenester - Under utvikling
+- **Zolva AS** - Inkassoselskap - Under utvikling
 
 ## Funksjoner
 
 - **Automatisert Innlogging**: Fødselsnummer blir tastet automatisk for brukeren når en må logge inn med BankIDd
 - **Dataeksport**: Lagrer all innsamlet data som JSON-filer organisert etter bruker og dato
-- **Gjeldsvisualisering**: Viser totale gjeldsbeløp og detaljert informasjon per kreditor
-- **Sporing av Betalt Gjeld**: Kan valgfritt vise både gjeldende og betalte gjeld
+- **Gjeldsvisualisering**: Viser totalt gjeldsbeløp og detaljert informasjon per kreditor
 
 ## Prosjektstruktur
 
 ```
 src/
   ├── main.mjs              # Electron hovedprosess
-  ├── renderer.mjs          # Hoved-UI-logikk og orkestrering
+  ├── renderer.mjs          # Hoved-UI-logikk
   ├── scraper.mjs           # Puppeteer nettleserautomatisering
-  ├── data.mjs              # Konfigurasjon for målnettsteder
+  ├── data.mjs              # Konfigurasjon for nettsteder som blir besøkt av tjenesten
   ├── json_reader.mjs       # Parse og behandle innsamlede JSON-data
   ├── dom.mjs               # Hjelpeverktøy for UI-rendering
   ├── utilities.mjs         # Filoperasjoner og datahåndtering
@@ -82,7 +83,7 @@ npm start
 
 Konfigurasjonsalternativer i kildekoden:
 
-- `showPaidDebts` (renderer.mjs): Veksle visning av betalte gjeld
+- `showPaidDebts` (renderer.mjs): Veksle visning av betalt gjeld
 - `offlineMode` (renderer.mjs): Aktiver testing med lagrede data
 - Mål-nettsted-URL-er er definert i `data.mjs`
 
