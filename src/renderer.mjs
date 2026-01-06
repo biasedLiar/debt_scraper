@@ -26,10 +26,18 @@ import {
   calculateTotalSaldoSum,
   findHighForsinkelsesrenterCases
 } from "./json_reader.mjs";
-import { detailedDebtConfig } from "./detailedDebtConfig.js";
 
 const fs = require("fs");
 const path = require("path");
+
+// Try to import detailedDebtConfig, but use empty object if it fails or is empty
+let detailedDebtConfig = {};
+try {
+  const imported = await import("./detailedDebtConfig.js");
+  detailedDebtConfig = imported.detailedDebtConfig || {};
+} catch (e) {
+  console.log("detailedDebtConfig not available (this is OK)");
+}
 
 /**
  * Validates Norwegian national ID (fødselsnummer)
@@ -405,9 +413,10 @@ nationalIdInput.focus();
 const totalVisualization = visualizeTotalDebts(totalDebtAmount.toLocaleString('no-NO') + " kr");
 document.body.append(totalVisualization);
 
-// Display all detailed debt info sums if available
-const detailedDebtInfoPath = path.join(__dirname, "..", "exports", detailedDebtConfig.nationalID, detailedDebtConfig.date, detailedDebtConfig.creditor, detailedDebtConfig.creditor, "detaileddebtinfo.json");
-if (fs.existsSync(detailedDebtInfoPath)) {
+// Display all detailed debt info sums if available (only if detailedDebtConfig is not empty)
+if (detailedDebtConfig && detailedDebtConfig.nationalID && detailedDebtConfig.date && detailedDebtConfig.creditor) {
+  const detailedDebtInfoPath = path.join(__dirname, "..", "exports", detailedDebtConfig.nationalID, detailedDebtConfig.date, detailedDebtConfig.creditor, detailedDebtConfig.creditor, "detaileddebtinfo.json");
+  if (fs.existsSync(detailedDebtInfoPath)) {
   const detailedDebtContainer = div({ class: "detailed-debt-container" });
   const creditorHeader = h2(detailedDebtConfig.creditor, "creditor-header");
   detailedDebtContainer.appendChild(creditorHeader);
@@ -466,6 +475,8 @@ if (fs.existsSync(detailedDebtInfoPath)) {
 
     highCasesContainer.appendChild(casesList);
     document.body.append(highCasesContainer);
+  }
+  
   }
 }
 
