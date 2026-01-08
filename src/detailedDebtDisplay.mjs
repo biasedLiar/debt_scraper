@@ -32,35 +32,19 @@ export function displayDetailedDebtInfo(detailedDebtConfig) {
   const creditorHeader = h2(detailedDebtConfig.creditor, "creditor-header");
   detailedDebtContainer.appendChild(creditorHeader);
 
-  const hovedkravSum = calculateHovedkravSum(detailedDebtInfoPath);
-  const hovedkravDiv = div({ class: "debt-line-item" });
-  hovedkravDiv.innerHTML = `<span class="debt-label">Hovedkrav:</span> <span class="debt-value">${hovedkravSum.toLocaleString('no-NO', {minimumFractionDigits: 2, maximumFractionDigits: 2})} kr</span>`;
-  detailedDebtContainer.appendChild(hovedkravDiv);
+  const addDebtLine = (label, calculateFn) => {
+    const sum = calculateFn(detailedDebtInfoPath);
+    const lineDiv = div({ class: "debt-line-item" });
+    lineDiv.innerHTML = `<span class="debt-label">${label}:</span> <span class="debt-value">${sum.toLocaleString('no-NO', {minimumFractionDigits: 2, maximumFractionDigits: 2})} kr</span>`;
+    detailedDebtContainer.appendChild(lineDiv);
+  };
 
-  const forsinkelsesSum = calculateForsinkelsesrenterSum(detailedDebtInfoPath);
-  const forsinkelsesDiv = div({ class: "debt-line-item" });
-  forsinkelsesDiv.innerHTML = `<span class="debt-label">Forsinkelsesrenter:</span> <span class="debt-value">${forsinkelsesSum.toLocaleString('no-NO', {minimumFractionDigits: 2, maximumFractionDigits: 2})} kr</span>`;
-  detailedDebtContainer.appendChild(forsinkelsesDiv);
-
-  const omkostningerSum = calculateOmkostningerSum(detailedDebtInfoPath);
-  const omkostningerDiv = div({ class: "debt-line-item" });
-  omkostningerDiv.innerHTML = `<span class="debt-label">Omkostninger:</span> <span class="debt-value">${omkostningerSum.toLocaleString('no-NO', {minimumFractionDigits: 2, maximumFractionDigits: 2})} kr</span>`;
-  detailedDebtContainer.appendChild(omkostningerDiv);
-
-  const salærSum = calculateSalærSum(detailedDebtInfoPath);
-  const salærDiv = div({ class: "debt-line-item" });
-  salærDiv.innerHTML = `<span class="debt-label">Salær:</span> <span class="debt-value">${salærSum.toLocaleString('no-NO', {minimumFractionDigits: 2, maximumFractionDigits: 2})} kr</span>`;
-  detailedDebtContainer.appendChild(salærDiv);
-
-  const rettsligGebyrSum = calculateRettsligGebyrSum(detailedDebtInfoPath);
-  const rettsligGebyrDiv = div({ class: "debt-line-item" });
-  rettsligGebyrDiv.innerHTML = `<span class="debt-label">Rettslig gebyr:</span> <span class="debt-value">${rettsligGebyrSum.toLocaleString('no-NO', {minimumFractionDigits: 2, maximumFractionDigits: 2})} kr</span>`;
-  detailedDebtContainer.appendChild(rettsligGebyrDiv);
-
-  const totalSaldoSum = calculateTotalSaldoSum(detailedDebtInfoPath);
-  const totalSaldoDiv = div({ class: "debt-line-item" });
-  totalSaldoDiv.innerHTML = `<span class="debt-label">Total saldo:</span> <span class="debt-value">${totalSaldoSum.toLocaleString('no-NO', {minimumFractionDigits: 2, maximumFractionDigits: 2})} kr</span>`;
-  detailedDebtContainer.appendChild(totalSaldoDiv);
+  addDebtLine("Hovedkrav", calculateHovedkravSum);
+  addDebtLine("Forsinkelsesrenter", calculateForsinkelsesrenterSum);
+  addDebtLine("Omkostninger", calculateOmkostningerSum);
+  addDebtLine("Salær", calculateSalærSum);
+  addDebtLine("Rettslig gebyr", calculateRettsligGebyrSum);
+  addDebtLine("Total saldo", calculateTotalSaldoSum);
 
   document.body.append(detailedDebtContainer);
 
