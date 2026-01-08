@@ -7,7 +7,7 @@
  */
 import { div, button, h1, h2, input, visualizeDebt, visualizeTotalDebts } from "./dom.mjs";
 import { PUP } from "./scraper.mjs";
-import { savePage, createFoldersAndGetName, fileContainsNameOfUser, transferFilesAfterLogin } from "./utilities.mjs";
+import { savePage, createFoldersAndGetName, fileContainsNameOfUser, transferFilesAfterLogin, readAllDebtForPerson } from "./utilities.mjs";
 import { U } from "./U.mjs";
 import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
@@ -409,6 +409,83 @@ document.body.append(totalVisualization);
 displayDetailedDebtInfo(detailedDebtConfig);
 
 const summaryDiv = div({ class: "summary-container" });
+
+// Function to load and display saved debt data for a person
+const loadSavedDebtData = (personId) => {
+  if (!personId || personId.length !== 11) return;
+  
+  try {
+    const debtData = readAllDebtForPerson(personId);
+    
+    if (debtData.totalDebt > 0) {
+      // Clear existing found debts
+      foundUnpaidDebts.foundCreditors = [];
+      foundUnpaidDebts.totalAmount = debtData.totalDebt;
+      foundUnpaidDebts.debts = {};
+      
+      // Update the total debt display
+      const totalDebtElement = document.body.querySelector(".total-debt-amount");
+      if (totalDebtElement) {
+        totalDebtElement.innerText = debtData.totalDebt.toLocaleString('no-NO') + " kr";
+      }
+      
+      // Clear summary container
+      summaryDiv.innerHTML = '';
+      
+      // Group debts by creditor and display
+      Object.entries(debtData.debtsByCreditor).forEach(([creditor, totalAmount]) => {
+        const creditorDebts = debtData.detailedDebts.filter(d => d.creditor === creditor);
+        const debtCollection = {
+          creditSite: creditor,
+          isCurrent: true,
+          totalAmount: totalAmount,
+          debts: creditorDebts.map(d => ({
+            id: d.id || 'Unknown',
+            amount: d.amount,
+            dueDate: 'Unknown',
+            type: d.type || '',
+            typeText: ''
+          }))
+        };
+        
+        foundUnpaidDebts.foundCreditors.push(creditor);
+        foundUnpaidDebts.debts[creditor] = debtCollection;
+        
+        const debtVisualization = visualizeDebt(debtCollection);
+        summaryDiv.append(debtVisualization);
+      });
+      
+      // Log details to console
+      console.log(`\n=== DEBT ANALYSIS ===`);
+      console.log(`Total Debt: ${debtData.totalDebt.toLocaleString('no-NO')} kr`);
+      console.log('\nBy Creditor:');
+      Object.entries(debtData.debtsByCreditor).forEach(([creditor, amount]) => {
+        console.log(`  ${creditor}: ${amount.toLocaleString('no-NO')} kr`);
+      });
+      console.log(`\nTotal number of debts: ${debtData.detailedDebts.length}`);
+      console.log('=================================\n');
+    }
+  } catch (error) {
+    console.error('Error calculating total debt:', error);
+  }
+};
+
+// Load saved debt data when input changes
+nationalIdInput.addEventListener('blur', () => {
+  loadSavedDebtData(nationalIdInput.value.trim());
+});
+
+// Also trigger on input (with debounce)
+let inputTimeout;
+nationalIdInput.addEventListener('input', () => {
+  clearTimeout(inputTimeout);
+  inputTimeout = setTimeout(() => {
+    const personId = nationalIdInput.value.trim();
+    if (personId.length === 11) {
+      loadSavedDebtData(personId);
+    }
+  }, 500);
+});
 
 if (offlineMode) {
   const doucment = offlineSIFile

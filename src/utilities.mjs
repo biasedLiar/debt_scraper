@@ -263,3 +263,121 @@ export function fileContainsNameOfUser(name) {
   return name.includes("skatt.skatteetaten.no_api_mii_skyldnerportal_om_meg_api_v1_basisinfo.json");
 }
 
+/**
+ * Reads all debt data for a specific person from exports folder
+ * @param {string} personId - The person's national ID
+ * @returns {{totalDebt: number, debtsByCreditor: Object, detailedDebts: Array}}
+ */
+export function readAllDebtForPerson(personId) {
+  const result = {
+    totalDebt: 0,
+    debtsByCreditor: {},
+    detailedDebts: []
+  };
+
+  const exportsPath = path.join('./exports', personId);
+  
+  if (!fs.existsSync(exportsPath)) {
+    console.log(`No exports found for person ${personId}`);
+    return result;
+  }
+
+  // Recursively find all JSON files
+  const findJsonFiles = (dir) => {
+    const files = [];
+    try {
+      const items = fs.readdirSync(dir);
+      items.forEach(item => {
+        const fullPath = path.join(dir, item);
+        const stat = fs.statSync(fullPath);
+        
+        if (stat.isDirectory()) {
+          files.push(...findJsonFiles(fullPath));
+        } else if (item.endsWith('.json')) {
+          files.push(fullPath);
+        }
+      });
+    } catch (err) {
+      console.error(`Error reading directory ${dir}:`, err);
+    }
+    return files;
+  };
+
+  const jsonFiles = findJsonFiles(exportsPath);
+  console.log(`Found ${jsonFiles.length} JSON files for person ${personId}`);
+
+  jsonFiles.forEach(filePath => {
+    try {
+      const content = fs.readFileSync(filePath, 'utf8');
+      const data = JSON.parse(content);
+
+      // Handle SI "krav" structure
+      if (data.krav && Array.isArray(data.krav)) {
+        data.krav.forEach(krav => {
+          const amount = krav.belop || 0;
+          
+          // Check if debt is unpaid
+          let isPaid = true;
+          if (krav.forfall && Array.isArray(krav.forfall)) {
+            for (let forfall of krav.forfall) {
+              if (forfall.gjenstaaendeBeloep && forfall.gjenstaaendeBeloep != 0) {
+                isPaid = false;
+                break;
+              }
+            }
+          }
+
+          if (!isPaid) {
+            result.totalDebt += amount;
+            const creditor = 'SI';
+            result.debtsByCreditor[creditor] = (result.debtsByCreditor[creditor] || 0) + amount;
+            result.detailedDebts.push({
+              creditor,
+              amount,
+              id: krav.identifikator,
+              type: krav.kravtype,
+              source: filePath
+            });
+          }
+        });
+      }
+
+      // Handle manually found debt structure (Intrum)
+      if (data.debtCases && Array.isArray(data.debtCases)) {
+        const seenCases = new Set();
+        data.debtCases.forEach(debtCase => {
+          if (debtCase.caseNumber && debtCase.totalAmount && debtCase.creditorName) {
+            // Avoid duplicates
+            const caseKey = `${debtCase.caseNumber}-${debtCase.totalAmount}`;
+            if (!seenCases.has(caseKey)) {
+              seenCases.add(caseKey);
+              const amount = parseFloat(debtCase.totalAmount.replace(',', '.'));
+              if (!isNaN(amount)) {
+                result.totalDebt += amount;
+                const creditor = 'Intrum';
+                result.debtsByCreditor[creditor] = (result.debtsByCreditor[creditor] || 0) + amount;
+                result.detailedDebts.push({
+                  creditor,
+                  amount,
+                  id: debtCase.caseNumber,
+                  type: debtCase.creditorName,
+                  source: filePath
+                });
+              }
+            }
+          }
+        });
+      }
+
+
+    } catch (err) {
+      console.error(`Error processing file ${filePath}:`, err);
+    }
+  });
+
+  console.log(`Total debt for ${personId}: ${result.totalDebt.toLocaleString('no-NO')} kr`);
+  console.log('Debts by creditor:', result.debtsByCreditor);
+  
+  return result;
+}
+
