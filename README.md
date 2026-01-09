@@ -83,7 +83,7 @@ npm start
 
 Konfigurasjonsalternativer i kildekoden:
 
-- `showPaidDebts` (renderer.mjs): Veksle visning av betalte gjeld
+- `showPaidDebts` (renderer.mjs): Veksle visning av betalt gjeld
 - `offlineMode` (renderer.mjs): Aktiver testing med lagrede data
 - Mål-nettsted-URL-er er definert i `data.mjs`
 
@@ -117,7 +117,3 @@ Applikasjonen er bygget med:
 - **Puppeteer** - Nettleserautomatisering
 - **Zod** - Skjemavalidering for datakonsistens og typesikkerhet
 - **ES-moduler** - Moderne JavaScript-modulsystem
-
-## Lisens
-
-[CC0 1.0 (Public Domain)](LICENSE.md)
