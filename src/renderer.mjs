@@ -444,7 +444,7 @@ const loadSavedDebtData = (personId) => {
             amount: d.amount,
             dueDate: 'Unknown',
             type: d.type || '',
-            typeText: ''
+            typeText: d.typeText || ''
           }))
         };
         

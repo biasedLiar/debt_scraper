@@ -1,4 +1,5 @@
 const fs = require("fs");
+import { getKravtypeDescription } from "./kravtypeMapping.mjs";
 
 
 
@@ -35,7 +36,7 @@ export const read_json = (creditSite, krav) => {
             amount: element.belop,
             dueDate: element.forfall[0].forfallsdato,
             type: element.kravtype,
-            typeText: element.kravtypetekst,
+            typeText: getKravtypeDescription(element.kravtype, element.kravtypetekst),
         };
 
         let isPaid = true;

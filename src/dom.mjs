@@ -106,13 +106,13 @@ export const visualizeDebt = (debtData) => {
     if (debt.dueDate === null) {
       debt.dueDate = "Ukjent";
     }
-    const typeText = debt.typeText ? "- " + debt.typeText : "";
+    const typeText = debt.typeText ? `: ${debt.typeText}` : "";
     
     debtDiv.innerHTML = `
             <h3>Sum: ${debt.amount.toLocaleString("no-NO")} kr</h3>
             <p>Gjeld ID: ${debt.id}</p>
             <p>Betalingsfrist: ${debt.dueDate.substring(0, 10)}</p>
-            <p>Type: ${debt.type} ${typeText}</p>
+            <p>Type ${debt.type}${typeText}</p>
         `;
     outerContainer.appendChild(debtDiv);
   });

@@ -282,6 +282,9 @@ export function readAllDebtForPerson(personId) {
     return result;
   }
 
+  // Import kravtype mapping
+  const { getKravtypeDescription } = require('./kravtypeMapping.mjs');
+
   // Recursively find all JSON files
   const findJsonFiles = (dir) => {
     const files = [];
@@ -336,6 +339,7 @@ export function readAllDebtForPerson(personId) {
               amount,
               id: krav.identifikator,
               type: krav.kravtype,
+              typeText: getKravtypeDescription(krav.kravtype, krav.kravtypetekst),
               source: filePath
             });
           }
