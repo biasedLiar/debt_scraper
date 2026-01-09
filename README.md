@@ -24,7 +24,7 @@ Applikasjonen støtter for øyeblikket følgende norske kreditor-/inkassotjenest
 
 ## Funksjoner
 
-- **Automatisert Innlogging**: Fødselsnummer blir tastet automatisk for brukeren når en må logge inn med BankIDd
+- **Automatisert Innlogging**: Fødselsnummer blir tastet automatisk for brukeren når en må logge inn med BankID
 - **Dataeksport**: Lagrer all innsamlet data som JSON-filer organisert etter bruker og dato
 - **Gjeldsvisualisering**: Viser totalt gjeldsbeløp og detaljert informasjon per kreditor
 
