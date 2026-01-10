@@ -14,9 +14,9 @@ import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
 import { handleIntrumLogin } from "./pages/intrum.mjs";
 import { handleTfBankLogin } from "./pages/tfbank.mjs";
-import { read_json, convertListsToJson } from "./json_reader.mjs";
-
-
+import { handlePraGroupLogin } from "./pages/pra-group.mjs";
+import { handleZolvaLogin } from "./pages/zolva-as.mjs";
+import { read_json } from "./json_reader.mjs";
 
 const fs = require("fs");
 
@@ -139,7 +139,9 @@ export const setupPageHandlers = (page, nationalID) => {
  */
 const openPage = async (url) => {
   const nationalIdInput = document.getElementById("nationalIdInput");
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() || "Unknown" : "Unknown";
+  const nationalID = nationalIdInput
+    ? nationalIdInput.value.trim() || "Unknown"
+    : "Unknown";
 
   const { browser, page } = await PUP.openPage(url);
 
@@ -164,27 +166,38 @@ const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput", "nu
 
 const siButton = button("Gå til si", async (ev) => {
   currentWebsite = "SI";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   await handleSILogin(nationalID, setupPageHandlers);
 });
 const digipostButton = button("Digipost", async (ev) => {
   currentWebsite = "Digipost";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   await handleDigipostLogin(nationalID, setupPageHandlers);
 });
 
 const intrumButton = button("Intrum", async (ev) => {
   currentWebsite = "Intrum";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   await handleIntrumLogin(nationalID, setupPageHandlers);
 });
-
 
 const kredinorButton = button("Kredinor", async (ev) => {
   currentWebsite = "Kredinor";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
   await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
   await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
+});
+
+
+const praGroupButton = button("PRA Group", async (ev) => {
+  currentWebsite = "PRA Group";
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  await handlePraGroupLogin(nationalID, setupPageHandlers);
+});
+const zolvaButton = button("Zolva AS", async (ev) => { 
+  currentWebsite = "Zolva AS";
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  await handleZolvaLogin(nationalID, setupPageHandlers);
 });
 
 // Add Enter key listener to nationalIdInput to trigger SI button
@@ -200,7 +213,8 @@ buttonsContainer.append(digipostButton);
 buttonsContainer.append(kredinorButton);
 buttonsContainer.append(intrumButton);
 buttonsContainer.append(tfBankButton);
-
+buttonsContainer.append(praGroupButton);
+buttonsContainer.append(zolvaButton);
 document.body.append(heading);
 document.body.append(heading2);
 document.body.append(nationalIdInput);

@@ -2,43 +2,118 @@
 
 **Få hjelp til å få oversikt over din egen gjeldssituasjon og finne veien videre.**
 
-> [!NOTE]
-> This repro was renamed from `electron-quick-start` to clarify its purpose as a repro template. If you're looking to boostrap a new Electron app, check out the [Electron Forge](https://www.electronforge.io/) docs instead to get started!
+En Electron-basert skrivebordsapplikasjon som hjelper norske borgere med å få oversikt over sin gjeldssituasjon ved å automatisere datainnsamling fra ulike inkassobyråer og kreditorer.
 
-Creating a minimal reproduction (or "minimal repro") is essential when troubleshooting Electron apps. By stripping away everything except the code needed to demonstrate a specific behavior or bug, it becomes easier for others to understand, debug, and fix issues. This focused approach saves time and ensures that everyone involved is looking at exactly the same problem without distractions.
+## Oversikt
 
-A basic Electron application contains:
+Denne applikasjonen bruker Puppeteer til å automatisere nettleserinteraksjoner og samle inn gjeldsinformasjon fra flere norske kreditor- og inkassonettsteder. Tjenesten gir deg en enkel oppsummering av din innsamlede gjeld hos kreditorer i Norge. 
 
-- `package.json` - Points to the app's main file and lists its details and dependencies.
-- `main.mjs` - Starts the app and creates a browser window to render HTML. This is the app's **main process**.
-- `index.html` - A web page to render. This is the app's **renderer process**.
-- `preload.js` - A content script that runs before the renderer process loads.
 
-You can learn more about each of these components in depth within the [Tutorial](https://electronjs.org/docs/latest/tutorial/tutorial-prerequisites).
+### Støttede Kreditorer
 
-## To Use
+Applikasjonen støtter for øyeblikket følgende norske kreditor-/inkassotjenester (Dette er ikke en komplett liste, kun det som for øyeblikket er under utvikling):
 
-To clone and run this repository you'll need [Git](https://git-scm.com) and [Node.js](https://nodejs.org/en/download/) (which comes with [npm](http://npmjs.com)) installed on your computer. From your command line:
+
+- **Statens Innkrevingssentral (SI)** - Statlig innkrevingsbyrå
+- **Intrum** - Inkassoselskap
+- **Kredinor** - Inkassoselskap
+- **PRA Group** - Under arbeid
+- **Digipost** - Digital postkassetjeneste - Under utvikling
+- **tfBank** - Finansielle tjenester - Under utvikling
+- **Zolva AS** - Inkassoselskap - Under utvikling
+
+## Funksjoner
+
+- **Automatisert Innlogging**: Fødselsnummer blir tastet automatisk for brukeren når en må logge inn med BankID
+- **Dataeksport**: Lagrer all innsamlet data som JSON-filer organisert etter bruker og dato
+- **Gjeldsvisualisering**: Viser totalt gjeldsbeløp og detaljert informasjon per kreditor
+
+## Prosjektstruktur
+
+```
+src/
+  ├── main.mjs              # Electron hovedprosess
+  ├── renderer.mjs          # Hoved-UI-logikk
+  ├── scraper.mjs           # Puppeteer nettleserautomatisering
+  ├── data.mjs              # Konfigurasjon for nettsteder som blir besøkt av tjenesten
+  ├── json_reader.mjs       # Parse og behandle innsamlede JSON-data
+  ├── dom.mjs               # Hjelpeverktøy for UI-rendering
+  ├── utilities.mjs         # Filoperasjoner og datahåndtering
+  ├── pages/                # puppeteer-operasjoner spesialisert for hvert nettsted
+  │   ├── intrum.mjs
+  │   ├── kredinor.mjs
+  │   ├── statens-innkrevingssentral.mjs
+  │   └── ...
+  └── index.html            # Hovedapplikasjonsvindu
+
+exports/                    # Innsamlede data organisert etter bruker/dato/kreditor
+```
+
+## Installasjon
 
 ```bash
-# Clone this repository
-git clone https://github.com/electron/minimal-repro
-# Go into the repository
-cd minimal-repro
-# Install dependencies
+# Installer avhengigheter
 npm install
-# Run the app
+
+# Kjør applikasjonen
 npm start
 ```
 
-Note: If you're using Linux Bash for Windows, [see this guide](https://www.howtogeek.com/261575/how-to-run-graphical-linux-desktop-applications-from-windows-10s-bash-shell/) or use `node` from the command prompt.
+### Krav
 
-## Resources for Learning Electron
+- Node.js (nyere versjon med støtte for ES-moduler)
+- Git
+- Windows/macOS/Linux
 
-- [electronjs.org/docs](https://electronjs.org/docs) - all of Electron's documentation
-- [Electron Fiddle](https://electronjs.org/fiddle) - Electron Fiddle, an app to test small Electron experiments
-- [Electron Forge](https://www.electronforge.io/) - Looking to bootstrap a new Electron app? Check out the Electron Forge docs to get started
+## Hvordan Det Fungerer
 
-## License
+1. **Bruker Starter Innlogging**: Bruker klikker på en kreditorknapp i brukergrensesnittet
+2. **Nettleserautomatisering**: Applikasjonen åpner et automatisert nettleservindu via Puppeteer
+3. **BankID-Autentisering**: Bruker fullfører innlogging med BankId
+4. **Data-innsamling**: Applikasjonen finner data på nettstedet gjennom skraping
+5. **Databehandling**: JSON-data blir parset og organisert etter kreditor
+6. **Visualisering**: Gjeldsinformasjon vises i applikasjonens brukergrensesnitt
 
-[CC0 1.0 (Public Domain)](LICENSE.md)
+
+
+
+
+
+## Konfigurasjon
+
+Konfigurasjonsalternativer i kildekoden:
+
+- `showPaidDebts` (renderer.mjs): Veksle visning av betalt gjeld
+- `offlineMode` (renderer.mjs): Aktiver testing med lagrede data
+- Mål-nettsted-URL-er er definert i `data.mjs`
+
+## Personvern og Sikkerhet
+
+>  **Viktig**: Denne applikasjonen håndterer sensitive økonomiske data. 
+> - Data lagres lokalt på din maskin
+> - Ingen data sendes til eksterne servere
+> - Ikke del eksporterte JSON-filer da de inneholder personlig informasjon
+
+## Datavalidering
+
+Applikasjonen bruker **Zod**-skjemaer for å sikre at alle lagrede data opprettholder et konsistent format:
+
+- All manuelt innsamlet gjeldsdata valideres før lagring
+- Ugyldig data lagres med et `_unvalidated`-suffiks for feilsøking
+- Valideringsfeil logges med detaljert informasjon om hva som feilet
+- Skjemaer er definert i [src/schemas.mjs](src/schemas.mjs)
+
+### Validerte Dataformater
+
+- **Intrum**: Manuelle gjeldssaker med saksnumre, beløp og kreditornavn
+- **Kredinor**: Gjeldsbeløp, aktive saker og detaljerte gjeldslister
+- Alle filer inkluderer ISO 8601-tidsstempler for sporing av når data ble samlet inn
+
+## Utvikling
+
+Applikasjonen er bygget med:
+
+- **Electron** - Rammeverk for skrivebordsapplikasjoner
+- **Puppeteer** - Nettleserautomatisering
+- **Zod** - Skjemavalidering for datakonsistens og typesikkerhet
+- **ES-moduler** - Moderne JavaScript-modulsystem
