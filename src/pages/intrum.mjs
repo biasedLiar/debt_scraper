@@ -2,6 +2,7 @@ import { PUP } from "../scraper.mjs";
 import { intrum } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
+import { saveValidatedJSON, IntrumManualDebtSchema } from "../schemas.mjs";
 const fs = require('fs/promises');
 
 /**
@@ -34,10 +35,8 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
-  // Usikker på hvor lang tid som trengs, finnes nok bedre løsninger også
-  await new Promise(r => setTimeout(r, 30000));
 
-   await page.waitForSelector('.case-container, .debt-case, [class*="case"]', { timeout: 10000 }).catch(() => {
+   await page.waitForSelector('.case-container, .debt-case, [class*="case"]', { timeout: 10000, visible: true }).catch(() => {
     console.log('No debt cases found or page took too long to load');
   });
 
@@ -85,7 +84,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
   console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
 
   try {
-     await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+     await saveValidatedJSON(filePath, data, IntrumManualDebtSchema);
   } catch (error) {
     console.error('Error writing debt data from Intrum to file:', error);
   }
@@ -107,7 +106,6 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
   const allDetailedInfo = [];
   
 
-  await new Promise(r => setTimeout(r, 15000));
 
   for (let i = 0; i < detailsButtonsToClick.length; i++) {
     console.log(`Processing case ${i + 1}/${detailsButtonsToClick.length}`);
@@ -117,6 +115,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
       const clickableElement = await detailsButtonsToClick[i].evaluateHandle(el => el.closest('button, a, [role="button"]'));
       await clickableElement.click();
 
+      //litt usikker på beste løsning her
       await new Promise(r => setTimeout(r, 4000));
 
       const detailedInfo = await page.evaluate(() => {
@@ -164,6 +163,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
   const detailedInfoFilePath = createFoldersAndGetName(intrum.name, nationalID, "Intrum", "DetailedDebtInfo", true);
   const detailedData = { allDetailedInfo, timestamp: new Date().toISOString() };
   try {
+    // Note: not updated to use schema validation yet due to some bugs
     await fs.writeFile(detailedInfoFilePath, JSON.stringify(detailedData, null, 2));
   } catch (error) {
     console.error(`Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`, error);

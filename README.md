@@ -1,6 +1,5 @@
-# Økonomi-hjelperen
+# Gjeld i Norge - Gjeldsoversikt
 
-**Få hjelp til å få oversikt over din egen gjeldssituasjon og finne veien videre.**
 
 En Electron-basert skrivebordsapplikasjon som hjelper norske borgere med å få oversikt over sin gjeldssituasjon ved å automatisere datainnsamling fra ulike inkassobyråer og kreditorer.
 
