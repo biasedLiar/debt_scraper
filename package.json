@@ -4,7 +4,12 @@
   "description": "A simple Electron application to scrape debt data.",
   "main": "src/main.mjs",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "format": "prettier --write \"src/**/*.{js,mjs,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,mjs,json,md}\"",
+    "docs:serve": "mkdocs serve",
+    "docs:build": "mkdocs build",
+    "docs:deploy": "mkdocs gh-deploy"
   },
   "repository": "https://github.com/biasedLiar/debt_scraper",
   "keywords": [
