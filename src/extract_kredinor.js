@@ -1,13 +1,11 @@
 
 import fs from 'fs';
-import { PDFParse } from 'pdf-parse'; // ✅ Correct import
+import { PDFParse } from 'pdf-parse';
 
 async function extractFields(pdfPath, outputPath) {
   const buffer = fs.readFileSync(pdfPath);
   const parser = new PDFParse({ data: buffer });
 
-  // getText() returns a TextResult with .text and .pages[].text in v2+
-  // We'll iterate result.pages to be page-accurate.  [1](https://deepwiki.com/mehmet-kozan/pdf-parse/2.2-quick-start-examples)
   const result = await parser.getText();
 
   // Fallback: if pages are missing for any reason, treat whole doc as one page
@@ -23,9 +21,9 @@ async function extractFields(pdfPath, outputPath) {
     const dateRegex = /\b\d{2}\.\d{2}\.\d{4}\b/g;
     const dates = [...pageText.matchAll(dateRegex)].map(m => m[0]);
 
-    // First date = utstedetDato, 6th date = forfallsDato
+    // not optimal, but it works for now, dates are underneath the fields
     const utstedetDato = dates[4] || null;
-    const forfallsDato = dates[5] || null; // <- 6th date (0-based index)
+    const forfallsDato = dates[5] || null; 
 
     // Financial fields (case-insensitive, optional colon, flexible whitespace)
     const fields = {

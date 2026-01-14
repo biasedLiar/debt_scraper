@@ -73,6 +73,27 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     els.map(el => el.textContent.trim())
   );
 
+  // Click button to download PDF of closed cases
+    try {
+      const downloadButton = await page.waitForSelector('span[data-text-key="claims.closed.overview_report.download.button"]', { timeout: 5000 });
+      
+      // Set up download handling
+      const client = await page.createCDPSession();
+      const pdfFolder = createFoldersAndGetName(kredinor.name, folderName, "KredinorPDF", "", false).replace(/[^\/\\]+$/, '');
+      await client.send('Page.setDownloadBehavior', {
+        behavior: 'allow',
+        downloadPath: pdfFolder
+      });
+      
+      await downloadButton.click();
+      console.log('Initiated download of closed cases PDF');
+      
+      // Wait for download to complete
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    } catch (error) {
+      console.log('Could not download closed cases PDF:', error.message);
+    }
+
   console.log("Debt List:", debtList);
   console.log("Creditor List:", creditorList);
   console.log("Saksnummer List:", saksnummerList);

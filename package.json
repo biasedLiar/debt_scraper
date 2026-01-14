@@ -21,10 +21,7 @@
     "prettier": "^3.7.4"
   },
   "dependencies": {
-    "canvas": "^3.2.1",
     "pdf-parse": "^2.4.5",
-    "pdf2json": "^4.0.1",
-    "pdfjs-dist": "^5.4.530",
     "puppeteer": "^24.29.1",
     "zod": "^4.1.12"
   }
