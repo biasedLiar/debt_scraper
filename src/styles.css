@@ -8,12 +8,30 @@ body {
   margin: 0;
   padding: 20px;
   font-family: sans-serif;
+  background-color: #F8FAFB;
 }
 
 h1 {
-  font-size: 32px;
+  font-size: 36px;
   margin-bottom: 10px;
-  color: darkslategray;
+  color: #2D5A67;
+}
+
+h2 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+
+h3 {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+hr {
+  border: none;
+  border-top: 2px solid #a9c5cf;
+  margin: 20px 0;
 }
 
 
@@ -23,11 +41,11 @@ h1 {
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  background-color: antiquewhite;
+  background-color: #a9c5cf;
   margin: 10px 10px 10px 0px;
 
   &:hover {
-    background-color: khaki;
+    background-color: #7B9EAB;
   }
 }
 
@@ -37,6 +55,14 @@ input {
   padding: 8px;
   font-size: 16px;
 }
+
+.national-id-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
 
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
@@ -48,9 +74,6 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
-.buttonDiv {
-  background-color: red;
-}
 
 .summary-container {
   display: flex;
@@ -65,22 +88,12 @@ input[type=number] {
   margin-top: 20px;
   border-radius: 8px;
   background-color: azure;
-
    &.ubetalt {
-    background-color:#ffb8b8;
-    border-color: #ff3535;
+    background-color:#c0d0d6;
+    border-color: #2D5A67;
 
     & .debt-item {
-      border-color: #ff6161;
-    }
-   }
-
-   &.ubetalt {
-    background-color:#ffb8b8;
-    border-color: #ff3535;
-
-    & .debt-item {
-      border-color: #ff6161;
+      border-color: #2D5A67;
     }
    }
 

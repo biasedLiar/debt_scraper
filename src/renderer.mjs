@@ -5,7 +5,7 @@
  * `contextIsolation` is turned on. Use the contextBridge API in `preload.js`
  * to expose Node.js functionality from the main process.
  */
-import { div, button, h1, h2, input, visualizeDebt, visualizeTotalDebts } from "./dom.mjs";
+import { div, button, h1, h2, hLine, input, visualizeDebt, visualizeTotalDebts } from "./dom.mjs";
 import { PUP } from "./scraper.mjs";
 import { savePage, createFoldersAndGetName, fileContainsNameOfUser, transferFilesAfterLogin } from "./utilities.mjs";
 import { U } from "./U.mjs";
@@ -151,6 +151,12 @@ export const setupPageHandlers = (page, nationalID) => {
     var pageName = (await page.title()).replace(/\s+/g, "_").toLowerCase();
     if (savePage(pageName)) {
       try {
+        // Skip requests that don't have a body (OPTIONS, failed requests, etc.)
+        if (r.request().method() === 'OPTIONS' || !r.ok()) {
+          console.log("Skipping non-OK or OPTIONS request");
+          return;
+        }
+        
         const data = await r.text();
         const isJson = U.isJson(data);
         const outerFolder = userName ? userName : nationalID;
@@ -234,9 +240,21 @@ const heading = h1("Gjeldshjelperen");
 const heading2 = h2(
   "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper", "main-subheading"
 );
+
+const hLine1 = hLine();
+const hLine2 = hLine();
+
+const nationalIdHeader = h2(
+  "Skriv inn fødselsnummer og trykk start applikasjon for å hente gjeld fra alle selskaper:", "main-subheading"
+);
+
+const heading3 = h2(
+  "Eller hent gjeld fra individuelle sider:", "main-subheading"
+);
+
 const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput", "number");
 
-const siButton = button("Gå til si", async (ev) => {
+const siButton = button("Statens Innkrevingssentral", async (ev) => {
   currentWebsite = "SI";
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   const validation = validateNationalID(nationalID);
@@ -301,7 +319,7 @@ const zolvaButton = button("Zolva AS", async (ev) => {
   await handleZolvaLogin(nationalID, setupPageHandlers);
 });
 
-const visitAllButton = button("Visit All Websites", async (ev) => {
+const visitAllButton = button("Start applikasjon", async (ev) => {
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   
   const validation = validateNationalID(nationalID);
@@ -312,7 +330,7 @@ const visitAllButton = button("Visit All Websites", async (ev) => {
 
   // Disable button during execution
   ev.target.disabled = true;
-  ev.target.innerText = "Visiting websites...";
+  ev.target.innerText = "Starter applikasjon...";
 
   const websites = [
     { name: "SI", handler: () => handleSILogin(nationalID, setupPageHandlers) },
@@ -386,8 +404,11 @@ nationalIdInput.addEventListener('keypress', (event) => {
   }
 });
 
+const nationalIdContainer = div({ class: "national-id-container" });
+nationalIdContainer.append(nationalIdInput);
+nationalIdContainer.append(visitAllButton);
+
 const buttonsContainer = div();
-buttonsContainer.append(visitAllButton);
 buttonsContainer.append(siButton);
 buttonsContainer.append(digipostButton);
 buttonsContainer.append(kredinorButton);
@@ -396,9 +417,13 @@ buttonsContainer.append(tfBankButton);
 buttonsContainer.append(praGroupButton);
 buttonsContainer.append(zolvaButton);
 document.body.append(heading);
-document.body.append(heading2);
-document.body.append(nationalIdInput);
+// document.body.append(heading2);
+// document.body.append(hLine1);
+document.body.append(nationalIdHeader);
+document.body.append(nationalIdContainer);
+document.body.append(heading3);
 document.body.append(buttonsContainer);
+document.body.append(hLine2);
 
 nationalIdInput.focus();
 

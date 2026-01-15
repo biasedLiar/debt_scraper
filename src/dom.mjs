@@ -62,6 +62,23 @@ export const h2 = (text, className) => {
 };
 
 /**
+ *
+ * @param text {string}
+ * @param class {string}
+ * @returns {HTMLHeadingElement}
+ */
+export const h3 = (text, className) => {
+  const element = document.createElement("h3");
+  element.textContent = text;
+  if (className) {
+    element.className = "h3 m-2 " + className;
+  } else {
+    element.className = "h3 m-2";
+  }
+  return element;
+};
+
+/**
  * @param {string} placeholder
  * @param {string} id
  * @param {string} [type]
@@ -74,6 +91,23 @@ export const input = (placeholder, id, type="text") => {
   inp.className = "form-control m-2";
   inp.type = type;
   return inp;
+};
+
+
+
+/**
+ *
+ * @param class {string}
+ * @returns {HTMLHeadingElement}
+ */
+export const hLine = (className) => {
+  const element = document.createElement("hr");
+  if (className) {
+    element.className = "hLine " + className;
+  } else {
+    element.className = "hLine";
+  }
+  return element;
 };
 
 
