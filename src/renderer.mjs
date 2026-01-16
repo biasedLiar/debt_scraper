@@ -167,6 +167,11 @@ export const setupPageHandlers = (page, nationalID) => {
     console.log(r.url());
     console.log(r.ok());
 
+    if (!(await page.title())) {
+      console.error("Current website not set, cannot save page");
+      return;
+    }
+    console.log("Page name for saving:", (await page.title()));
     var pageName = (await page.title()).replace(/\s+/g, "_").toLowerCase();
     if (savePage(pageName)) {
       try {

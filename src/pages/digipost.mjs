@@ -39,39 +39,16 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
   console.log("Waiting for Digipost inbox to load...");
   
   // Wait for message list to load (this implicitly waits for navigation to complete)
-  await page.waitForSelector('[aria-labelledby="message-label-3109957961"]', { 
-    timeout: 30000, 
+  // TODO dont hardcode single message
+  await page.waitForSelector('[aria-labelledby="message-label-3070544070"]', { 
     visible: true 
   });
-  
-//   console.log("Digipost inbox loaded successfully");
 
-// // Get all message links
-// const messageLinks = await page.$$eval('a.message-list-item__info[data-testid="document-attachment"]', links => 
-//     links.map(link => ({
-//         href: link.getAttribute('href'),
-//         sender: link.querySelector('.message-creator p')?.textContent?.trim(),
-//         subject: link.querySelector('.message-subject-content span')?.textContent?.trim(),
-//         date: link.querySelector('time')?.getAttribute('datetime')
-//     }))
-// );
-// console.log(`Found ${messageLinks.length} messages`);
-
-
-
-
-
-
-
-
-  console.log("Digipost inbox loaded successfully1");
-  
-// const button = await page.$('[aria-labelledby="message-label-3070544070"]');
-const button = await page.$('[aria-labelledby="message-label-3109957961"]');
+// TODO dont hardcode single message
+const button = await page.$('[aria-labelledby="message-label-3070544070"] .message-list-item__info');
 await button.click();
 
 
-  console.log("Digipost inbox loaded successfully2");
 
 await page.waitForSelector('[aria-label="Dokumenthandlinger"]', { 
   timeout: 30000, 
@@ -79,13 +56,13 @@ await page.waitForSelector('[aria-label="Dokumenthandlinger"]', {
 });
 
 const button2 = await page.$('[aria-label="Dokumenthandlinger"]');
+
 if (button2) {
   await button2.click();
 } else {
   console.error("Dokumenthandlinger button not found even after waiting");
 }
 
-  console.log("Digipost inbox loaded successfully3");
 
 const pdfFilePath = createFoldersAndGetName(digiPost.name, nationalID, "Digipost", "downloadedPDF", false);
 await page._client().send('Page.setDownloadBehavior', {behavior: 'allow', 
@@ -109,33 +86,6 @@ if (button3) {
 
 
 
-
-// data-testid="download-document"
-
-
-
-// const newPagePromise = new Promise(resolve => 
-//     browser.once('targetcreated', target => resolve(target))
-//   );
-
-
-// const button2 = await page.$('[data-testid="open-document"]');
-// if (button2) {
-//   await button2.click();
-// } else {
-//   console.error("Dokumenthandlinger button not found even after waiting");
-// }
-
-
-
-
-// console.log("Dokumenthandlinger1");
-  
-// const newPageTarget = await newPagePromise;
-// const newPage = await newPageTarget.page();
-
-// console.log("Dokumenthandlinger2");
-
 // const pdfFilePath = createFoldersAndGetName(digiPost.name, nationalID, "Digipost", "downloadedPDF", false);
 // await newPage._client().send('Page.setDownloadBehavior', {behavior: 'allow', 
 //   downloadPath: pdfFilePath});
@@ -144,13 +94,9 @@ if (button3) {
 //   timeout: 30000, 
 //   visible: true 
 // });
-// console.log("Dokumenthandlinger3");
 // const button3 = await newPage.$('#save');
-// console.log("Dokumenthandlinger4");
 // if (button3) {
-//   console.log("Dokumenthandlinger5");
 //   await button3.click();
-//   console.log("Dokumenthandlinger6");
 // } else {
 //   console.error("Dokumenthandlinger button not found even after waiting");
 // }
