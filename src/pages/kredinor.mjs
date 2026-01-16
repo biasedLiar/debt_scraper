@@ -16,8 +16,6 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   
   console.log(`Opened ${kredinor.name} at ${kredinor.url}`);
 
-  console.log("Starting Kredinor login process, at step 1");  
-
   const userName = getUserName();
   
   // Setup page handlers for saving responses
@@ -43,12 +41,9 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     throw new Error('Failed to find or click login button');
   }
   
-  
-  
-  await loginWithBankID(page, nationalID);
-  console.log("Starting Kredinor login process, at step 3");  
 
- 
+  await loginWithBankID(page, nationalID);
+
 
   await page.waitForSelector('.info-row-item-group', { timeout: 10000, visible: true }).catch(() => {
     console.log('No debt information found or page took too long to load');
@@ -56,7 +51,6 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   const [debtAmount, activeCases] = await page.$$eval('.info-row-item-title', els => 
     els.map(el => el.textContent.trim())
   );
-  console.log("Starting Kredinor login process, at step 5");  
 
 
   const folderName = userName ? userName : nationalID;

@@ -68,7 +68,7 @@ const showValidationError = (message) => {
   errorDiv.style.fontSize = '0.9rem';
   
   nationalIdInput.style.borderColor = 'red';
-  nationalIdInput.insertAdjacentElement('afterend', errorDiv);
+  nationalIdContainer.insertAdjacentElement('afterend', errorDiv);
   
   setTimeout(() => {
     errorDiv.remove();
@@ -238,8 +238,8 @@ di.innerText = "Hello World from dom!";
 
 const heading = h1("Gjeldshjelperen");
 const heading2 = h2(
-  "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper", "main-subheading"
-);
+  "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper", "main-subheading new-paragraph"
+)
 
 const hLine1 = hLine();
 const hLine2 = hLine();

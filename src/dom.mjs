@@ -50,14 +50,16 @@ export const h1 = (text, className) => {
 /**
  *
  * @param text {string}
- * @param class {string}
+ * @param className {string}
  * @returns {HTMLHeadingElement}
  */
 export const h2 = (text, className) => {
   const element = document.createElement("h2");
+  console.log("Creating h2 element with text:", className);
   element.textContent = text;
   if (className) {
     element.className = "h2 m-2 " + className;
+    console.log("Assigned className:", element.className);
   } else {
     element.className = "h2 m-2";
   }
