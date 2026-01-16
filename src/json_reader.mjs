@@ -108,3 +108,113 @@ export function convertListsToJson(debtList, creditorList, saksnummerList, credi
     return debts_unpaid;
 
 }
+
+/**
+ * Reads detailed debt info file and calculates sum of a specific field
+ * @param {string} filePath - Path to the detaileddebtinfo.json file
+ * @param {string} fieldName - The field name to sum (e.g., 'Forsinkelsesrenter', 'Hovedkrav', 'Omkostninger', 'Salær', 'Rettslig gebyr', 'Total saldo')
+ * @param {boolean} useStartsWith - If true, matches keys that start with fieldName (useful for 'Forsinkelsesrenter')
+ * @returns {number} Sum of all values for the specified field
+ */
+export function calculateFieldSum(filePath, fieldName, useStartsWith = false) {
+    try {
+        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        
+        if (!data.allDetailedInfo || !Array.isArray(data.allDetailedInfo)) {
+            console.log("No allDetailedInfo found in file");
+            return 0;
+        }
+
+        let sum = 0;
+        data.allDetailedInfo.forEach(item => {
+            let key;
+            if (useStartsWith) {
+                key = Object.keys(item).find(k => k.startsWith(fieldName));
+            } else {
+                key = Object.keys(item).find(k => k === fieldName);
+            }
+            
+            if (key) {
+                const value = parseFloat(item[key]);
+                if (!isNaN(value)) {
+                    sum += value;
+                }
+            }
+        });
+
+        console.log(`Total ${fieldName}:`, sum);
+        return sum;
+    } catch (error) {
+        console.error(`Error calculating ${fieldName} sum:`, error);
+        return 0;
+    }
+}
+
+// Convenience wrapper functions for backward compatibility
+export function calculateForsinkelsesrenterSum(filePath) {
+    return calculateFieldSum(filePath, 'Forsinkelsesrenter', true);
+}
+
+export function calculateHovedkravSum(filePath) {
+    return calculateFieldSum(filePath, 'Hovedkrav');
+}
+
+export function calculateOmkostningerSum(filePath) {
+    return calculateFieldSum(filePath, 'Omkostninger');
+}
+
+export function calculateSalærSum(filePath) {
+    return calculateFieldSum(filePath, 'Salær');
+}
+
+export function calculateRettsligGebyrSum(filePath) {
+    return calculateFieldSum(filePath, 'Rettslig gebyr');
+}
+
+export function calculateTotalSaldoSum(filePath) {
+    return calculateFieldSum(filePath, 'Total saldo');
+}
+
+/**
+ * Finds cases where Forsinkelsesrenter is above a threshold
+ * @param {string} filePath - Path to the detaileddebtinfo.json file
+ * @param {number} threshold - Minimum Forsinkelsesrenter value to filter
+ * @returns {Array} Array of cases with high Forsinkelsesrenter
+ */
+export function findHighForsinkelsesrenterCases(filePath, threshold = 20000) {
+    try {
+        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        
+        if (!data.allDetailedInfo || !Array.isArray(data.allDetailedInfo)) {
+            console.log("No allDetailedInfo found in file");
+            return [];
+        }
+
+        const highCases = [];
+        data.allDetailedInfo.forEach((item, index) => {
+            const forsinkelsesKey = Object.keys(item).find(key => 
+                key.startsWith('Forsinkelsesrenter')
+            );
+            
+            if (forsinkelsesKey) {
+                const value = parseFloat(item[forsinkelsesKey]);
+                if (!isNaN(value) && value > threshold) {
+                    highCases.push({
+                        caseNumber: index + 1,
+                        forsinkelsesrenter: value,
+                        hovedkrav: parseFloat(item.Hovedkrav) || 0,
+                        totalSaldo: parseFloat(item['Total saldo']) || 0,
+                        salær: parseFloat(item.Salær) || 0,
+                        rettsligGebyr: parseFloat(item['Rettslig gebyr']) || 0
+                    });
+                }
+            }
+        });
+
+        console.log(`Found ${highCases.length} cases with Forsinkelsesrenter above ${threshold}`);
+        return highCases;
+    } catch (error) {
+        console.error("Error finding high Forsinkelsesrenter cases:", error);
+        return [];
+    }
+}

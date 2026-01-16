@@ -34,7 +34,7 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers) {
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
-  await new Promise((r) => setTimeout(r, 5000)); // wait for 5 seconds
+ 
 
   return { browser, page };
 }

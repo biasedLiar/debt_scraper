@@ -21,11 +21,14 @@ export const div = (styles) => {
  * @param onClick {(this: GlobalEventHandlers, ev: MouseEvent) => any}
  * @returns {HTMLButtonElement}
  */
-export const button = (text, onClick) => {
+export const button = (text, onClick, className) => {
   const b = document.createElement("button");
   b.innerHTML = text;
   b.onclick = onClick;
   b.className = "btn btn-primary";
+  if (className) {
+    b.className += " " + className;
+  }
   return b;
 };
 
@@ -47,16 +50,35 @@ export const h1 = (text, className) => {
 /**
  *
  * @param text {string}
- * @param class {string}
+ * @param className {string}
  * @returns {HTMLHeadingElement}
  */
 export const h2 = (text, className) => {
   const element = document.createElement("h2");
+  console.log("Creating h2 element with text:", className);
   element.textContent = text;
   if (className) {
     element.className = "h2 m-2 " + className;
+    console.log("Assigned className:", element.className);
   } else {
     element.className = "h2 m-2";
+  }
+  return element;
+};
+
+/**
+ *
+ * @param text {string}
+ * @param class {string}
+ * @returns {HTMLHeadingElement}
+ */
+export const h3 = (text, className) => {
+  const element = document.createElement("h3");
+  element.textContent = text;
+  if (className) {
+    element.className = "h3 m-2 " + className;
+  } else {
+    element.className = "h3 m-2";
   }
   return element;
 };
@@ -74,6 +96,23 @@ export const input = (placeholder, id, type="text") => {
   inp.className = "form-control m-2";
   inp.type = type;
   return inp;
+};
+
+
+
+/**
+ *
+ * @param class {string}
+ * @returns {HTMLHeadingElement}
+ */
+export const hLine = (className) => {
+  const element = document.createElement("hr");
+  if (className) {
+    element.className = "hLine " + className;
+  } else {
+    element.className = "hLine";
+  }
+  return element;
 };
 
 

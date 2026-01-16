@@ -3,3 +3,5 @@ node_modules
 exports/
 extracted_data/
 src/detailedDebtConfig.js
+src/kladd
+src/structure

@@ -130,7 +130,7 @@ const intrum = createTargetPage(
   "Intrum"
 );
 
-const tfBank = createTargetPage("https://tfbank.no/", "tfBank");
+const tfBank = createTargetPage("https://minesider.tfbank.no/login", "tfBank");
 
 const praGroup = createTargetPage(
   "https://mypage.pragroup.no/",

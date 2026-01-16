@@ -13,7 +13,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
   console.log(`Opened ${digiPost.name} at ${digiPost.url}`);
 
   // Setup page handlers for saving responses
-  if (setupPageHandlers) {
+  if (setupPageHandlers) {Gjeldshjelperen
     setupPageHandlers(page, nationalID);
   }
 

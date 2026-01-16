@@ -16,6 +16,10 @@ export async function handleTfBankLogin(nationalID, setupPageHandlers) {
   if (setupPageHandlers) {
     setupPageHandlers(page, nationalID);
   }
+
+  // Click the BankID button
+  await page.waitForSelector('div.btn.authButton.NorwegianBankId');
+  await page.click('div.btn.authButton.NorwegianBankId');
  
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
