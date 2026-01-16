@@ -36,7 +36,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   }
   
   try {
-    await page.waitForSelector('button.login-button', { timeout: 10000 });
+    await page.waitForSelector('button.login-button', { visible: true, timeout: 10000 });
     await page.click('button.login-button');
   } catch (error) {
     console.error('Error clicking login button:', error.message);

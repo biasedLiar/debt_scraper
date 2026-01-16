@@ -21,11 +21,14 @@ export const div = (styles) => {
  * @param onClick {(this: GlobalEventHandlers, ev: MouseEvent) => any}
  * @returns {HTMLButtonElement}
  */
-export const button = (text, onClick) => {
+export const button = (text, onClick, className) => {
   const b = document.createElement("button");
   b.innerHTML = text;
   b.onclick = onClick;
   b.className = "btn btn-primary";
+  if (className) {
+    b.className += " " + className;
+  }
   return b;
 };
 

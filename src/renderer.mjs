@@ -245,7 +245,7 @@ const hLine1 = hLine();
 const hLine2 = hLine();
 
 const nationalIdHeader = h2(
-  "Skriv inn fødselsnummer og trykk start applikasjon for å hente gjeld fra alle selskaper:", "main-subheading"
+  "Skriv inn fødselsnummer og trykk start for å hente gjeld fra alle selskaper:", "main-subheading"
 );
 
 const heading3 = h2(
@@ -319,7 +319,7 @@ const zolvaButton = button("Zolva AS", async (ev) => {
   await handleZolvaLogin(nationalID, setupPageHandlers);
 });
 
-const visitAllButton = button("Start applikasjon", async (ev) => {
+const visitAllButton = button("Start", async (ev) => {
   const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   
   const validation = validateNationalID(nationalID);
@@ -347,7 +347,7 @@ const visitAllButton = button("Start applikasjon", async (ev) => {
       const site = websites[i];
       currentWebsite = site.name;
       
-      ev.target.innerText = `Visiting ${site.name} (${i + 1}/${websites.length})...`;
+      ev.target.innerText = `Besøker ${site.name} (${i + 1}/${websites.length})...`;
       console.log(`Starting visit to ${site.name}`);
       
       // Create a promise that will be resolved when scraping is complete
@@ -395,7 +395,7 @@ const visitAllButton = button("Start applikasjon", async (ev) => {
     ev.target.disabled = false;
     ev.target.innerText = "Visit All Websites";
   }
-});
+}, "main-start-button");
 
 // Add Enter key listener to nationalIdInput to trigger SI button
 nationalIdInput.addEventListener('keypress', (event) => {
