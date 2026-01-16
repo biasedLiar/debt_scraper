@@ -23,7 +23,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
 
   try {
       // Click the "Logg inn" button with id="signicatOIDC"
-      await page.waitForSelector('#signicatOIDC', { timeout: 10000 });
+      await page.waitForSelector('#signicatOIDC', { visible: true });
       await page.click('#signicatOIDC');
       console.log('Clicked "Logg inn" button');
     } catch (error) {
@@ -36,7 +36,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
   await loginWithBankID(page, nationalID);
 
 
-   await page.waitForSelector('.case-container, .debt-case, [class*="case"]', { timeout: 10000, visible: true }).catch(() => {
+   await page.waitForSelector('.case-container, .debt-case, [class*="case"]', { visible: true }).catch(() => {
     console.log('No debt cases found or page took too long to load');
   });
 
