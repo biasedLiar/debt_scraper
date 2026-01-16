@@ -19,7 +19,7 @@ import { PUP } from "./scraper.mjs";
 import {
   savePage,
   createFoldersAndGetName,
-  fileContainsNameOfUser,
+  fileKnownToContainName,
   transferFilesAfterLogin,
 } from "./utilities.mjs";
 import { U } from "./U.mjs";
@@ -199,7 +199,7 @@ export const setupPageHandlers = (page, nationalID) => {
           }
         });
 
-        if (fileContainsNameOfUser(filename)) {
+        if (fileKnownToContainName(filename)) {
           userName = JSON.parse(data).navn.replace(/[^a-zA-Z0-9æøåÆØÅ]/g, "_");
           const h1Element = document.body.querySelector("h1");
           //This is important for visit all websites, do not remove
@@ -392,7 +392,7 @@ const visitAllButton = button(
       {
         name: "Kredinor",
         handler: () =>
-          handleKredinorLogin(nationalID, () => userName, setupPageHandlers),
+          handleKredinorLogin(nationalID, () => userName, setupPageHandlers, scrapingCompleteCallback),
       },
       {
         name: "Intrum",

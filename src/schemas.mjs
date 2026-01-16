@@ -61,8 +61,8 @@ export const IntrumDetailedCaseSchema = z.object({
  * Schema for Kredinor manually found debt
  */
 export const KredinorManualDebtSchema = z.object({
-  debtAmount: z.string(),
-  activeCases: z.string(),
+  debtAmount: z.number(),
+  activeCases: z.int(),
   timestamp: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid ISO 8601 datetime string",
   }),
@@ -107,8 +107,8 @@ export const saveValidatedJSON = async (filePath, data, schema) => {
     const error = validatedData.error;
     console.log("Validation error data:", data);
     console.log("Validation error:", error);
-    console.error("❌ Validation error:", error.issues);
-    console.error("Failed to validate data for:", filePath);
+    console.warn("❌ Validation error:", error.issues);
+    console.warn("Failed to validate data for:", filePath);
 
     // Save anyway but with _unvalidated suffix for debugging
     const unvalidatedPath = filePath.replace(".json", "_unvalidated.json");
@@ -119,7 +119,7 @@ export const saveValidatedJSON = async (filePath, data, schema) => {
     );
     console.log(`⚠️  Saved unvalidated data to ${unvalidatedPath}`);
     console.log("About to write following");
-    console.log(error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join(", "));
+    console.warn(error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join(", "));
 
     return {
       success: false,

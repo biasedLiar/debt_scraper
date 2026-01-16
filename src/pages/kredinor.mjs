@@ -18,7 +18,8 @@ const fs = require("fs/promises");
 export async function handleKredinorLogin(
   nationalID,
   getUserName,
-  setupPageHandlers
+  setupPageHandlers,
+  scrapingCompleteCallback
 ) {
   const { browser, page } = await PUP.openPage(kredinor.url);
 
@@ -28,6 +29,7 @@ export async function handleKredinorLogin(
 
   // Setup page handlers for saving responses
   if (setupPageHandlers) {
+    console.log("Setting up page handlers for Kredinor");
     setupPageHandlers(page, nationalID);
   }
 
@@ -55,10 +57,21 @@ export async function handleKredinorLogin(
     .catch(() => {
       console.log("No debt information found or page took too long to load");
     });
-  const [debtAmount, activeCases] = await page.$$eval(
+  const [debtAmountString, activeCasesString] = await page.$$eval(
     ".info-row-item-title",
     (els) => els.map((el) => el.textContent.trim())
   );
+
+  const debtAmount = debtAmountString ? parseFloat(debtAmountString.replace(/[^0-9.-]+/g,"")) : 0.0;  
+  const activeCases = activeCasesString ? parseInt(activeCasesString.replace(/[^0-9]+/g,"")) : 0;
+
+  //   const infoRowItems = await page.$$eval(
+  //   ".info-row-item-title",
+  //   (els) => els.map((el) => el.textContent.trim())
+  // );
+
+  // const debtAmount = infoRowItems[0] ? parseFloat(infoRowItems[0].replace(/[^0-9.-]+/g,"")) : 0.0;  
+  // const activeCases = infoRowItems[1] ? parseInt(infoRowItems[1].replace(/[^0-9]+/g,"")) : 0;
 
   const folderName = userName ? userName : nationalID;
   const filePath = createFoldersAndGetName(
@@ -70,14 +83,9 @@ export async function handleKredinorLogin(
   );
   console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
   const data = { debtAmount, activeCases, timestamp: new Date().toISOString() };
-  console.log(`Debt amount raw: ${data}`);
-  await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);
-  console.log(`Debt amount: ${debtAmount}`);
-  console.log(`Active cases: ${activeCases}`);
+  console.log(`Debt amount raw: ${data.debtAmount}, active cases raw: ${data.activeCases}`);
+  const { success, error } = await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);
 
-  const newPagePromise = browser.waitForTarget(
-    (target) => target.opener() === page
-  );
 
   const pdfFilePath = createFoldersAndGetName(
     kredinor.name,
@@ -94,6 +102,20 @@ export async function handleKredinorLogin(
     });
 
   const button = await page.$(".pdf-attachment-btn");
+
+  if (!button) {
+    console.log("No PDF attachment button found");  
+    // Signal that scraping is complete for this website
+    console.log("Scraping complete, signaling callback...");
+    setTimeout(() => scrapingCompleteCallback(), 2000); // Small delay to ensure all data is processed
+    return { browser, page };
+  }
+
+  
+  const newPagePromise = browser.waitForTarget(
+    (target) => target.opener() === page
+  );
+
   await button.click();
 
   const newPageTarget = await newPagePromise;
