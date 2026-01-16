@@ -19,13 +19,10 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers) {
 
   // Wait for and click the login button
   try {
-    await page.waitForSelector(
-      "button.c-btn.c-btn--variant-nets.mb-1",
-      { timeout: 5000 }
-    );
-    await page.click(
-      "button.c-btn.c-btn--variant-nets.mb-1"
-    );
+    await page.waitForSelector("button.c-btn.c-btn--variant-nets.mb-1", {
+      timeout: 5000,
+    });
+    await page.click("button.c-btn.c-btn--variant-nets.mb-1");
     console.log("Clicked BankID login button");
   } catch (e) {
     console.error("Could not find/click button:", e);
@@ -33,8 +30,6 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers) {
 
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
-
- 
 
   return { browser, page };
 }

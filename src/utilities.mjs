@@ -1,5 +1,5 @@
 const fs = require("fs");
-const path = require('path');
+const path = require("path");
 
 /**
  * @param {string} [pageName]
@@ -114,7 +114,11 @@ export const createFoldersAndGetName = (
         "/not_json"
     );
   }
-  const url_name = url.replace("https://", "").replace(".json", "").replace(/[^a-zA-Z0-9.]/g, "_").toLowerCase();
+  const url_name = url
+    .replace("https://", "")
+    .replace(".json", "")
+    .replace(/[^a-zA-Z0-9.]/g, "_")
+    .toLowerCase();
   let dirname =
     "./exports/" +
     name +
@@ -136,7 +140,12 @@ export const createFoldersAndGetName = (
  * @param {string} [currentWebsite]
  * @param {string} [nationalId]
  */
-export const transferFilesAfterLogin = (pageName, name, currentWebsite, nationalId) => {
+export const transferFilesAfterLogin = (
+  pageName,
+  name,
+  currentWebsite,
+  nationalId
+) => {
   var dateObj = new Date();
   const month = (dateObj.getUTCMonth() + 1).toString().padStart(2, "0");
   const day = dateObj.getUTCDate().toString().padStart(2, "0");
@@ -168,16 +177,61 @@ export const transferFilesAfterLogin = (pageName, name, currentWebsite, national
     fs.mkdirSync("./exports/" + name + "/" + newDate);
   }
 
-  if (!fs.existsSync("./exports/" + name + "/" + newDate + "/" + currentWebsite)) {
+  if (
+    !fs.existsSync("./exports/" + name + "/" + newDate + "/" + currentWebsite)
+  ) {
     fs.mkdirSync("./exports/" + name + "/" + newDate + "/" + currentWebsite);
   }
 
-  if (!fs.existsSync("./exports/" + name + "/" + newDate + "/" + currentWebsite + "/" + pageName)) {
-    fs.mkdirSync("./exports/" + name + "/" + newDate + "/" + currentWebsite + "/" + pageName);
+  if (
+    !fs.existsSync(
+      "./exports/" +
+        name +
+        "/" +
+        newDate +
+        "/" +
+        currentWebsite +
+        "/" +
+        pageName
+    )
+  ) {
+    fs.mkdirSync(
+      "./exports/" +
+        name +
+        "/" +
+        newDate +
+        "/" +
+        currentWebsite +
+        "/" +
+        pageName
+    );
   }
 
-  if (!fs.existsSync("./exports/" + name + "/" + newDate + "/" + currentWebsite + "/" + pageName + "/" + "not_json")) {
-    fs.mkdirSync("./exports/" + name + "/" + newDate + "/" + currentWebsite + "/" + pageName + "/not_json");
+  if (
+    !fs.existsSync(
+      "./exports/" +
+        name +
+        "/" +
+        newDate +
+        "/" +
+        currentWebsite +
+        "/" +
+        pageName +
+        "/" +
+        "not_json"
+    )
+  ) {
+    fs.mkdirSync(
+      "./exports/" +
+        name +
+        "/" +
+        newDate +
+        "/" +
+        currentWebsite +
+        "/" +
+        pageName +
+        "/not_json"
+    );
   }
 
   let sourceDir =
@@ -190,7 +244,6 @@ export const transferFilesAfterLogin = (pageName, name, currentWebsite, national
     "/" +
     pageName +
     "/";
-
 
   let destDir =
     "./exports/" +
@@ -228,16 +281,14 @@ export const transferFilesAfterLogin = (pageName, name, currentWebsite, national
     "/not_json/";
 
   moveFiles(sourceDir, destDir);
-
-  
 };
 
 export function moveFiles(sourceDir, destDir) {
   try {
     fs.readdir(sourceDir, (err, files) => {
-    if (err) throw err;
+      if (err) throw err;
 
-      files.forEach(file => {
+      files.forEach((file) => {
         const sourcePath = path.join(sourceDir, file);
         const destPath = path.join(destDir, file);
 
@@ -260,6 +311,7 @@ export function moveFiles(sourceDir, destDir) {
  * @returns {boolean}
  */
 export function fileContainsNameOfUser(name) {
-  return name.includes("skatt.skatteetaten.no_api_mii_skyldnerportal_om_meg_api_v1_basisinfo.json");
+  return name.includes(
+    "skatt.skatteetaten.no_api_mii_skyldnerportal_om_meg_api_v1_basisinfo.json"
+  );
 }
-

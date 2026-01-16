@@ -9,18 +9,18 @@ import { loginWithBankID } from "./bankid-login.mjs";
  */
 export async function handleTfBankLogin(nationalID, setupPageHandlers) {
   const { browser, page } = await PUP.openPage(tfBank.url);
-  
+
   console.log(`Opened ${tfBank.name} at ${tfBank.url}`);
-  
+
   // Setup page handlers for saving responses
   if (setupPageHandlers) {
     setupPageHandlers(page, nationalID);
   }
 
   // Click the BankID button
-  await page.waitForSelector('div.btn.authButton.NorwegianBankId');
-  await page.click('div.btn.authButton.NorwegianBankId');
- 
+  await page.waitForSelector("div.btn.authButton.NorwegianBankId");
+  await page.click("div.btn.authButton.NorwegianBankId");
+
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 

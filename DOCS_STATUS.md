@@ -92,6 +92,7 @@ docs/
 Følgende dokumenter bør opprettes for fullstendig dokumentasjon:
 
 ### User Guide
+
 - `user-guide/overview.md` - Brukerguide oversikt
 - `user-guide/authentication.md` - BankID og autentisering
 - `user-guide/data-collection.md` - Datainnsamlingsprosess
@@ -99,11 +100,13 @@ Følgende dokumenter bør opprettes for fullstendig dokumentasjon:
 - `user-guide/data-export.md` - Eksport og bruk av data
 
 ### Architecture
+
 - `architecture/components.md` - Detaljert komponentbeskrivelse
 - `architecture/data-flow.md` - Dataflytdiagrammer
 - `architecture/file-structure.md` - Filsystemoversikt
 
 ### Developer Guide
+
 - `developer-guide/setup.md` - Utviklingsmiljø
 - `developer-guide/code-standards.md` - Kodestandard
 - `developer-guide/adding-creditor.md` - Legge til ny kreditor
@@ -111,12 +114,14 @@ Følgende dokumenter bør opprettes for fullstendig dokumentasjon:
 - `developer-guide/debugging.md` - Debugging-tips
 
 ### API Reference
+
 - `api/scraper.md` - Scraper API dokumentasjon
 - `api/schemas.md` - Zod schema dokumentasjon
 - `api/creditor-scrapers.md` - Kreditor-spesifikke API-er
 - `api/utilities.md` - Hjelpefunksjoner
 
 ### Creditors
+
 - `creditors/supported.md` - Oversikt over kreditorer
 - `creditors/intrum.md` - Intrum-dokumentasjon
 - `creditors/kredinor.md` - Kredinor-dokumentasjon
@@ -125,11 +130,13 @@ Følgende dokumenter bør opprettes for fullstendig dokumentasjon:
 - `creditors/digipost.md` - Digipost-dokumentasjon
 
 ### Security
+
 - `security/privacy.md` - Personvern og datasikkerhet
 - `security/data-handling.md` - Datahåndtering
 - `security/best-practices.md` - Beste praksis
 
 ### Contributing
+
 - `contributing/code-contributions.md` - Guide for kodebidrag
 - `contributing/bug-reports.md` - Rapportere bugs
 
@@ -140,7 +147,7 @@ Følgende dokumenter bør opprettes for fullstendig dokumentasjon:
 Dokumentasjonen støtter:
 
 - ✅ **Admonitions**: `!!! note`, `!!! warning`, `!!! tip`
-- ✅ **Code highlighting**: ```javascript, ```python, ```bash
+- ✅ **Code highlighting**: `javascript, `python, ```bash
 - ✅ **Tabs**: `=== "Windows"` for plattform-spesifikt innhold
 - ✅ **Icons**: `:material-icon:`, `:fontawesome-brands-github:`
 - ✅ **Tables**: Markdown tabeller
@@ -152,20 +159,20 @@ Dokumentasjonen støtter:
 
 ```markdown
 !!! warning "Viktig sikkerhetsinformasjon"
-    Denne applikasjonen håndterer sensitive data. Pass på at maskinen din er sikret.
+Denne applikasjonen håndterer sensitive data. Pass på at maskinen din er sikret.
 ```
 
 #### Faner (tabs)
 
 ```markdown
 === "Windows"
-    Windows-spesifikk instruksjon her
+Windows-spesifikk instruksjon her
 
 === "macOS"
-    macOS-spesifikk instruksjon her
+macOS-spesifikk instruksjon her
 
 === "Linux"
-    Linux-spesifikk instruksjon her
+Linux-spesifikk instruksjon her
 ```
 
 #### Mermaid diagram
@@ -221,6 +228,7 @@ pip install -r docs/requirements.txt
 Dokumentasjonen kan publiseres til:
 
 1. **GitHub Pages** (anbefalt)
+
    ```bash
    npm run docs:deploy
    ```
@@ -253,6 +261,7 @@ Dokumentasjonen kan publiseres til:
 **Status:** 📊 Ca. 40% fullført (10/24 dokumenter)
 
 **Prioritet:**
+
 1. Fullfør User Guide
 2. Fullfør API Reference
 3. Fullfør Developer Guide

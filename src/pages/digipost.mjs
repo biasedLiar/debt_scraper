@@ -13,7 +13,8 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
   console.log(`Opened ${digiPost.name} at ${digiPost.url}`);
 
   // Setup page handlers for saving responses
-  if (setupPageHandlers) {Gjeldshjelperen
+  if (setupPageHandlers) {
+    Gjeldshjelperen;
     setupPageHandlers(page, nationalID);
   }
 
@@ -34,23 +35,29 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
+  // Wait for message list to load
+  await page.waitForSelector(
+    'a.message-list-item__info[data-testid="document-attachment"]',
+    { timeout: 10000 }
+  );
 
-// Wait for message list to load
-await page.waitForSelector('a.message-list-item__info[data-testid="document-attachment"]', { timeout: 10000 });
+  // Get all message links
+  const messageLinks = await page.$$eval(
+    'a.message-list-item__info[data-testid="document-attachment"]',
+    (links) =>
+      links.map((link) => ({
+        href: link.getAttribute("href"),
+        sender: link.querySelector(".message-creator p")?.textContent?.trim(),
+        subject: link
+          .querySelector(".message-subject-content span")
+          ?.textContent?.trim(),
+        date: link.querySelector("time")?.getAttribute("datetime"),
+      }))
+  );
 
-// Get all message links
-const messageLinks = await page.$$eval('a.message-list-item__info[data-testid="document-attachment"]', links => 
-    links.map(link => ({
-        href: link.getAttribute('href'),
-        sender: link.querySelector('.message-creator p')?.textContent?.trim(),
-        subject: link.querySelector('.message-subject-content span')?.textContent?.trim(),
-        date: link.querySelector('time')?.getAttribute('datetime')
-    }))
-);
+  console.log(`Found ${messageLinks.length} messages`);
 
-console.log(`Found ${messageLinks.length} messages`);
-
-/* WIP
+  /* WIP
 
 // Visit each message and extract information
 for (const message of messageLinks) {
@@ -76,6 +83,4 @@ for (const message of messageLinks) {
     }
 } */
   return { browser, page };
-
-
 }

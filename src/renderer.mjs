@@ -5,9 +5,23 @@
  * `contextIsolation` is turned on. Use the contextBridge API in `preload.js`
  * to expose Node.js functionality from the main process.
  */
-import { div, button, h1, h2, hLine, input, visualizeDebt, visualizeTotalDebts } from "./dom.mjs";
+import {
+  div,
+  button,
+  h1,
+  h2,
+  hLine,
+  input,
+  visualizeDebt,
+  visualizeTotalDebts,
+} from "./dom.mjs";
 import { PUP } from "./scraper.mjs";
-import { savePage, createFoldersAndGetName, fileContainsNameOfUser, transferFilesAfterLogin } from "./utilities.mjs";
+import {
+  savePage,
+  createFoldersAndGetName,
+  fileContainsNameOfUser,
+  transferFilesAfterLogin,
+} from "./utilities.mjs";
 import { U } from "./U.mjs";
 import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
@@ -38,15 +52,15 @@ try {
  */
 const validateNationalID = (nationalID) => {
   const trimmed = nationalID.trim();
-  
+
   if (!trimmed) {
     return { valid: false, error: "Fødselsnummer er påkrevd" };
   }
-  
+
   if (trimmed.length !== 11) {
     return { valid: false, error: "Fødselsnummer må være nøyaktig 11 siffer" };
   }
-  
+
   return { valid: true };
 };
 
@@ -55,24 +69,24 @@ const validateNationalID = (nationalID) => {
  * @param {string} message - Error message to display
  */
 const showValidationError = (message) => {
-  const existingError = document.querySelector('.validation-error');
+  const existingError = document.querySelector(".validation-error");
   if (existingError) {
     existingError.remove();
   }
-  
-  const errorDiv = document.createElement('div');
-  errorDiv.className = 'validation-error';
+
+  const errorDiv = document.createElement("div");
+  errorDiv.className = "validation-error";
   errorDiv.textContent = message;
-  errorDiv.style.color = 'red';
-  errorDiv.style.marginLeft = '0.5rem';
-  errorDiv.style.fontSize = '0.9rem';
-  
-  nationalIdInput.style.borderColor = 'red';
-  nationalIdContainer.insertAdjacentElement('afterend', errorDiv);
-  
+  errorDiv.style.color = "red";
+  errorDiv.style.marginLeft = "0.5rem";
+  errorDiv.style.fontSize = "0.9rem";
+
+  nationalIdInput.style.borderColor = "red";
+  nationalIdContainer.insertAdjacentElement("afterend", errorDiv);
+
   setTimeout(() => {
     errorDiv.remove();
-    nationalIdInput.style.borderColor = '';
+    nationalIdInput.style.borderColor = "";
   }, 4000);
 };
 
@@ -84,7 +98,6 @@ const offlineMode = false;
 const offlineSIFile = "";
 const offlineKredinorFile = "";
 
- 
 let currentWebsite = null;
 let userName = null;
 let totalDebtAmount = 0;
@@ -92,16 +105,15 @@ let scrapingCompleteCallback = null; // Callback to signal scraping is done
 
 const foundUnpaidDebts = {
   foundCreditors: [],
-  totalAmount: 0, 
-  debts: {}
-}
+  totalAmount: 0,
+  debts: {},
+};
 
 const foundPaidDebts = {
   foundCreditors: [],
-  totalAmount: 0, 
-  debts: {}
-}
-
+  totalAmount: 0,
+  debts: {},
+};
 
 /**
  * @param {DebtCollection} debtData
@@ -110,19 +122,26 @@ const displayDebtData = (debtData) => {
   if (debtData.totalAmount <= 0) {
     return;
   }
-  
-  if (!foundUnpaidDebts.foundCreditors.includes(debtData.creditSite) && debtData.isCurrent) {
+
+  if (
+    !foundUnpaidDebts.foundCreditors.includes(debtData.creditSite) &&
+    debtData.isCurrent
+  ) {
     foundUnpaidDebts.foundCreditors.push(debtData.creditSite);
     foundUnpaidDebts.totalAmount += debtData.totalAmount;
     foundUnpaidDebts.debts[debtData.creditSite] = debtData;
 
     const debtUnpaidVisualization = visualizeDebt(debtData);
     summaryDiv.append(debtUnpaidVisualization);
-    
-    document.body.querySelector(".total-debt-amount").innerText = foundUnpaidDebts.totalAmount.toLocaleString('no-NO') + " kr";
+
+    document.body.querySelector(".total-debt-amount").innerText =
+      foundUnpaidDebts.totalAmount.toLocaleString("no-NO") + " kr";
   }
 
-  if (!foundPaidDebts.foundCreditors.includes(debtData.creditSite) && !debtData.isCurrent) {
+  if (
+    !foundPaidDebts.foundCreditors.includes(debtData.creditSite) &&
+    !debtData.isCurrent
+  ) {
     foundPaidDebts.foundCreditors.push(debtData.creditSite);
     foundPaidDebts.totalAmount += debtData.totalAmount;
     foundPaidDebts.debts[debtData.creditSite] = debtData;
@@ -131,7 +150,7 @@ const displayDebtData = (debtData) => {
       summaryDiv.append(debtPaidVisualization);
     }
   }
-}
+};
 
 /**
  * Sets up page response handlers to save JSON data
@@ -152,16 +171,22 @@ export const setupPageHandlers = (page, nationalID) => {
     if (savePage(pageName)) {
       try {
         // Skip requests that don't have a body (OPTIONS, failed requests, etc.)
-        if (r.request().method() === 'OPTIONS' || !r.ok()) {
+        if (r.request().method() === "OPTIONS" || !r.ok()) {
           console.log("Skipping non-OK or OPTIONS request");
           return;
         }
-        
+
         const data = await r.text();
         const isJson = U.isJson(data);
         const outerFolder = userName ? userName : nationalID;
-        const filename = createFoldersAndGetName(pageName, outerFolder, currentWebsite, r.url(), isJson);
-        
+        const filename = createFoldersAndGetName(
+          pageName,
+          outerFolder,
+          currentWebsite,
+          r.url(),
+          isJson
+        );
+
         console.log("Response data length:", data);
         fs.writeFile(filename, data, function (err) {
           if (err) {
@@ -174,24 +199,39 @@ export const setupPageHandlers = (page, nationalID) => {
           const h1Element = document.body.querySelector("h1");
           //This is important for visit all websites, do not remove
           if (h1Element) {
-            h1Element.innerText = "Gjeldshjelper for " + userName.replaceAll("_", " ");
+            h1Element.innerText =
+              "Gjeldshjelper for " + userName.replaceAll("_", " ");
           }
-          transferFilesAfterLogin(pageName, userName, currentWebsite, nationalID);
+          transferFilesAfterLogin(
+            pageName,
+            userName,
+            currentWebsite,
+            nationalID
+          );
         }
 
         if (isJson && JSON.parse(data).krav !== undefined) {
-          
-          const { debts_paid, debts_unpaid } = read_json(currentWebsite, JSON.parse(data).krav);
+          const { debts_paid, debts_unpaid } = read_json(
+            currentWebsite,
+            JSON.parse(data).krav
+          );
           displayDebtData(debts_unpaid);
           displayDebtData(debts_paid);
-      
+
           if (offlineMode) {
             const doucment2 = offlineKredinorFile;
-            const { debtList, creditorList, saksnummerList } = require(doucment2);
-            const debts_unpaid2 = convertListsToJson(debtList, creditorList, saksnummerList, "Kredinor");
-            displayDebtData(debts_unpaid2);       
+            const { debtList, creditorList, saksnummerList } = require(
+              doucment2
+            );
+            const debts_unpaid2 = convertListsToJson(
+              debtList,
+              creditorList,
+              saksnummerList,
+              "Kredinor"
+            );
+            displayDebtData(debts_unpaid2);
           }
-          
+
           // Signal that scraping is complete for this website
           if (scrapingCompleteCallback) {
             console.log("Scraping complete, signaling callback...");
@@ -221,10 +261,9 @@ const openPage = async (url) => {
   setupPageHandlers(page, nationalID);
 };
 
-
 const tfBankButton = button("tfBank", async (ev) => {
   currentWebsite = "tfBank";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   const validation = validateNationalID(nationalID);
   if (!validation.valid) {
     showValidationError(validation.error);
@@ -238,21 +277,28 @@ di.innerText = "Hello World from dom!";
 
 const heading = h1("Gjeldshjelperen");
 const heading2 = h2(
-  "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper", "main-subheading new-paragraph"
-)
+  "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper",
+  "main-subheading new-paragraph"
+);
 
 const hLine1 = hLine();
 const hLine2 = hLine();
 
 const nationalIdHeader = h2(
-  "Skriv inn fødselsnummer og trykk start for å hente gjeld fra alle selskaper:", "main-subheading"
+  "Skriv inn fødselsnummer og trykk start for å hente gjeld fra alle selskaper:",
+  "main-subheading"
 );
 
 const heading3 = h2(
-  "Eller hent gjeld fra individuelle sider:", "main-subheading"
+  "Eller hent gjeld fra individuelle sider:",
+  "main-subheading"
 );
 
-const nationalIdInput = input("Skriv inn fødselsnummer", "nationalIdInput", "number");
+const nationalIdInput = input(
+  "Skriv inn fødselsnummer",
+  "nationalIdInput",
+  "number"
+);
 
 const siButton = button("Statens Innkrevingssentral", async (ev) => {
   currentWebsite = "SI";
@@ -288,7 +334,7 @@ const intrumButton = button("Intrum", async (ev) => {
 
 const kredinorButton = button("Kredinor", async (ev) => {
   currentWebsite = "Kredinor";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   const validation = validateNationalID(nationalID);
   if (!validation.valid) {
     showValidationError(validation.error);
@@ -297,10 +343,9 @@ const kredinorButton = button("Kredinor", async (ev) => {
   await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
 });
 
-
 const praGroupButton = button("PRA Group", async (ev) => {
   currentWebsite = "PRA Group";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   const validation = validateNationalID(nationalID);
   if (!validation.valid) {
     showValidationError(validation.error);
@@ -308,9 +353,9 @@ const praGroupButton = button("PRA Group", async (ev) => {
   }
   await handlePraGroupLogin(nationalID, setupPageHandlers);
 });
-const zolvaButton = button("Zolva AS", async (ev) => { 
+const zolvaButton = button("Zolva AS", async (ev) => {
   currentWebsite = "Zolva AS";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
+  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
   const validation = validateNationalID(nationalID);
   if (!validation.valid) {
     showValidationError(validation.error);
@@ -319,82 +364,107 @@ const zolvaButton = button("Zolva AS", async (ev) => {
   await handleZolvaLogin(nationalID, setupPageHandlers);
 });
 
-const visitAllButton = button("Start", async (ev) => {
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-  
-  const validation = validateNationalID(nationalID);
-  if (!validation.valid) {
-    showValidationError(validation.error);
-    return;
-  }
+const visitAllButton = button(
+  "Start",
+  async (ev) => {
+    const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
 
-  // Disable button during execution
-  ev.target.disabled = true;
-  ev.target.innerText = "Starter applikasjon...";
-
-  const websites = [
-    { name: "SI", handler: () => handleSILogin(nationalID, setupPageHandlers) },
-    { name: "Kredinor", handler: () => handleKredinorLogin(nationalID, ()=>userName, setupPageHandlers) },
-    { name: "Intrum", handler: () => handleIntrumLogin(nationalID, setupPageHandlers) },
-    { name: "Digipost", handler: () => handleDigipostLogin(nationalID, setupPageHandlers) },
-    { name: "tfBank", handler: () => handleTfBankLogin(nationalID, setupPageHandlers) },
-    { name: "PRA Group", handler: () => handlePraGroupLogin(nationalID, setupPageHandlers) },
-    { name: "Zolva AS", handler: () => handleZolvaLogin(nationalID, setupPageHandlers) }
-  ];
-
-  try {
-    for (let i = 0; i < websites.length; i++) {
-      const site = websites[i];
-      currentWebsite = site.name;
-      
-      ev.target.innerText = `Besøker ${site.name} (${i + 1}/${websites.length})...`;
-      console.log(`Starting visit to ${site.name}`);
-      
-      // Create a promise that will be resolved when scraping is complete
-      const scrapingPromise = new Promise((resolve) => {
-        scrapingCompleteCallback = resolve;
-
-      });
-      
-      // Open the website and do the scraping
-      await site.handler();
-      
-      // Wait for scraping to complete (signaled by the callback)
-      console.log(`Waiting for ${site.name} scraping to complete...`);
-      await scrapingPromise;
-      
-      // Reset callback
-      scrapingCompleteCallback = null;
-      
-      // Close the browser automatically
-      console.log(`Closing ${site.name} browser...`);
-      await PUP.closeBrowser();
-      
-      // Small delay between websites
-      await new Promise(resolve => setTimeout(resolve, 2000));
+    const validation = validateNationalID(nationalID);
+    if (!validation.valid) {
+      showValidationError(validation.error);
+      return;
     }
-    
-    alert("Finished visiting all websites!");
-  } catch (error) {
-    console.error("Error during website visits:", error);
-    alert("An error occurred. Check console for details.");
-    // Clean up
-    scrapingCompleteCallback = null;
+
+    // Disable button during execution
+    ev.target.disabled = true;
+    ev.target.innerText = "Starter applikasjon...";
+
+    const websites = [
+      {
+        name: "SI",
+        handler: () => handleSILogin(nationalID, setupPageHandlers),
+      },
+      {
+        name: "Kredinor",
+        handler: () =>
+          handleKredinorLogin(nationalID, () => userName, setupPageHandlers),
+      },
+      {
+        name: "Intrum",
+        handler: () => handleIntrumLogin(nationalID, setupPageHandlers),
+      },
+      {
+        name: "Digipost",
+        handler: () => handleDigipostLogin(nationalID, setupPageHandlers),
+      },
+      {
+        name: "tfBank",
+        handler: () => handleTfBankLogin(nationalID, setupPageHandlers),
+      },
+      {
+        name: "PRA Group",
+        handler: () => handlePraGroupLogin(nationalID, setupPageHandlers),
+      },
+      {
+        name: "Zolva AS",
+        handler: () => handleZolvaLogin(nationalID, setupPageHandlers),
+      },
+    ];
+
     try {
-      await PUP.closeBrowser();
-    } catch (e) {
-      console.error("Error closing browser:", e);
+      for (let i = 0; i < websites.length; i++) {
+        const site = websites[i];
+        currentWebsite = site.name;
+
+        ev.target.innerText = `Besøker ${site.name} (${i + 1}/${websites.length})...`;
+        console.log(`Starting visit to ${site.name}`);
+
+        // Create a promise that will be resolved when scraping is complete
+        const scrapingPromise = new Promise((resolve) => {
+          scrapingCompleteCallback = resolve;
+        });
+
+        // Open the website and do the scraping
+        await site.handler();
+
+        // Wait for scraping to complete (signaled by the callback)
+        console.log(`Waiting for ${site.name} scraping to complete...`);
+        await scrapingPromise;
+
+        // Reset callback
+        scrapingCompleteCallback = null;
+
+        // Close the browser automatically
+        console.log(`Closing ${site.name} browser...`);
+        await PUP.closeBrowser();
+
+        // Small delay between websites
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+
+      alert("Finished visiting all websites!");
+    } catch (error) {
+      console.error("Error during website visits:", error);
+      alert("An error occurred. Check console for details.");
+      // Clean up
+      scrapingCompleteCallback = null;
+      try {
+        await PUP.closeBrowser();
+      } catch (e) {
+        console.error("Error closing browser:", e);
+      }
+    } finally {
+      // Re-enable button
+      ev.target.disabled = false;
+      ev.target.innerText = "Start";
     }
-  } finally {
-    // Re-enable button
-    ev.target.disabled = false;
-    ev.target.innerText = "Visit All Websites";
-  }
-}, "main-start-button");
+  },
+  "main-start-button"
+);
 
 // Add Enter key listener to nationalIdInput to trigger SI button
-nationalIdInput.addEventListener('keypress', (event) => {
-  if (event.key === 'Enter') {
+nationalIdInput.addEventListener("keypress", (event) => {
+  if (event.key === "Enter") {
     visitAllButton.click();
   }
 });
@@ -422,7 +492,9 @@ document.body.append(hLine2);
 
 nationalIdInput.focus();
 
-const totalVisualization = visualizeTotalDebts(totalDebtAmount.toLocaleString('no-NO') + " kr");
+const totalVisualization = visualizeTotalDebts(
+  totalDebtAmount.toLocaleString("no-NO") + " kr"
+);
 document.body.append(totalVisualization);
 
 // Display all detailed debt info sums if available
@@ -431,17 +503,21 @@ displayDetailedDebtInfo(detailedDebtConfig);
 const summaryDiv = div({ class: "summary-container" });
 
 if (offlineMode) {
-  const doucment = offlineSIFile
+  const doucment = offlineSIFile;
   const data = require(doucment);
   const { debts_paid, debts_unpaid } = read_json("SI", data.krav);
   displayDebtData(debts_unpaid);
-  displayDebtData(debts_paid);    
+  displayDebtData(debts_paid);
 
-  const doucment2 = offlineKredinorFile
+  const doucment2 = offlineKredinorFile;
   const { debtList, creditorList, saksnummerList } = require(doucment2);
-  const debts_unpaid2 = convertListsToJson(debtList, creditorList, saksnummerList, "Ikke-kredinor");
-  displayDebtData(debts_unpaid2);             
+  const debts_unpaid2 = convertListsToJson(
+    debtList,
+    creditorList,
+    saksnummerList,
+    "Ikke-kredinor"
+  );
+  displayDebtData(debts_unpaid2);
 }
 
 document.body.append(summaryDiv);
-
