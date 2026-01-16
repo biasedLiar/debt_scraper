@@ -19,7 +19,7 @@ export async function loginWithBankID(page, nationalID) {
   try {
     if (nationalID) {
       //Page.waitforSelector ser ut til å funke når man har visible: true. Funker ikke uten.
-      await page.waitForSelector('input#nnin', { timeout: 5000, visible: true });
+      await page.waitForSelector('input#nnin', { visible: true });
      
       await page.type('input#nnin', nationalID);
       console.log('Filled in national identity number');
@@ -32,7 +32,7 @@ export async function loginWithBankID(page, nationalID) {
   
   // Wait for and click the continue button
   try {
-    await page.waitForSelector('button#nnin-next-button', { timeout: 5000 });
+    await page.waitForSelector('button#nnin-next-button', { visible: true });
     await page.click('button#nnin-next-button');
     console.log('Clicked continue button');
   } catch (e) {

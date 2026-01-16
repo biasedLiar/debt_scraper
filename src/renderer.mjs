@@ -353,12 +353,7 @@ const visitAllButton = button("Start", async (ev) => {
       // Create a promise that will be resolved when scraping is complete
       const scrapingPromise = new Promise((resolve) => {
         scrapingCompleteCallback = resolve;
-        
-        // timeout fallback in case scraping doesn't complete
-        setTimeout(() => {
-          console.log(`Timeout reached for ${site.name}, moving on...`);
-          resolve();
-        }, 30000); // 30s max wait time
+
       });
       
       // Open the website and do the scraping

@@ -1,5 +1,7 @@
 node_modules
 .idea
 exports/
-src/detailedDebtConfig.js
 extracted_data/
+src/detailedDebtConfig.js
+src/kladd
+src/structure
