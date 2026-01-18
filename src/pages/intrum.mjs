@@ -10,7 +10,7 @@ const fs = require("fs/promises");
  * @param {string} nationalID - The national identity number to use for login
  * @returns {Promise<{browser: any, page: any}>}
  */
-export async function handleIntrumLogin(nationalID, setupPageHandlers) {
+export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingCompleteCallback) {
   const { browser, page } = await PUP.openPage(intrum.url);
 
   console.log(`Opened ${intrum.name} at ${intrum.url}`);
@@ -193,5 +193,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
       error
     );
   }
+
+  setTimeout(() => scrapingCompleteCallback(), 2000);
   return { browser, page };
 }
