@@ -21,7 +21,7 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers) {
   try {
     await page.waitForSelector(
       "button.c-btn.c-btn--variant-nets.mb-1",
-      { timeout: 5000 }
+      { visible: true  }
     );
     await page.click(
       "button.c-btn.c-btn--variant-nets.mb-1"

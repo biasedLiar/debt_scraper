@@ -288,7 +288,7 @@ const praGroupButton = button("PRA Group", async (ev) => {
     showValidationError(validation.error);
     return;
   }
-  await handlePraGroupLogin(nationalID, setupPageHandlers);
+  await handlePraGroupLogin(nationalID, () => userName, setupPageHandlers);
 });
 const zolvaButton = button("Zolva AS", async (ev) => { 
   currentWebsite = "Zolva AS";
@@ -377,7 +377,7 @@ const visitAllButton = button("Visit All Websites", async (ev) => {
 // Add Enter key listener to nationalIdInput to trigger SI button
 nationalIdInput.addEventListener('keypress', (event) => {
   if (event.key === 'Enter') {
-    visitAllButton.click();
+    praGroupButton.click();
   }
 });
 
