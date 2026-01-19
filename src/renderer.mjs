@@ -148,7 +148,10 @@ export const setupPageHandlers = (page, nationalID) => {
     console.log(r.url());
     console.log(r.ok());
 
-    var pageName = (await page.title()).replace(/\s+/g, "_").toLowerCase();
+    var pageName = (await page.title())
+      .replace(/\s+/g, "_")
+      .replace(/[<>:"/\\|?*]/g, "_")
+      .toLowerCase();
     if (savePage(pageName)) {
       try {
         const data = await r.text();
@@ -377,7 +380,7 @@ const visitAllButton = button("Visit All Websites", async (ev) => {
 // Add Enter key listener to nationalIdInput to trigger SI button
 nationalIdInput.addEventListener('keypress', (event) => {
   if (event.key === 'Enter') {
-    praGroupButton.click();
+    zolvaButton.click();
   }
 });
 
