@@ -69,7 +69,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
 
     console.log(`Opening message: ${message.subject} from ${message.sender}`);
 
-    await page.waitForNavigation({ waitUntil: "networkidle2" });
+    //await page.waitForNavigation({ waitUntil: "networkidle2" });
 
     await page.waitForSelector('[aria-label="Dokumenthandlinger"]', {
       visible: true,
@@ -115,6 +115,18 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
     // Save to letters subfolder
     await PUP.saveToFile(content, `letters/${filename}.txt`);
     console.log(`Saved message to letters/${filename}.txt`);
+
+    // Click back to inbox button
+    await page.waitForSelector('span.dds-button--link-text', { visible: true });
+    await page.evaluate(() => {
+      const spans = Array.from(document.querySelectorAll('span.dds-button--link-text'));
+      const backButton = spans.find(span => span.textContent.includes('Tilbake til Innboks'));
+      if (backButton) {
+        backButton.closest('button, a').click();
+      }
+    });
+    console.log("Clicked back to inbox button");
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
   return { browser, page };
 }
