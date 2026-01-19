@@ -1,6 +1,7 @@
 import { PUP } from "../scraper.mjs";
 import { digiPost } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
+import { createFoldersAndGetName } from "../utilities.mjs";
 
 /**
  * Handles the Digipost login automation flow
@@ -60,6 +61,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
   await new Promise((resolve) => setTimeout(resolve, 5000));
   console.log("Waited 5 seconds for page to stabilize");
   // Visit each message and extract information
+  //TODO Save message ids instead to avoid clicking the same message every time
   for (const message of messageLinks) {
     const messageListSelector =
       'a.message-list-item__info[data-testid="document-attachment"]';
@@ -82,7 +84,21 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
     } else {
       console.error("Dokumenthandlinger button not found even after waiting");
     }
-    
+
+    const pdfFilePath = createFoldersAndGetName(
+      digiPost.name,
+      nationalID,
+      "Digipost",
+      "downloadedPDF",
+      false
+    );
+    await page
+      ._client()
+      .send("Page.setDownloadBehavior", {
+        behavior: "allow",
+        downloadPath: pdfFilePath,
+      });
+
     await page.waitForSelector('[data-testid="download-document"]', {
       visible: true,
     });
@@ -113,20 +129,30 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
       );
 
     // Save to letters subfolder
+    /*
     await PUP.saveToFile(content, `letters/${filename}.txt`);
-    console.log(`Saved message to letters/${filename}.txt`);
+    console.log(`Saved message to letters/${filename}.txt`); */
 
+    // Go back to message list
+    await page.goBack();
+    console.log("Returned to message list");
+
+    /*
     // Click back to inbox button
-    await page.waitForSelector('span.dds-button--link-text', { visible: true });
+    await page.waitForSelector("span.dds-button--link-text", { visible: true });
     await page.evaluate(() => {
-      const spans = Array.from(document.querySelectorAll('span.dds-button--link-text'));
-      const backButton = spans.find(span => span.textContent.includes('Tilbake til Innboks'));
+      const spans = Array.from(
+        document.querySelectorAll("span.dds-button--link-text")
+      );
+      const backButton = spans.find((span) =>
+        span.textContent.includes("Tilbake til Innboks")
+      );
       if (backButton) {
-        backButton.closest('button, a').click();
+        backButton.closest("button, a").click();
       }
     });
     console.log("Clicked back to inbox button");
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000)); */
   }
   return { browser, page };
 }
