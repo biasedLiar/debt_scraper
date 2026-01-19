@@ -2,12 +2,10 @@ import { PUP } from "../scraper.mjs";
 import { kredinor } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
-import {
-  saveValidatedJSON,
-  KredinorManualDebtSchema,
-  KredinorFullDebtDetailsSchema,
-} from "../schemas.mjs";
-const fs = require("fs/promises");
+import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../schemas.mjs";
+import { extractFields } from "../extract_kredinor.js";
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Handles the Digipost login automation flow
@@ -132,36 +130,59 @@ export async function handleKredinorLogin(
   );
 
   // Click button to download PDF of closed cases
-  try {
-    const downloadButton = await page.waitForSelector(
-      'span[data-text-key="claims.closed.overview_report.download.button"]',
-      { visible: true }
-    );
-
-    await downloadButton.click();
-
-    console.log("Clicked download button in PDF viewer");
-    // Wait for the save button to be ready in the PDF viewer
-    // Wait for PDF to open in new tab and switch to it
-
-    await page.waitForSelector("cr-icon-button#save", { visible: true });
-    console.log("Save button found in PDF viewer");
-
-    /*
-       // Set up download handling
+    try {
+      const downloadButton = await page.waitForSelector('span[data-text-key="claims.active.overview_report.download.button"]', { visible: true });
+      
+      // Set download path for this specific download - CDP requires absolute path
       const client = await page.createCDPSession();
-      const pdfFolder = createFoldersAndGetName(kredinor.name, folderName, "KredinorPDF", "", false).replace(/[^\/\\]+$/, '');
+      const pdfFolderRelative = createFoldersAndGetName(kredinor.name, folderName, "KredinorPDF", "", false).replace(/[^\/\\]+$/, '');
+      const pdfFolder = path.resolve(pdfFolderRelative);
+      
+      // Ensure folder exists
+      if (!fs.existsSync(pdfFolder)) {
+        fs.mkdirSync(pdfFolder, { recursive: true });
+      }
+      
       await client.send('Page.setDownloadBehavior', {
         behavior: 'allow',
         downloadPath: pdfFolder
-      }); */
+      });
+      
+      console.log(`Download path set to: ${pdfFolder}`);
+      
+      await downloadButton.click();
+      console.log('Clicked download button');
+      
+      // Wait for download to complete  //TODO, prøv å gjøre dette mer deterministisk
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
+      console.log('PDF download completed');
+      
+      // Extract data from the downloaded PDF
+      try {
+        // Find the downloaded PDF file
+        const files = fs.readdirSync(pdfFolderRelative);
+        const pdfFile = files.find(f => f.endsWith('.pdf'));
+        
+        if (pdfFile) {
+          const pdfPath = path.join(pdfFolderRelative, pdfFile);
+          const outputPath = path.join(pdfFolderRelative, 'extracted_data.json');
+          
+          console.log(`Extracting data from ${pdfFile}...`);
+          await extractFields(pdfPath, outputPath);
+          console.log('PDF extraction completed');
+        } else {
+          console.log('No PDF file found in download folder');
+        }
+      } catch (extractError) {
+        console.log('Error extracting PDF data:', extractError.message);
+      }
 
-    await page.click("#save");
-
-    console.log("Initiated download of closed cases PDF");
-  } catch (error) {
-    console.log("Could not download closed cases PDF:", error.message);
-  }
+      
+      
+    } catch (error) {
+      console.log('Could not download closed cases PDF:', error.message);
+    }
 
   console.log("Debt List:", debtList);
   console.log("Creditor List:", creditorList);

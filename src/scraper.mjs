@@ -27,6 +27,25 @@ const openPage = async (url) => {
       defaultViewport: null,
     });
 
+    // Set up download behavior for all pages
+    browser.on('targetcreated', async (target) => {
+      console.log('targetcreated');
+      if (target.type() !== 'page') {
+        return;
+      }
+      try {
+        const pageList = await browser.pages();
+        pageList.forEach((page) => {
+          page._client.send('Page.setDownloadBehavior', {
+            behavior: 'allow',
+            downloadPath: './pdfDownloaded/',
+          });
+        });
+      } catch (e) {
+        console.log("targetcreated error:", e);
+      }
+    });
+
     browser.once("disconnected", () => {
       console.log("Disconnected!");
       if (browser) {

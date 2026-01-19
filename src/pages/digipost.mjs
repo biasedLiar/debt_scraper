@@ -22,7 +22,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
   try {
     await page.waitForSelector(
       "button.dds-button.dds-button--primary.dds-button--size-large",
-      { timeout: 5000 }
+      { visible: true }
     );
     await page.click(
       "button.dds-button.dds-button--primary.dds-button--size-large"
@@ -110,28 +110,90 @@ if (button3) {
 // }
 /* WIP
 
-// Visit each message and extract information
-for (const message of messageLinks) {
-    if (message.href) {
-        console.log(`Opening message: ${message.subject} from ${message.sender}`);
-        await page.goto(`${digiPost.url}${message.href}`, { waitUntil: 'networkidle2' });
-        
-        // Wait for message content to load
-        await page.waitForTimeout(2000);
-        
-        // TODO: Extract message content here
-        // Get message content
-        const content = await page.evaluate(() => {
-            return document.body.innerText;
-        });
+    console.log(`Opening message: ${message.subject} from ${message.sender}`);
 
-        // Create filename from sender and subject
-        const filename = `${nationalID}_${message.sender}_${message.subject}_${message.date}`.replace(/[^a-z0-9]/gi, '_');
+    //await page.waitForNavigation({ waitUntil: "networkidle2" });
 
-        // Save to letters subfolder
-        await PUP.saveToFile(content, `letters/${filename}.txt`);
-        console.log(`Saved message to letters/${filename}.txt`);
+    await page.waitForSelector('[aria-label="Dokumenthandlinger"]', {
+      visible: true,
+    });
+
+    const button2 = await page.$('[aria-label="Dokumenthandlinger"]');
+
+    if (button2) {
+      await button2.click();
+    } else {
+      console.error("Dokumenthandlinger button not found even after waiting");
     }
-} */
+
+    const pdfFilePath = createFoldersAndGetName(
+      digiPost.name,
+      nationalID,
+      "Digipost",
+      "downloadedPDF",
+      false
+    );
+    await page
+      ._client()
+      .send("Page.setDownloadBehavior", {
+        behavior: "allow",
+        downloadPath: pdfFilePath,
+      });
+
+    await page.waitForSelector('[data-testid="download-document"]', {
+      visible: true,
+    });
+
+    const button3 = await page.$('[data-testid="download-document"]');
+    if (button3) {
+      await button3.click();
+      console.log("Clicked download document button");
+    } else {
+      console.error("Dokumenthandlinger button not found even after waiting");
+    }
+
+    //console.log("Clicked download button");
+
+    // Wait for download to complete
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // TODO: Extract message content here
+    // Get message content
+    const content = await page.evaluate(() => {
+      return document.body.innerText;
+    });
+
+    // Create filename from sender and subject
+    const filename =
+      `${nationalID}_${message.sender}_${message.subject}_${message.date}`.replace(
+        /[^a-z0-9]/gi,
+        "_"
+      );
+
+    // Save to letters subfolder
+    /*
+    await PUP.saveToFile(content, `letters/${filename}.txt`);
+    console.log(`Saved message to letters/${filename}.txt`); */
+
+    // Go back to message list
+    await page.goBack();
+    console.log("Returned to message list");
+
+    /*
+    // Click back to inbox button
+    await page.waitForSelector("span.dds-button--link-text", { visible: true });
+    await page.evaluate(() => {
+      const spans = Array.from(
+        document.querySelectorAll("span.dds-button--link-text")
+      );
+      const backButton = spans.find((span) =>
+        span.textContent.includes("Tilbake til Innboks")
+      );
+      if (backButton) {
+        backButton.closest("button, a").click();
+      }
+    });
+    console.log("Clicked back to inbox button");
+    await new Promise((resolve) => setTimeout(resolve, 1000)); */
+  }
   return { browser, page };
 }
