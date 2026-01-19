@@ -1,27 +1,23 @@
+const fs = require('fs');
+const path = require('path');
+const { PDFParse } = require('pdf-parse');
 
-import fs from 'fs';
-import { PDFParse } from 'pdf-parse';
-
-async function extractFields(pdfPath, outputPath) {
-  const buffer = fs.readFileSync(pdfPath);
-  const parser = new PDFParse({ data: buffer });
-
-  const result = await parser.getText();
-
-  // Fallback: if pages are missing for any reason, treat whole doc as one page
-  const pages = (result.pages && Array.isArray(result.pages) && result.pages.length > 0)
-    ? result.pages.map(p => (typeof p === 'string' ? p : p.text || ''))
-    : [result.text || ''];
-
-  const allResults = pages.map((rawPageText, index) => {
-    // Normalize NBSP and other odd whitespaces to regular spaces
-    const pageText = rawPageText.replace(/\u00A0/g, ' ');
-
-    // Find all dates on this page (dd.mm.yyyy)
+export async function extractFields(pdfPath, outputPath) {
+  try {
+    const buffer = fs.readFileSync(pdfPath);
+    const parser = new PDFParse({ data: buffer });
+    const result = await parser.getText();
+    
+    // Extract text from result - result.text contains all text
+    const fullText = result.text || '';
+    
+    // Normalize whitespace
+    const pageText = fullText.replace(/\u00A0/g, ' ');
+    
+    // Find all dates (dd.mm.yyyy)
     const dateRegex = /\b\d{2}\.\d{2}\.\d{4}\b/g;
     const dates = [...pageText.matchAll(dateRegex)].map(m => m[0]);
-
-    // not optimal, but it works for now, dates are underneath the fields
+    
     const utstedetDato = dates[4] || null;
     const forfallsDato = dates[5] || null; 
 
@@ -49,16 +45,20 @@ async function extractFields(pdfPath, outputPath) {
       ),
     };
 
-    return {
-      page: index + 1,
+    const extractedData = {
       utstedetDato,
       forfallsDato,
       ...fields,
     };
-  });
 
-  fs.writeFileSync(outputPath, JSON.stringify(allResults, null, 2), 'utf-8');
-  console.log(`✅ Results saved to ${outputPath}`);
+    fs.writeFileSync(outputPath, JSON.stringify(extractedData, null, 2), 'utf-8');
+    console.log(`✅ Results saved to ${outputPath}`);
+    
+    await parser.destroy();
+  } catch (error) {
+    console.error('Error extracting PDF:', error.message);
+    throw error;
+  }
 }
 
 // Helper: return the first numeric capture as Number (handles "4 481,63")
@@ -68,9 +68,3 @@ function findFirstValue(text, regex) {
     ? parseFloat(match[1].replace(/\s/g, '').replace(',', '.'))
     : null;
 }
-
-// Run the function
-extractFields(
-  'testpdf',
-  'results.json'
-);

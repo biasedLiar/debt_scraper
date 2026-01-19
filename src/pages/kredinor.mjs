@@ -3,6 +3,7 @@ import { kredinor } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
 import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../schemas.mjs";
+import { extractFields } from "../extract_kredinor.js";
 const fs = require('fs');
 const path = require('path');
 
@@ -76,7 +77,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
 
   // Click button to download PDF of closed cases
     try {
-      const downloadButton = await page.waitForSelector('span[data-text-key="claims.closed.overview_report.download.button"]', { visible: true });
+      const downloadButton = await page.waitForSelector('span[data-text-key="claims.active.overview_report.download.button"]', { visible: true });
       
       // Set download path for this specific download - CDP requires absolute path
       const client = await page.createCDPSession();
@@ -98,9 +99,32 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
       await downloadButton.click();
       console.log('Clicked download button');
       
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Wait for download to complete  //TODO, prøv å gjøre dette mer deterministisk
+      await new Promise(resolve => setTimeout(resolve, 5000));
       
-      console.log('PDF download initiated');
+      console.log('PDF download completed');
+      
+      // Extract data from the downloaded PDF
+      try {
+        // Find the downloaded PDF file
+        const files = fs.readdirSync(pdfFolderRelative);
+        const pdfFile = files.find(f => f.endsWith('.pdf'));
+        
+        if (pdfFile) {
+          const pdfPath = path.join(pdfFolderRelative, pdfFile);
+          const outputPath = path.join(pdfFolderRelative, 'extracted_data.json');
+          
+          console.log(`Extracting data from ${pdfFile}...`);
+          await extractFields(pdfPath, outputPath);
+          console.log('PDF extraction completed');
+        } else {
+          console.log('No PDF file found in download folder');
+        }
+      } catch (extractError) {
+        console.log('Error extracting PDF data:', extractError.message);
+      }
+
+      
       
     } catch (error) {
       console.log('Could not download closed cases PDF:', error.message);
