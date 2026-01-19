@@ -71,6 +71,18 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
 
     await page.waitForNavigation({ waitUntil: "networkidle2" });
 
+    await page.waitForSelector('[aria-label="Dokumenthandlinger"]', {
+      visible: true,
+    });
+
+    const button2 = await page.$('[aria-label="Dokumenthandlinger"]');
+
+    if (button2) {
+      await button2.click();
+    } else {
+      console.error("Dokumenthandlinger button not found even after waiting");
+    }
+    
     await page.waitForSelector('[data-testid="download-document"]', {
       visible: true,
     });
@@ -83,7 +95,6 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
       console.error("Dokumenthandlinger button not found even after waiting");
     }
 
-   
     //console.log("Clicked download button");
 
     // Wait for download to complete
