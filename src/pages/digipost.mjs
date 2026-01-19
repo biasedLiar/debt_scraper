@@ -13,7 +13,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
   console.log(`Opened ${digiPost.name} at ${digiPost.url}`);
 
   // Setup page handlers for saving responses
-  if (setupPageHandlers) {Gjeldshjelperen
+  if (setupPageHandlers) {
     setupPageHandlers(page, nationalID);
   }
 
@@ -21,7 +21,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
   try {
     await page.waitForSelector(
       "button.dds-button.dds-button--primary.dds-button--size-large",
-      { timeout: 5000 }
+      { visible: true }
     );
     await page.click(
       "button.dds-button.dds-button--primary.dds-button--size-large"
@@ -36,7 +36,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
 
 
 // Wait for message list to load
-await page.waitForSelector('a.message-list-item__info[data-testid="document-attachment"]', { timeout: 10000 });
+await page.waitForSelector('a.message-list-item__info[data-testid="document-attachment"]', { visible: true });
 
 // Get all message links
 const messageLinks = await page.$$eval('a.message-list-item__info[data-testid="document-attachment"]', links => 
@@ -50,31 +50,45 @@ const messageLinks = await page.$$eval('a.message-list-item__info[data-testid="d
 
 console.log(`Found ${messageLinks.length} messages`);
 
-/* WIP
 
+// Add a 5 second delay before processing messages
+await new Promise(resolve => setTimeout(resolve, 5000));
+console.log("Waited 5 seconds for page to stabilize");
 // Visit each message and extract information
 for (const message of messageLinks) {
-    if (message.href) {
-        console.log(`Opening message: ${message.subject} from ${message.sender}`);
-        await page.goto(`${digiPost.url}${message.href}`, { waitUntil: 'networkidle2' });
-        
-        // Wait for message content to load
-        await page.waitForTimeout(2000);
-        
-        // TODO: Extract message content here
-        // Get message content
-        const content = await page.evaluate(() => {
-            return document.body.innerText;
-        });
 
-        // Create filename from sender and subject
-        const filename = `${nationalID}_${message.sender}_${message.subject}_${message.date}`.replace(/[^a-z0-9]/gi, '_');
 
-        // Save to letters subfolder
-        await PUP.saveToFile(content, `letters/${filename}.txt`);
-        console.log(`Saved message to letters/${filename}.txt`);
-    }
-} */
+  const messageListSelector = 'a.message-list-item__info[data-testid="document-attachment"]';
+  await page.waitForSelector(messageListSelector, { visible: true });
+
+  await page.click(messageListSelector);
+  
+  console.log(`Opening message: ${message.subject} from ${message.sender}`);
+  
+  
+  await page.waitForNavigation({ waitUntil: 'networkidle2' });
+ 
+  // Wait for and click the download button
+  await page.waitForSelector('a[data-testid="download-document"]', { timeout: 5000 });
+  await page.click('a[data-testid="download-document"]');
+  console.log("Clicked download button");
+
+  // Wait for download to complete
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  // TODO: Extract message content here
+  // Get message content
+  const content = await page.evaluate(() => {
+      return document.body.innerText;
+  });
+
+  // Create filename from sender and subject
+  const filename = `${nationalID}_${message.sender}_${message.subject}_${message.date}`.replace(/[^a-z0-9]/gi, '_');
+
+  // Save to letters subfolder
+  await PUP.saveToFile(content, `letters/${filename}.txt`);
+  console.log(`Saved message to letters/${filename}.txt`);
+
+} 
   return { browser, page };
 
 

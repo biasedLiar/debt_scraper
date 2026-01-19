@@ -59,7 +59,10 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   const filePath = createFoldersAndGetName(kredinor.name, folderName, "Kredinor", "ManuallyFoundDebt", true);
   console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
   const data = { debtAmount, activeCases, timestamp: new Date().toISOString() };
-  await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);
+  
+  //implement zod here later if possible
+  await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+
   console.log(`Debt amount: ${debtAmount}`);
   console.log(`Active cases: ${activeCases}`);
 
@@ -73,6 +76,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     els.map(el => el.textContent.trim())
   );
 
+  /*
   // Click button to download PDF of closed cases
     try {
       const downloadButton = await page.waitForSelector('span[data-text-key="claims.closed.overview_report.download.button"]', { visible: true });
@@ -94,7 +98,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
       await client.send('Page.setDownloadBehavior', {
         behavior: 'allow',
         downloadPath: pdfFolder
-      }); */
+      }); 
       
 
 
@@ -105,14 +109,14 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
    
     } catch (error) {
       console.log('Could not download closed cases PDF:', error.message);
-    }
+    } */
 
   console.log("Debt List:", debtList);
   console.log("Creditor List:", creditorList);
   console.log("Saksnummer List:", saksnummerList);
 
   const filePath2 = createFoldersAndGetName(kredinor.name, folderName, "Kredinor", "FullDebtDetails", true);
-  await saveValidatedJSON(filePath2, {debtList, creditorList, saksnummerList}, KredinorFullDebtDetailsSchema);
+  await fs.writeFile(filePath2, JSON.stringify({debtList, creditorList, saksnummerList}, null, 2));
 
   return { browser, page };
 }

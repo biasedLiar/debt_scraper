@@ -316,7 +316,7 @@ const visitAllButton = button("Visit All Websites", async (ev) => {
 
   const websites = [
     { name: "SI", handler: () => handleSILogin(nationalID, setupPageHandlers) },
-    { name: "Kredinor", handler: () => handleKredinorLogin(nationalID, ()=>userName, setupPageHandlers) },
+    //{ name: "Kredinor", handler: () => handleKredinorLogin(nationalID, ()=>userName, setupPageHandlers) },
     { name: "Intrum", handler: () => handleIntrumLogin(nationalID, setupPageHandlers) },
     { name: "Digipost", handler: () => handleDigipostLogin(nationalID, setupPageHandlers) },
     { name: "tfBank", handler: () => handleTfBankLogin(nationalID, setupPageHandlers) },

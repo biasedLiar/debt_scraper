@@ -35,6 +35,19 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
+    // Check if there are no cases in the system
+    try {
+      const noCasesElement = await page.waitForSelector('.warning-message', { visible: true }).catch(() => console.log('No warning message found'));
+      if (noCasesElement) {
+        const warningText = await page.evaluate(el => el.textContent, noCasesElement);
+        if (warningText.includes('Vi finner ingen saker i vårt system.')) {
+          console.log('No cases found in Intrum system. Finishing execution.');
+          return { browser, page };
+        }
+      }
+    } catch (error) {
+      console.log('No warning message found, continuing with debt case extraction');
+    }
 
    await page.waitForSelector('.case-container, .debt-case, [class*="case"]', { visible: true }).catch(() => {
     console.log('No debt cases found or page took too long to load');
