@@ -3,7 +3,8 @@ import { kredinor } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
 import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../schemas.mjs";
-const fs = require('fs/promises');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Handles the Digipost login automation flow
@@ -59,10 +60,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   const filePath = createFoldersAndGetName(kredinor.name, folderName, "Kredinor", "ManuallyFoundDebt", true);
   console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
   const data = { debtAmount, activeCases, timestamp: new Date().toISOString() };
-  
-  //implement zod here later if possible
-  await fs.writeFile(filePath, JSON.stringify(data, null, 2));
-
+  await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);
   console.log(`Debt amount: ${debtAmount}`);
   console.log(`Active cases: ${activeCases}`);
 
@@ -76,47 +74,44 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     els.map(el => el.textContent.trim())
   );
 
-  /*
   // Click button to download PDF of closed cases
     try {
       const downloadButton = await page.waitForSelector('span[data-text-key="claims.closed.overview_report.download.button"]', { visible: true });
       
-     
-      await downloadButton.click();
-
-      console.log('Clicked download button in PDF viewer');
-      // Wait for the save button to be ready in the PDF viewer
-      // Wait for PDF to open in new tab and switch to it
-
-      await page.waitForSelector('cr-icon-button#save', { visible: true });
-      console.log('Save button found in PDF viewer');
-
-      /*
-       // Set up download handling
+      // Set download path for this specific download - CDP requires absolute path
       const client = await page.createCDPSession();
-      const pdfFolder = createFoldersAndGetName(kredinor.name, folderName, "KredinorPDF", "", false).replace(/[^\/\\]+$/, '');
+      const pdfFolderRelative = createFoldersAndGetName(kredinor.name, folderName, "KredinorPDF", "", false).replace(/[^\/\\]+$/, '');
+      const pdfFolder = path.resolve(pdfFolderRelative);
+      
+      // Ensure folder exists
+      if (!fs.existsSync(pdfFolder)) {
+        fs.mkdirSync(pdfFolder, { recursive: true });
+      }
+      
       await client.send('Page.setDownloadBehavior', {
         behavior: 'allow',
         downloadPath: pdfFolder
-      }); 
+      });
       
-
-
-      await page.click('#save');
+      console.log(`Download path set to: ${pdfFolder}`);
       
-      console.log('Initiated download of closed cases PDF');
+      await downloadButton.click();
+      console.log('Clicked download button');
       
-   
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      console.log('PDF download initiated');
+      
     } catch (error) {
       console.log('Could not download closed cases PDF:', error.message);
-    } */
+    }
 
   console.log("Debt List:", debtList);
   console.log("Creditor List:", creditorList);
   console.log("Saksnummer List:", saksnummerList);
 
   const filePath2 = createFoldersAndGetName(kredinor.name, folderName, "Kredinor", "FullDebtDetails", true);
-  await fs.writeFile(filePath2, JSON.stringify({debtList, creditorList, saksnummerList}, null, 2));
+  await saveValidatedJSON(filePath2, {debtList, creditorList, saksnummerList}, KredinorFullDebtDetailsSchema);
 
   return { browser, page };
 }

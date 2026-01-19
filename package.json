@@ -28,6 +28,8 @@
   "dependencies": {
     "pdf-parse": "^2.4.5",
     "puppeteer": "^24.29.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-user-preferences": "^2.4.1",
     "zod": "^4.1.12"
   }
 }
