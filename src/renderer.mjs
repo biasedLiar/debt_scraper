@@ -176,7 +176,10 @@ export const setupPageHandlers = (page, nationalID) => {
       return;
     }
     console.log("Page name for saving:", (await page.title()));
-    var pageName = (await page.title()).replace(/\s+/g, "_").toLowerCase();
+    var pageName = (await page.title())
+      .replace(/\s+/g, "_")
+      .replace(/[<>:"/\\|?*]/g, "_")
+      .toLowerCase();
     if (savePage(pageName)) {
       try {
         // Skip requests that don't have a body (OPTIONS, failed requests, etc.)
@@ -349,7 +352,7 @@ const praGroupButton = button("PRA Group", async (ev) => {
     showValidationError(validation.error);
     return;
   }
-  await handlePraGroupLogin(nationalID, setupPageHandlers);
+  await handlePraGroupLogin(nationalID, () => userName, setupPageHandlers);
 });
 const zolvaButton = button("Zolva AS", async (ev) => {
   currentWebsite = "Zolva AS";
