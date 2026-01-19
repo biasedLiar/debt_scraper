@@ -34,62 +34,76 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
+  // Wait for message list to load
+  await page.waitForSelector(
+    'a.message-list-item__info[data-testid="document-attachment"]',
+    { visible: true }
+  );
 
-// Wait for message list to load
-await page.waitForSelector('a.message-list-item__info[data-testid="document-attachment"]', { visible: true });
+  // Get all message links
+  const messageLinks = await page.$$eval(
+    'a.message-list-item__info[data-testid="document-attachment"]',
+    (links) =>
+      links.map((link) => ({
+        href: link.getAttribute("href"),
+        sender: link.querySelector(".message-creator p")?.textContent?.trim(),
+        subject: link
+          .querySelector(".message-subject-content span")
+          ?.textContent?.trim(),
+        date: link.querySelector("time")?.getAttribute("datetime"),
+      }))
+  );
 
-// Get all message links
-const messageLinks = await page.$$eval('a.message-list-item__info[data-testid="document-attachment"]', links => 
-    links.map(link => ({
-        href: link.getAttribute('href'),
-        sender: link.querySelector('.message-creator p')?.textContent?.trim(),
-        subject: link.querySelector('.message-subject-content span')?.textContent?.trim(),
-        date: link.querySelector('time')?.getAttribute('datetime')
-    }))
-);
+  console.log(`Found ${messageLinks.length} messages`);
 
-console.log(`Found ${messageLinks.length} messages`);
+  // Add a 5 second delay before processing messages
+  await new Promise((resolve) => setTimeout(resolve, 5000));
+  console.log("Waited 5 seconds for page to stabilize");
+  // Visit each message and extract information
+  for (const message of messageLinks) {
+    const messageListSelector =
+      'a.message-list-item__info[data-testid="document-attachment"]';
+    await page.waitForSelector(messageListSelector, { visible: true });
 
+    await page.click(messageListSelector);
 
-// Add a 5 second delay before processing messages
-await new Promise(resolve => setTimeout(resolve, 5000));
-console.log("Waited 5 seconds for page to stabilize");
-// Visit each message and extract information
-for (const message of messageLinks) {
+    console.log(`Opening message: ${message.subject} from ${message.sender}`);
 
+    await page.waitForNavigation({ waitUntil: "networkidle2" });
 
-  const messageListSelector = 'a.message-list-item__info[data-testid="document-attachment"]';
-  await page.waitForSelector(messageListSelector, { visible: true });
+    await page.waitForSelector('[data-testid="download-document"]', {
+      visible: true,
+    });
 
-  await page.click(messageListSelector);
-  
-  console.log(`Opening message: ${message.subject} from ${message.sender}`);
-  
-  
-  await page.waitForNavigation({ waitUntil: 'networkidle2' });
- 
-  // Wait for and click the download button
-  await page.waitForSelector('a[data-testid="download-document"]', { timeout: 5000 });
-  await page.click('a[data-testid="download-document"]');
-  console.log("Clicked download button");
+    const button3 = await page.$('[data-testid="download-document"]');
+    if (button3) {
+      await button3.click();
+      console.log("Clicked download document button");
+    } else {
+      console.error("Dokumenthandlinger button not found even after waiting");
+    }
 
-  // Wait for download to complete
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  // TODO: Extract message content here
-  // Get message content
-  const content = await page.evaluate(() => {
+   
+    //console.log("Clicked download button");
+
+    // Wait for download to complete
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // TODO: Extract message content here
+    // Get message content
+    const content = await page.evaluate(() => {
       return document.body.innerText;
-  });
+    });
 
-  // Create filename from sender and subject
-  const filename = `${nationalID}_${message.sender}_${message.subject}_${message.date}`.replace(/[^a-z0-9]/gi, '_');
+    // Create filename from sender and subject
+    const filename =
+      `${nationalID}_${message.sender}_${message.subject}_${message.date}`.replace(
+        /[^a-z0-9]/gi,
+        "_"
+      );
 
-  // Save to letters subfolder
-  await PUP.saveToFile(content, `letters/${filename}.txt`);
-  console.log(`Saved message to letters/${filename}.txt`);
-
-} 
+    // Save to letters subfolder
+    await PUP.saveToFile(content, `letters/${filename}.txt`);
+    console.log(`Saved message to letters/${filename}.txt`);
+  }
   return { browser, page };
-
-
 }
