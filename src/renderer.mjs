@@ -379,10 +379,6 @@ const visitAllButton = button(
 
     const websites = [
       {
-        name: "SI",
-        handler: () => handleSILogin(nationalID, setupPageHandlers),
-      },
-      {
         name: "Kredinor",
         handler: () =>
           handleKredinorLogin(nationalID, () => userName, setupPageHandlers, scrapingCompleteCallback),
@@ -390,6 +386,10 @@ const visitAllButton = button(
       {
         name: "Intrum",
         handler: () => handleIntrumLogin(nationalID, setupPageHandlers, scrapingCompleteCallback),
+      },
+      {
+        name: "SI",
+        handler: () => handleSILogin(nationalID, setupPageHandlers),
       },
       {
         name: "Digipost",

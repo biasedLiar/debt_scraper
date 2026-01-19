@@ -3,7 +3,7 @@ import { intrum } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
 import { saveValidatedJSON, IntrumManualDebtSchema } from "../schemas.mjs";
-const fs = require("fs/promises");
+const fs = require('fs/promises');
 
 /**
  * Handles the Intrum login automation flow
@@ -20,15 +20,17 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingC
     setupPageHandlers(page, nationalID);
   }
 
+
   try {
-    // Click the "Logg inn" button with id="signicatOIDC"
-    await page.waitForSelector("#signicatOIDC", { visible: true });
-    await page.click("#signicatOIDC");
-    console.log('Clicked "Logg inn" button');
-  } catch (error) {
-    console.error('Error clicking "Logg inn" button:', error);
-    throw error;
-  }
+      // Click the "Logg inn" button with id="signicatOIDC"
+      await page.waitForSelector('#signicatOIDC', { visible: true });
+      await page.click('#signicatOIDC');
+      console.log('Clicked "Logg inn" button');
+    } catch (error) {
+      console.error('Error clicking "Logg inn" button:', error);
+      throw error;
+    }
+
 
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
@@ -54,125 +56,112 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingC
 
   const debtCases = await page.evaluate(() => {
     const cases = [];
-
+    
     // Find all case containers
-    const caseElements = document.querySelectorAll(
-      '.case-container, .debt-case, [class*="case"]'
-    );
-
-    caseElements.forEach((caseEl) => {
+    const caseElements = document.querySelectorAll('.case-container, .debt-case, [class*="case"]');
+    
+    caseElements.forEach(caseEl => {
       const caseData = {};
-
+      
       // Extract case number
-      const caseNumberEl = caseEl.querySelector(".label");
+      const caseNumberEl = caseEl.querySelector('.label');
       if (caseNumberEl) {
         const match = caseNumberEl.textContent.match(/Saksnummer\s+(\d+)/);
         caseData.caseNumber = match ? match[1] : null;
       }
-
+      
       // Extract total amount
-      const totalAmountEl = caseEl.querySelector(".case-total-amount-value");
+      const totalAmountEl = caseEl.querySelector('.case-total-amount-value');
       if (totalAmountEl) {
-        caseData.totalAmount = totalAmountEl.textContent
-          .replace(/\s/g, "")
-          .replace(",", ".");
+        caseData.totalAmount = totalAmountEl.textContent.replace(/\s/g, '').replace(',', '.');
       }
-
+      
       // Extract creditor name
-      const creditorEl = caseEl.querySelector(".creditor-name");
+      const creditorEl = caseEl.querySelector('.creditor-name');
       if (creditorEl) {
         caseData.creditorName = creditorEl.textContent.trim();
       }
-
+      
       if (Object.keys(caseData).length > 0) {
         cases.push(caseData);
       }
     });
-
+    
     return cases;
   });
+  
+  console.log('Extracted debt cases:', debtCases);
 
-  console.log("Extracted debt cases:", debtCases);
-
-  const filePath = createFoldersAndGetName(
-    intrum.name,
-    nationalID,
-    "Intrum",
-    "ManuallyFoundDebt",
-    true
-  );
+  const filePath = createFoldersAndGetName(intrum.name, nationalID, "Intrum", "ManuallyFoundDebt", true);
   const data = { debtCases, timestamp: new Date().toISOString() };
   console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
 
   try {
-    await saveValidatedJSON(filePath, data, IntrumManualDebtSchema);
+     await saveValidatedJSON(filePath, data, IntrumManualDebtSchema);
   } catch (error) {
-    console.error("Error writing debt data from Intrum to file:", error);
+    console.error('Error writing debt data from Intrum to file:', error);
   }
+ 
 
   // Find all "Detaljer på sak" buttons and process each one
-  const detailsButtons = await page.$$("span.button-text");
+  const detailsButtons = await page.$$('span.button-text');
   const detailsButtonsToClick = [];
-
+  
   for (const button of detailsButtons) {
-    const text = await button.evaluate((el) => el.textContent.trim());
-    if (text === "Detaljer på sak") {
+    const text = await button.evaluate(el => el.textContent.trim());
+    if (text === 'Detaljer på sak') {
       detailsButtonsToClick.push(button);
     }
   }
-
-  console.log(
-    `Found ${detailsButtonsToClick.length} detail buttons to process`
-  );
-
+  
+  console.log(`Found ${detailsButtonsToClick.length} detail buttons to process`);
+  
   const allDetailedInfo = [];
+  
+
 
   for (let i = 0; i < detailsButtonsToClick.length; i++) {
     console.log(`Processing case ${i + 1}/${detailsButtonsToClick.length}`);
-
+    
     try {
-      const clickableElement = await detailsButtonsToClick[i].evaluateHandle(
-        (el) => el.closest('button, a, [role="button"]')
-      );
+
+      const clickableElement = await detailsButtonsToClick[i].evaluateHandle(el => el.closest('button, a, [role="button"]'));
       await clickableElement.click();
 
       //litt usikker på beste løsning her
-      await new Promise((r) => setTimeout(r, 4000));
+      await new Promise(r => setTimeout(r, 4000));
 
       const detailedInfo = await page.evaluate(() => {
         const details = {};
-        const rows = document.querySelectorAll(".global-table tr");
-
-        rows.forEach((row) => {
-          const label = row.querySelector(".table-label, .bold");
-          const amount = row.querySelector(".table-amount");
-
+        const rows = document.querySelectorAll('.global-table tr');
+        
+        rows.forEach(row => {
+          const label = row.querySelector('.table-label, .bold');
+          const amount = row.querySelector('.table-amount');
+          
           if (label && amount) {
             const labelText = label.textContent.trim();
-            const amountText = amount.textContent
-              .replace(/\s/g, "")
-              .replace(",", ".")
-              .replace("NOK", "")
-              .trim();
+            const amountText = amount.textContent.replace(/\s/g, '').replace(',', '.').replace('NOK', '').trim();
             details[labelText] = amountText;
           }
         });
-
+        
         return details;
       });
-
+      
       allDetailedInfo.push(detailedInfo);
       console.log(`Case ${i + 1} details:`, detailedInfo);
+      
 
       await page.goBack();
-      await new Promise((r) => setTimeout(r, 4000));
-
+      await new Promise(r => setTimeout(r, 4000));
+      
       if (i < detailsButtonsToClick.length - 1) {
-        const newButtons = await page.$$("span.button-text");
+        const newButtons = await page.$$('span.button-text');
         detailsButtonsToClick.length = 0;
         for (const button of newButtons) {
-          const text = await button.evaluate((el) => el.textContent.trim());
-          if (text === "Detaljer på sak") {
+          const text = await button.evaluate(el => el.textContent.trim());
+          if (text === 'Detaljer på sak') {
             detailsButtonsToClick.push(button);
           }
         }
@@ -181,30 +170,18 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingC
       console.error(`Failed to process case ${i + 1}:`, e);
     }
   }
+  
+  console.log('All detailed case information:', allDetailedInfo);
 
-  console.log("All detailed case information:", allDetailedInfo);
-
-  const detailedInfoFilePath = createFoldersAndGetName(
-    intrum.name,
-    nationalID,
-    "Intrum",
-    "DetailedDebtInfo",
-    true
-  );
+  const detailedInfoFilePath = createFoldersAndGetName(intrum.name, nationalID, "Intrum", "DetailedDebtInfo", true);
   const detailedData = { allDetailedInfo, timestamp: new Date().toISOString() };
   try {
     // Note: not updated to use schema validation yet due to some bugs
-    await fs.writeFile(
-      detailedInfoFilePath,
-      JSON.stringify(detailedData, null, 2)
-    );
+    await fs.writeFile(detailedInfoFilePath, JSON.stringify(detailedData, null, 2));
   } catch (error) {
-    console.error(
-      `Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`,
-      error
-    );
+    console.error(`Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`, error);
   }
-
   setTimeout(() => scrapingCompleteCallback(), 2000);
+
   return { browser, page };
 }
