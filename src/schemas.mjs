@@ -105,8 +105,6 @@ export const saveValidatedJSON = async (filePath, data, schema) => {
 
   if (!validatedData.success) {
     const error = validatedData.error;
-    console.log("Validation error data:", data);
-    console.log("Validation error:", error);
     console.warn("❌ Validation error:", error.issues);
     console.warn("Failed to validate data for:", filePath);
 
@@ -119,7 +117,7 @@ export const saveValidatedJSON = async (filePath, data, schema) => {
     );
     console.log(`⚠️  Saved unvalidated data to ${unvalidatedPath}`);
     console.log("About to write following");
-    console.warn(error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join(", "));
+    console.error(error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join(", "));
 
     return {
       success: false,
@@ -138,12 +136,6 @@ export const saveValidatedJSON = async (filePath, data, schema) => {
   
   console.log(`✓ Validated and saved data to ${filePath}`);
   return { success: true };
-  
-  
-  console.error("❌ File write error:", error);
-  return { success: false, error: error.message };
-
-      
 };
 
 /**

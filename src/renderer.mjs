@@ -27,7 +27,6 @@ import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
 import { handleIntrumLogin } from "./pages/intrum.mjs";
-import { handleTfBankLogin } from "./pages/tfbank.mjs";
 import { handlePraGroupLogin } from "./pages/pra-group.mjs";
 import { handleZolvaLogin } from "./pages/zolva-as.mjs";
 import { read_json } from "./json_reader.mjs";
@@ -271,17 +270,6 @@ const openPage = async (url) => {
   setupPageHandlers(page, nationalID);
 };
 
-const tfBankButton = button("tfBank", async (ev) => {
-  currentWebsite = "tfBank";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-  const validation = validateNationalID(nationalID);
-  if (!validation.valid) {
-    showValidationError(validation.error);
-    return;
-  }
-  await handleTfBankLogin(nationalID, setupPageHandlers);
-});
-
 const di = div();
 di.innerText = "Hello World from dom!";
 
@@ -408,10 +396,6 @@ const visitAllButton = button(
         handler: () => handleDigipostLogin(nationalID, setupPageHandlers),
       },
       {
-        name: "tfBank",
-        handler: () => handleTfBankLogin(nationalID, setupPageHandlers),
-      },
-      {
         name: "PRA Group",
         handler: () => handlePraGroupLogin(nationalID, setupPageHandlers),
       },
@@ -490,7 +474,6 @@ buttonsContainer.append(siButton);
 buttonsContainer.append(digipostButton);
 buttonsContainer.append(kredinorButton);
 buttonsContainer.append(intrumButton);
-buttonsContainer.append(tfBankButton);
 buttonsContainer.append(praGroupButton);
 buttonsContainer.append(zolvaButton);
 document.body.append(heading);

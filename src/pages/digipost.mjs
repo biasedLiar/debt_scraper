@@ -1,7 +1,7 @@
 import { PUP } from "../scraper.mjs";
 import { digiPost } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName } from "../utilities.mjs";
+import { createFoldersAndGetName, createDownloadFoldersAndGetName } from "../utilities.mjs";
 
 /**
  * Handles the Digipost login automation flow
@@ -50,23 +50,31 @@ await button.click();
 
 
 
-await page.waitForSelector('[aria-label="Dokumenthandlinger"]', { 
-  timeout: 30000, 
+await page.waitForSelector('[aria-label="Dokumenthandlinger"]', {
   visible: true 
 });
 
 const button2 = await page.$('[aria-label="Dokumenthandlinger"]');
 
 if (button2) {
-  await button2.click();
+  await 
+  button2.click();
 } else {
   console.error("Dokumenthandlinger button not found even after waiting");
 }
 
 
-const pdfFilePath = createFoldersAndGetName(digiPost.name, nationalID, "Digipost", "downloadedPDF", false);
-await page._client().send('Page.setDownloadBehavior', {behavior: 'allow', 
-  downloadPath: pdfFilePath});
+const pdfFilePath = createDownloadFoldersAndGetName(digiPost.name, nationalID, "Digipost");
+
+const client = await page.target().createCDPSession()
+await client.send('Page.setDownloadBehavior', {
+  behavior: 'allow',
+  downloadPath: pdfFilePath,
+})
+
+console.log("Set download behavior for Digipost, downloading to:", pdfFilePath);
+// await page._client().send('Page.setDownloadBehavior', {behavior: 'allow', 
+//   downloadPath: pdfFilePath});
 
 
 
