@@ -38,7 +38,5 @@ export async function loginWithBankID(page, nationalID) {
   } catch (e) {
     console.error("Could not find/click continue button:", e);
   }
-
-  // Wait for ditt bankID-passord or for page to move on
-  await page.bringToFront();
+  await page.bringToFront()
 }
