@@ -61,6 +61,13 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   const filePath = createFoldersAndGetName(kredinor.name, folderName, "Kredinor", "ManuallyFoundDebt", true);
   console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
   const data = { debtAmount, activeCases, timestamp: new Date().toISOString() };
+  if (debtAmount === undefined && activeCases === undefined) {
+    data.note = "No debt information found on page.";
+    
+    setTimeout(() => scrapingCompleteCallback(), 2000);
+
+    return { browser, page };
+  }
   await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);
   console.log(`Debt amount: ${debtAmount}`);
   console.log(`Active cases: ${activeCases}`);
@@ -131,7 +138,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
       
       
     } catch (error) {
-      console.log('Could not download closed cases PDF:', error.message);
+      console.log('Could not download closed cases PDF:', error);
     }
 
   console.log("Debt List:", debtList);
