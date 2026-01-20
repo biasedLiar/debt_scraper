@@ -119,22 +119,13 @@ digiPost.apiData = [
 ];
 
 // this website url is found in kredinors page
-const kredinor = createTargetPage(
-  "https://minside.kredinor.no",
-  "Kredinor"
-);
+const kredinor = createTargetPage("https://minside.kredinor.no", "Kredinor");
 
 //this website url is found in intrums page
-const intrum = createTargetPage(
-  "https://minesider.intrum.no/",
-  "Intrum"
-);
+const intrum = createTargetPage("https://minesider.intrum.no/", "Intrum");
 
 
-const praGroup = createTargetPage(
-  "https://mypage.pragroup.no/",
-  "PRA Group"
-);
+const praGroup = createTargetPage("https://mypage.pragroup.no/", "PRA Group");
 
 const zolva = createTargetPage(
   "https://portal.zolva.no/minside/Login",

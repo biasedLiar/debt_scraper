@@ -13,7 +13,7 @@ const path = require('path');
  * @param {() => string} getUserName - Function to get the user name
  * @returns {Promise<{browser: any, page: any}>}
  */
-export async function handleKredinorLogin(nationalID, getUserName, setupPageHandlers) {
+export async function handleKredinorLogin(nationalID, getUserName, setupPageHandlers, scrapingCompleteCallback) {
   const { browser, page } = await PUP.openPage(kredinor.url);
   
   console.log(`Opened ${kredinor.name} at ${kredinor.url}`);
@@ -136,6 +136,9 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
 
   const filePath2 = createFoldersAndGetName(kredinor.name, folderName, "Kredinor", "FullDebtDetails", true);
   await saveValidatedJSON(filePath2, {debtList, creditorList, saksnummerList}, KredinorFullDebtDetailsSchema);
+
+  
+  setTimeout(() => scrapingCompleteCallback(), 2000);
 
   return { browser, page };
 }

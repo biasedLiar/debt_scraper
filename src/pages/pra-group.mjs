@@ -19,7 +19,6 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers) {
     setupPageHandlers(page, nationalID);
   }
 
-
   // Wait for and click the login button
   try {
     await page.waitForSelector("#loginButtonId", { visible: true });

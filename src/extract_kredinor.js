@@ -19,7 +19,7 @@ export async function extractFields(pdfPath, outputPath) {
     const dates = [...pageText.matchAll(dateRegex)].map(m => m[0]);
     
     const utstedetDato = dates[4] || null;
-    const forfallsDato = dates[5] || null; 
+    const forfallsDato = dates[5] || null;
 
     // Financial fields (case-insensitive, optional colon, flexible whitespace)
     const fields = {
@@ -27,14 +27,8 @@ export async function extractFields(pdfPath, outputPath) {
         pageText,
         /Rest\s+hovedstol\s*:?\s*([\d\s]+,\d{2})/i
       ),
-      renter: findFirstValue(
-        pageText,
-        /Renter\s*:?\s*([\d\s]+,\d{2})/i
-      ),
-      gebyrer: findFirstValue(
-        pageText,
-        /Gebyrer\s*:?\s*([\d\s]+,\d{2})/i
-      ),
+      renter: findFirstValue(pageText, /Renter\s*:?\s*([\d\s]+,\d{2})/i),
+      gebyrer: findFirstValue(pageText, /Gebyrer\s*:?\s*([\d\s]+,\d{2})/i),
       inkasso: findFirstValue(
         pageText,
         /Inkassosalær\s*\/\s*Omkostninger\s*:?\s*([\d\s]+,\d{2})/i
@@ -65,6 +59,6 @@ export async function extractFields(pdfPath, outputPath) {
 function findFirstValue(text, regex) {
   const match = text.match(regex);
   return match
-    ? parseFloat(match[1].replace(/\s/g, '').replace(',', '.'))
+    ? parseFloat(match[1].replace(/\s/g, "").replace(",", "."))
     : null;
 }

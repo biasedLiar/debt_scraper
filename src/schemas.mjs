@@ -36,8 +36,11 @@ export const IntrumDebtCaseSchema = z.object({
  * Automatically filters out incomplete cases during validation
  */
 export const IntrumManualDebtSchema = z.object({
-  debtCases: z.array(IntrumDebtCaseSchema)
-    .transform(cases => cases.filter(c => c.caseNumber && c.totalAmount && c.creditorName)),
+  debtCases: z
+    .array(IntrumDebtCaseSchema)
+    .transform((cases) =>
+      cases.filter((c) => c.caseNumber && c.totalAmount && c.creditorName)
+    ),
   timestamp: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid ISO 8601 datetime string",
   }),
@@ -58,8 +61,8 @@ export const IntrumDetailedCaseSchema = z.object({
  * Schema for Kredinor manually found debt
  */
 export const KredinorManualDebtSchema = z.object({
-  debtAmount: z.string(),
-  activeCases: z.string(),
+  debtAmount: z.number(),
+  activeCases: z.int(),
   timestamp: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid ISO 8601 datetime string",
   }),
@@ -95,36 +98,44 @@ export const SavedFileMetadataSchema = z.object({
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 export const saveValidatedJSON = async (filePath, data, schema) => {
-  const fs = require('fs/promises');
-  
-  try {
-    // Validate data against schema
-    const validatedData = schema.parse(data);
-    
-    // Save to file
-    await fs.writeFile(filePath, JSON.stringify(validatedData, null, 2), 'utf-8');
-    
-    console.log(`✓ Validated and saved data to ${filePath}`);
-    return { success: true };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      console.error('❌ Validation error:', error.errors);
-      console.error('Failed to validate data for:', filePath);
-      
-      // Save anyway but with _unvalidated suffix for debugging
-      const unvalidatedPath = filePath.replace('.json', '_unvalidated.json');
-      await fs.writeFile(unvalidatedPath, JSON.stringify(data, null, 2), 'utf-8');
-      console.log(`⚠️  Saved unvalidated data to ${unvalidatedPath}`);
-      
-      return { 
-        success: false, 
-        error: `Validation failed: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`
-      };
-    }
-    
-    console.error('❌ File write error:', error);
-    return { success: false, error: error.message };
+  const fs = require("fs/promises");
+
+  // Validate data against schema
+  const validatedData = schema.safeParse(data);
+
+  if (!validatedData.success) {
+    const error = validatedData.error;
+    console.warn("❌ Validation error:", error.issues);
+    console.warn("Failed to validate data for:", filePath);
+
+    // Save anyway but with _unvalidated suffix for debugging
+    const unvalidatedPath = filePath.replace(".json", "_unvalidated.json");
+    await fs.writeFile(
+      unvalidatedPath,
+      JSON.stringify(data, null, 2),
+      "utf-8"
+    );
+    console.log(`⚠️  Saved unvalidated data to ${unvalidatedPath}`);
+    console.log("About to write following");
+    console.error(error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join(", "));
+
+    return {
+      success: false,
+      error: `Validation failed: ${error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ")}`,
+    };
   }
+  
+  
+  // Save to file
+  await fs.writeFile(
+    filePath,
+    JSON.stringify(validatedData.data, null, 2),
+    "utf-8"
+  );
+  
+  
+  console.log(`✓ Validated and saved data to ${filePath}`);
+  return { success: true };
 };
 
 /**
@@ -138,7 +149,7 @@ export const safeParseData = (schema, data) => {
     return schema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('❌ Data validation error:', error.errors);
+      console.error("❌ Data validation error:", error.errors);
     }
     return null;
   }
