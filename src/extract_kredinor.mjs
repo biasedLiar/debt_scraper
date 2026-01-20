@@ -24,6 +24,9 @@ export async function extractFields(pdfPath, outputPath) {
     // Normalize whitespace
     const pageText = fullText.replace(/\u00A0/g, ' ');
     
+    // Debug: log the text to see structure
+    console.log('PDF TEXT:', pageText);
+    
     // Find all dates (dd.mm.yyyy)
     const dateRegex = /\b\d{2}\.\d{2}\.\d{4}\b/g;
     const dates = [...pageText.matchAll(dateRegex)].map(m => m[0]);
@@ -49,14 +52,22 @@ export async function extractFields(pdfPath, outputPath) {
       ),
     };
 
+    // Extract saksnummer (case number) - format like "1689333/22"
+    // Find first occurrence of number/number pattern after Saksnummer header
+    const saksnummerMatch = pageText.match(/(\d{5,}\/\d{2})/);
+    const saksnummer = saksnummerMatch ? saksnummerMatch[1] : null;
+    
+    console.log('Saksnummer match:', saksnummerMatch);
+
     const extractedData = {
+      saksnummer,
       utstedetDato,
       forfallsDato,
       ...fields,
     };
 
     fs.writeFileSync(outputPath, JSON.stringify(extractedData, null, 2), 'utf-8');
-    console.log(`✅ Results saved to ${outputPath}`);
+    console.log(`Results saved to ${outputPath}`);
   } catch (error) {
     console.error('Error extracting PDF:', error.message);
     throw error;
