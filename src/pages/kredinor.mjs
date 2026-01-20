@@ -3,7 +3,7 @@ import { kredinor } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
 import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../schemas.mjs";
-import { extractFields } from "../extract_kredinor.js";
+import { extractFields } from "../extract_kredinor.mjs";
 const fs = require('fs');
 const path = require('path');
 
