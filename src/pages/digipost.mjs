@@ -1,6 +1,7 @@
 import { PUP } from "../scraper.mjs";
 import { digiPost } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
+import { createFoldersAndGetName, createDownloadFoldersAndGetName } from "../utilities.mjs";
 
 /**
  * Handles the Digipost login automation flow
@@ -34,22 +35,79 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
+  // Wait for the page to fully load and render after BankID login
+  console.log("Waiting for Digipost inbox to load...");
+  
+  // Wait for message list to load (this implicitly waits for navigation to complete)
+  // TODO dont hardcode single message
+  await page.waitForSelector('[aria-labelledby="message-label-3070544070"]', { 
+    visible: true 
+  });
 
-// Wait for message list to load
-await page.waitForSelector('a.message-list-item__info[data-testid="document-attachment"]', { timeout: 10000 });
+// TODO dont hardcode single message
+const button = await page.$('[aria-labelledby="message-label-3070544070"] .message-list-item__info');
+await button.click();
 
-// Get all message links
-const messageLinks = await page.$$eval('a.message-list-item__info[data-testid="document-attachment"]', links => 
-    links.map(link => ({
-        href: link.getAttribute('href'),
-        sender: link.querySelector('.message-creator p')?.textContent?.trim(),
-        subject: link.querySelector('.message-subject-content span')?.textContent?.trim(),
-        date: link.querySelector('time')?.getAttribute('datetime')
-    }))
-);
 
-console.log(`Found ${messageLinks.length} messages`);
 
+await page.waitForSelector('[aria-label="Dokumenthandlinger"]', {
+  visible: true 
+});
+
+const button2 = await page.$('[aria-label="Dokumenthandlinger"]');
+
+if (button2) {
+  await 
+  button2.click();
+} else {
+  console.error("Dokumenthandlinger button not found even after waiting");
+}
+
+
+const pdfFilePath = createDownloadFoldersAndGetName(digiPost.name, nationalID, "Digipost");
+
+const client = await page.target().createCDPSession()
+await client.send('Page.setDownloadBehavior', {
+  behavior: 'allow',
+  downloadPath: pdfFilePath,
+})
+
+console.log("Set download behavior for Digipost, downloading to:", pdfFilePath);
+// await page._client().send('Page.setDownloadBehavior', {behavior: 'allow', 
+//   downloadPath: pdfFilePath});
+
+
+
+await page.waitForSelector('[data-testid="download-document"]', { 
+  timeout: 30000, 
+  visible: true 
+});
+
+const button3 = await page.$('[data-testid="download-document"]');
+if (button3) {
+  await button3.click();
+  console.log("Clicked download document button");
+} else {
+  console.error("Dokumenthandlinger button not found even after waiting");
+}
+
+
+
+
+// const pdfFilePath = createFoldersAndGetName(digiPost.name, nationalID, "Digipost", "downloadedPDF", false);
+// await newPage._client().send('Page.setDownloadBehavior', {behavior: 'allow', 
+//   downloadPath: pdfFilePath});
+
+// await newPage.waitForSelector('#save', { 
+//   timeout: 30000, 
+//   visible: true 
+// });
+// const button3 = await newPage.$('#save');
+// if (button3) {
+//   await button3.click();
+// } else {
+//   console.error("Dokumenthandlinger button not found even after waiting");
+// }
 /* WIP
 
 // Visit each message and extract information
@@ -76,6 +134,4 @@ for (const message of messageLinks) {
     }
 } */
   return { browser, page };
-
-
 }

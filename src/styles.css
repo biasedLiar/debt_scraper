@@ -8,14 +8,34 @@ body {
   margin: 0;
   padding: 20px;
   font-family: sans-serif;
+  background-color: #f8fafb;
 }
 
 h1 {
-  font-size: 32px;
-  margin-bottom: 10px;
-  color: darkslategray;
+  font-size: 36px;
+  /* margin-bottom: 40px; */
+  color: #2d5a67;
 }
 
+h2 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.main-subheading {
+  margin-top: 40px;
+}
+
+h3 {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+hr {
+  border: none;
+  border-top: 2px solid #a9c5cf;
+  margin: 20px 0;
+}
 
 .btn {
   font-size: 16px;
@@ -23,11 +43,19 @@ h1 {
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  background-color: antiquewhite;
+  background-color: #a9c5cf;
   margin: 10px 10px 10px 0px;
 
   &:hover {
-    background-color: khaki;
+    background-color: #4ebbe2;
+  }
+}
+
+.main-start-button {
+  background-color: #37c9ab;
+
+  &:hover {
+    background-color: #01e2b5;
   }
 }
 
@@ -36,6 +64,17 @@ input {
   margin: 10px 0;
   padding: 8px;
   font-size: 16px;
+
+  &:focus-visible {
+    outline: #2d5a67 auto 2px;
+  }
+}
+
+.national-id-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* margin-bottom: 40px; */
 }
 
 input::-webkit-outer-spin-button,
@@ -44,12 +83,8 @@ input::-webkit-inner-spin-button {
   margin: 0;
 }
 
-input[type=number] {
+input[type="number"] {
   -moz-appearance: textfield;
-}
-
-.buttonDiv {
-  background-color: red;
 }
 
 .summary-container {
@@ -57,34 +92,22 @@ input[type=number] {
   flex-direction: column-reverse;
 }
 
-
-
 .debt-container {
   border: 1px solid #ccc;
   padding: 15px;
   margin-top: 20px;
   border-radius: 8px;
   background-color: azure;
-
-   &.ubetalt {
-    background-color:#ffb8b8;
-    border-color: #ff3535;
-
-    & .debt-item {
-      border-color: #ff6161;
-    }
-   }
-
-   &.ubetalt {
-    background-color:#ffb8b8;
-    border-color: #ff3535;
+  &.ubetalt {
+    background-color: #c0d0d6;
+    border-color: #2d5a67;
 
     & .debt-item {
-      border-color: #ff6161;
+      border-color: #2d5a67;
     }
-   }
+  }
 
-  & .creditor-header{
+  & .creditor-header {
     font-size: 20px;
     font-weight: bold;
     margin-bottom: 10px;
@@ -119,16 +142,58 @@ input[type=number] {
   }
 }
 
-
 .total-debt-container {
   border: 5px solid mediumslateblue;
+  background-color: rgb(206, 200, 240);
   padding: 15px;
   margin-top: 20px;
   border-radius: 8px;
 
-  & .total-debt-amount{
+  & .total-debt-amount {
     font-weight: bold;
     font-size: 50px;
     margin-bottom: 10px;
   }
+}
+
+.high-cases-container {
+  margin-top: 20px;
+  padding: 15px;
+  border: 2px solid #ff6b6b;
+  border-radius: 8px;
+  background-color: #fff5f5;
+}
+
+.high-cases-list {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 10px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 5px;
+}
+
+.high-case-item {
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid #ffcccb;
+  border-radius: 5px;
+  background-color: #fff;
+}
+
+.high-case-item:last-child {
+  margin-bottom: 0;
+}
+
+.case-header {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #d32f2f;
+}
+
+.case-detail {
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: #333;
 }

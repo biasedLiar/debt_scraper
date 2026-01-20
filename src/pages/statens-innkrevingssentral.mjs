@@ -21,12 +21,12 @@ export async function handleSILogin(nationalID, setupPageHandlers) {
   await loginWithBankID(page, nationalID);
 
   // Find and log the debt amount
-  const debtElement = await page.$('span.ce26PEIo');
+  const debtElement = await page.$("span.ce26PEIo");
   if (debtElement) {
-    const debtText = await page.evaluate(el => el.textContent, debtElement);
-    console.log('Debt amount:', debtText);
+    const debtText = await page.evaluate((el) => el.textContent, debtElement);
+    console.log("Debt amount:", debtText);
   } else {
-    console.log('Debt element not found');
+    console.log("Debt element not found");
   }
 
   return { browser, page };
