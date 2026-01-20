@@ -78,7 +78,8 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   // Click button to download PDF of closed cases
   // active for active cases, closed for closed cases
     try {
-      const downloadButton = await page.waitForSelector('span[data-text-key="claims.closed.overview_report.download.button"]', { visible: true });
+      const downloadButton = await page.waitForSelector('span[data-text-key="claims.active.overview_report.download.button"], span[data-text-key="claims.closed.overview_report.download.button"]', { visible: true });
+      
       
       // Set download path for this specific download - CDP requires absolute path
       const client = await page.createCDPSession();
