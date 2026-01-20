@@ -64,6 +64,7 @@ export async function extractFields(pdfPath, outputPath) {
       
       console.log(`\n--- Case ${i + 1}: ${saksnummer} ---`);
       console.log('Case text length:', caseText.length);
+      console.log('Case text preview:', caseText.substring(0, 500));
       
       // Extract Fakturadato and Forfallsdato from the table section
       // Look for dates after a reference number (8+ digits followed by two dates)
@@ -95,8 +96,10 @@ export async function extractFields(pdfPath, outputPath) {
       };
       
       // Extract Oppdragsgiver from this case section
-      const oppdragsgiverMatch = caseText.match(/Oppdragsgiver[:\s]+([A-Za-zÆØÅæøå0-9\s\-\.]+?)(?=\s*(?:Opprinnelig|Saksnummer|Avsluttet|Innbetalt|Utestående|$))/i);
+      const oppdragsgiverMatch = caseText.match(/Oppdragsgiver[:\s]+([A-Za-zÆØÅæøå0-9\s\-\.]+?)(?=\s*(?:Opprinnelig\s+oppdragsgiver|Kundenummer|Saksnummer|Avsluttet|Innbetalt|Utestående|Referanse\s+til|Fakturadato|\d{8,}|$))/i);
       const oppdragsgiver = oppdragsgiverMatch ? oppdragsgiverMatch[1].trim() : null;
+      console.log('Oppdragsgiver match:', oppdragsgiverMatch);
+      console.log('Oppdragsgiver:', oppdragsgiver);
       
       // Extract Opprinnelig oppdragsgiver from this case section
       // More flexible regex - match everything until we hit "Kundenummer", "Referanse" header or table markers
@@ -107,7 +110,6 @@ export async function extractFields(pdfPath, outputPath) {
       if (opprinneligOppdragsgiver) {
         opprinneligOppdragsgiver = opprinneligOppdragsgiver.replace(/\s*Kundenummer.*/i, '').trim();
       }
-      
       console.log('Oppdragsgiver:', oppdragsgiver);
       console.log('Opprinnelig oppdragsgiver match:', opprinneligOppdragsgiverMatch);
       console.log('Fields:', fields);
