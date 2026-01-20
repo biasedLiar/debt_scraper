@@ -18,7 +18,6 @@ Applikasjonen støtter for øyeblikket følgende norske kreditor-/inkassotjenest
 - **Kredinor** - Inkassoselskap
 - **PRA Group** - Under arbeid
 - **Digipost** - Digital postkassetjeneste - Under utvikling
-- **tfBank** - Finansielle tjenester - Under utvikling
 - **Zolva AS** - Inkassoselskap - Under utvikling
 
 ## Funksjoner

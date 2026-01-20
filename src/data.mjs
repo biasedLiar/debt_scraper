@@ -130,7 +130,6 @@ const intrum = createTargetPage(
   "Intrum"
 );
 
-const tfBank = createTargetPage("https://minesider.tfbank.no/login", "tfBank");
 
 const praGroup = createTargetPage(
   "https://mypage.pragroup.no/",
@@ -147,8 +146,7 @@ Object.freeze(si);
 Object.freeze(digiPost);
 Object.freeze(kredinor);
 Object.freeze(intrum);
-Object.freeze(tfBank);
 Object.freeze(praGroup);
 Object.freeze(zolva);
 
-export { si, digiPost, kredinor, intrum, tfBank, praGroup, zolva };
+export { si, digiPost, kredinor, intrum, praGroup, zolva };
