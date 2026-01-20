@@ -38,4 +38,10 @@ export async function loginWithBankID(page, nationalID) {
   } catch (e) {
     console.error("Could not find/click continue button:", e);
   }
+
+  // Wait for ditt bankID-passord or for page to move on
+  console.log("Waiting for BankID password input or page to move on");
+  
+
+  await page.bringToFront()
 }
