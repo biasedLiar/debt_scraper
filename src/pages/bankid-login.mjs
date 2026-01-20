@@ -38,4 +38,5 @@ export async function loginWithBankID(page, nationalID) {
   } catch (e) {
     console.error("Could not find/click continue button:", e);
   }
+  await page.bringToFront()
 }
