@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "pdf-parse": "^2.4.5",
+    "pdfjs-dist": "^4.9.155",
     "puppeteer": "^24.29.1",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-user-preferences": "^2.4.1",

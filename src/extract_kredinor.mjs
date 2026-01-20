@@ -2,8 +2,13 @@ const fs = require('fs');
 const path = require('path');
 const pdfjs = require('pdfjs-dist/legacy/build/pdf.mjs');
 
-// Set worker path for Node.js/Electron environment
-pdfjs.GlobalWorkerOptions.workerSrc = path.join(__dirname, '../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
+// Set worker path for Node.js/Electron environment - use require.resolve for cross-system compatibility
+try {
+  pdfjs.GlobalWorkerOptions.workerSrc = require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs');
+} catch (e) {
+  // Fallback if resolve doesn't work
+  pdfjs.GlobalWorkerOptions.workerSrc = path.join(__dirname, '../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
+}
 
 export async function extractFields(pdfPath, outputPath) {
   try {
@@ -57,10 +62,22 @@ export async function extractFields(pdfPath, outputPath) {
     const saksnummerMatch = pageText.match(/(\d{5,}\/\d{2})/);
     const saksnummer = saksnummerMatch ? saksnummerMatch[1] : null;
     
+    // Extract Oppdragsgiver (creditor/client)
+    const oppdragsgiverMatch = pageText.match(/Oppdragsgiver:\s*([^\n]+)/i);
+    const oppdragsgiver = oppdragsgiverMatch ? oppdragsgiverMatch[1].trim() : null;
+    
+    // Extract Opprinnelig oppdragsgiver (original creditor/client)
+    const opprinneligOppdragsgiverMatch = pageText.match(/Opprinnelig\s+oppdragsgiver:\s*([^\n]+)/i);
+    const opprinneligOppdragsgiver = opprinneligOppdragsgiverMatch ? opprinneligOppdragsgiverMatch[1].trim() : null;
+    
     console.log('Saksnummer match:', saksnummerMatch);
+    console.log('Oppdragsgiver:', oppdragsgiver);
+    console.log('Opprinnelig oppdragsgiver:', opprinneligOppdragsgiver);
 
     const extractedData = {
       saksnummer,
+      oppdragsgiver,
+      opprinneligOppdragsgiver,
       utstedetDato,
       forfallsDato,
       ...fields,
