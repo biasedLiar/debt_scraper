@@ -43,5 +43,5 @@ export async function loginWithBankID(page, nationalID) {
   console.log("Waiting for BankID password input or page to move on");
   
 
-  await page.bringToFront()
+  await page.bringToFront();
 }
