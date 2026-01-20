@@ -1,18 +1,31 @@
 const fs = require('fs');
 const path = require('path');
-const { PDFParse } = require('pdf-parse');
+const pdfjs = require('pdfjs-dist/legacy/build/pdf.mjs');
+
+// Set worker path for Node.js/Electron environment
+pdfjs.GlobalWorkerOptions.workerSrc = path.join(__dirname, '../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
 
 export async function extractFields(pdfPath, outputPath) {
   try {
-    const buffer = fs.readFileSync(pdfPath);
-    const parser = new PDFParse({ data: buffer });
-    const result = await parser.getText();
+    const dataBuffer = fs.readFileSync(pdfPath);
+    const uint8Array = new Uint8Array(dataBuffer);
     
-    // Extract text from result - result.text contains all text
-    const fullText = result.text || '';
+    const doc = await pdfjs.getDocument({ data: uint8Array }).promise;
+    let fullText = '';
+    
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(' ');
+      fullText += pageText + '\n';
+    }
+    
     
     // Normalize whitespace
     const pageText = fullText.replace(/\u00A0/g, ' ');
+    
+    // Debug: log the text to see structure
+    console.log('PDF TEXT:', pageText);
     
     // Find all dates (dd.mm.yyyy)
     const dateRegex = /\b\d{2}\.\d{2}\.\d{4}\b/g;
@@ -39,16 +52,22 @@ export async function extractFields(pdfPath, outputPath) {
       ),
     };
 
+    // Extract saksnummer (case number) - format like "1689333/22"
+    // Find first occurrence of number/number pattern after Saksnummer header
+    const saksnummerMatch = pageText.match(/(\d{5,}\/\d{2})/);
+    const saksnummer = saksnummerMatch ? saksnummerMatch[1] : null;
+    
+    console.log('Saksnummer match:', saksnummerMatch);
+
     const extractedData = {
+      saksnummer,
       utstedetDato,
       forfallsDato,
       ...fields,
     };
 
     fs.writeFileSync(outputPath, JSON.stringify(extractedData, null, 2), 'utf-8');
-    console.log(`✅ Results saved to ${outputPath}`);
-    
-    await parser.destroy();
+    console.log(`Results saved to ${outputPath}`);
   } catch (error) {
     console.error('Error extracting PDF:', error.message);
     throw error;

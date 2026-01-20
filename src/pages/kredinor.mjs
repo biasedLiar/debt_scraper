@@ -3,7 +3,7 @@ import { kredinor } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
 import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../schemas.mjs";
-import { extractFields } from "../extract_kredinor.js";
+import { extractFields } from "../extract_kredinor.mjs";
 const fs = require('fs');
 const path = require('path');
 
@@ -76,8 +76,10 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   );
 
   // Click button to download PDF of closed cases
+  // active for active cases, closed for closed cases
     try {
-      const downloadButton = await page.waitForSelector('span[data-text-key="claims.active.overview_report.download.button"]', { visible: true });
+      const downloadButton = await page.waitForSelector('span[data-text-key="claims.active.overview_report.download.button"], span[data-text-key="claims.closed.overview_report.download.button"]', { visible: true });
+      
       
       // Set download path for this specific download - CDP requires absolute path
       const client = await page.createCDPSession();
