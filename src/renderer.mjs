@@ -171,6 +171,14 @@ export const setupPageHandlers = (page, nationalID) => {
       console.log("Could not get text:", e);
       return;
     }
+
+    try {
+      await page.title();
+    } catch (e) {
+      console.log("Could not get page title:", e);
+      return;
+    }
+
     if (!(await page.title())) {
       console.error("Current website not set, cannot save page");
       return;
@@ -408,16 +416,16 @@ const visitAllButton = button(
         handler: () => handleSILogin(nationalID, setupPageHandlers),
       },
       {
-        name: "Digipost",
-        handler: () => handleDigipostLogin(nationalID, setupPageHandlers),
-      },
-      {
         name: "PRA Group",
         handler: () => handlePraGroupLogin(nationalID, setupPageHandlers),
       },
       {
         name: "Zolva AS",
         handler: () => handleZolvaLogin(nationalID, setupPageHandlers),
+      },
+      {
+        name: "Digipost",
+        handler: () => handleDigipostLogin(nationalID, setupPageHandlers),
       },
     ];
 
@@ -455,6 +463,7 @@ const visitAllButton = button(
       }
 
       alert("Finished visiting all websites!");
+
     } catch (error) {
       console.error("Error during website visits:", error);
       alert("An error occurred. Check console for details.");

@@ -42,6 +42,8 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingC
         const warningText = await page.evaluate(el => el.textContent, noCasesElement);
         if (warningText.includes('Vi finner ingen saker i vårt system.')) {
           console.log('No cases found in Intrum system. Finishing execution.');
+          
+          setTimeout(() => scrapingCompleteCallback(), 2000);
           return { browser, page };
         }
       }

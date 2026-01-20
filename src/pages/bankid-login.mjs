@@ -7,12 +7,12 @@ export async function loginWithBankID(page, nationalID) {
   // Wait for and click the BankID link
   try {
     await page.waitForSelector('a[href="/authorize/bankid"]', {
-      timeout: 2000,
+      timeout: 2000
     });
     await page.click('a[href="/authorize/bankid"]');
     console.log("Clicked BankID link");
   } catch (e) {
-    console.error("Could not find/click BankID link:", e);
+    console.log("Could not find/click BankID link:", e);
   }
 
   // Wait for and fill in the national identity number input
@@ -40,8 +40,5 @@ export async function loginWithBankID(page, nationalID) {
   }
 
   // Wait for ditt bankID-passord or for page to move on
-  console.log("Waiting for BankID password input or page to move on");
-  
-
   await page.bringToFront();
 }
