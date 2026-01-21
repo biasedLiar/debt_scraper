@@ -62,6 +62,17 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, scrapingCo
     console.log('Page might not have any debt data to display');
     return { browser, page };
   }
+  // Check if table shows "Ingen data å vise"
+    const hasNoData = await page.evaluate(() => {
+      const noDataCell = document.querySelector('td.react-bs-table-no-data');
+      return noDataCell !== null;
+    });
+
+    if (hasNoData) {
+      console.log('Table shows "Ingen data å vise" - no debt data available');
+      setTimeout(() => scrapingCompleteCallback(), 2000);
+      return { browser, page };
+    }
 
   // Extract table data
   const tableData = await page.evaluate(() => {

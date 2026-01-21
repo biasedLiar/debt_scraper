@@ -415,10 +415,7 @@ const visitAllButton = button(
     ev.target.innerText = "Starter applikasjon...";
 
     const websites = [
-          {
-        name: "Zolva AS",
-        handler: () => handleZolvaLogin(nationalID, setupPageHandlers, scrapingCompleteCallback),
-      },
+       
       {
         name: "Kredinor",
         handler: () =>
@@ -432,11 +429,11 @@ const visitAllButton = button(
         name: "SI",
         handler: () => handleSILogin(nationalID, setupPageHandlers),
       },
-      
+      /*
       {
         name: "Digipost",
         handler: () => handleDigipostLogin(nationalID, setupPageHandlers),
-      }, 
+      }, */
       {
         name: "PRA Group",
         handler: () => handlePraGroupLogin(nationalID, setupPageHandlers, scrapingCompleteCallback),
