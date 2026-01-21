@@ -41,11 +41,11 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers) {
   
   console.log("Account reference:", accountReference);
 
-  // Extract amount
-  await page.waitForSelector('.text--big strong', { visible: true });
+  // Extract amount (second number in the box)
+  await page.waitForSelector('.text--big strong', { visible: true, timeout: 120000 });
   const amount = await page.evaluate(() => {
-    const element = document.querySelector('.text--big strong');
-    return element ? element.textContent.trim() : null;
+    const elements = document.querySelectorAll('.text--big strong');
+    return elements[1] ? elements[1].textContent.trim() : null;
   });
 
   console.log("Amount:", amount);

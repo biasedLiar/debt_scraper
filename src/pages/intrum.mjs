@@ -106,6 +106,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingC
  
 
   // Find all "Detaljer på sak" buttons and process each one
+  await page.waitForSelector('span.button-text', { visible: true });
   const detailsButtons = await page.$$('span.button-text');
   const detailsButtonsToClick = [];
   
