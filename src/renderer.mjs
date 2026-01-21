@@ -400,7 +400,7 @@ const visitAllButton = button(
         name: "SI",
         handler: () => handleSILogin(nationalID, setupPageHandlers),
       },
-      /*
+      
       {
         name: "Digipost",
         handler: () => handleDigipostLogin(nationalID, setupPageHandlers),
@@ -408,7 +408,7 @@ const visitAllButton = button(
       {
         name: "PRA Group",
         handler: () => handlePraGroupLogin(nationalID, setupPageHandlers),
-      },*/
+      },
   
     ];
 
