@@ -9,7 +9,7 @@ const fs = require('fs/promises');
  * @param {string} nationalID - The national identity number to use for login
  * @returns {Promise<{browser: any, page: any}>}
  */
-export async function handlePraGroupLogin(nationalID, setupPageHandlers) {
+export async function handlePraGroupLogin(nationalID, setupPageHandlers, scrapingCompleteCallback) {
   const { browser, page } = await PUP.openPage(praGroup.url);
 
   console.log(`Opened ${praGroup.name} at ${praGroup.url}`);
@@ -41,34 +41,29 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers) {
 
   console.log(`Found ${possibleElements.length} possible account reference elements.`);
 
-  const repeatedLoginElements = possibleElements.filter(async (el) => {
-    console.log('Element has value:', await page.evaluate(el => el.textContent, element));
-    const text = await page.evaluate(element => element.textContent, el);
-    // return text.includes('For mange mislykkede påloggingsforsøk');
-    return text.includes('For mange mislykkede påloggingsforsøk.');
-  });
-  console.log(`Found ${repeatedLoginElements.length} possible account repeatedLoginElements elements.`);
-
-  const noAccountElements = possibleElements.filter(async (el) => {
-    console.log('Element has value:', await page.evaluate(el => el.textContent, element));
-    const text = await page.evaluate(element => element.textContent, el);
-    // return text.includes('For mange mislykkede påloggingsforsøk');
-    return text.includes('Opplysningene du har oppgitt stemmer ikke med våre');
-  });
-  console.log(`Found ${noAccountElements.length} possible account noAccountElements elements.`);
-
   for (let index = 0; index < possibleElements.length; index++) {
     const element = possibleElements[index];
     console.log('Element has value:', await page.evaluate(el => el.textContent, element));
-    
-  }
-  if (possibleElements.length === 0) {
-    console.log("Could not find account reference element");
-    throw new Error("Account reference element not found");
+    const hasText1 = await page.evaluate(el => el.textContent.includes('For mange mislykkede påloggingsforsøk.'), element);
+    if (hasText1) {
+      console.log("Detected too many failed login attempts message. Ending execution.");
+      // TODO, handle
+      console.log(scrapingCompleteCallback);
+      setTimeout(() => scrapingCompleteCallback(), 2000);
+
+      return { browser, page };
+    }
+    const hasText2 = await page.evaluate(el => el.textContent.includes('Opplysningene du har oppgitt stemmer ikke med våre'), element);
+    if (hasText2) {
+      console.log("No account exists for profile.");
+
+      setTimeout(() => scrapingCompleteCallback(), 2000);
+
+      return { browser, page };
+    }
   }
   
-  
-  await page.waitForSelector('#accountReferenceId strong, .validation-summary-errors > li[contains(text(), "Opplysningene du har oppgitt stemmer ikke med våre. Vennligst prøv på nytt.")]', { visible: true });
+
   const accountReference = await page.evaluate(() => {
     const element = document.querySelector('#accountReferenceId strong');
     return element ? element.textContent.trim() : null;
