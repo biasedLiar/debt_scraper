@@ -470,10 +470,16 @@ const visitAllButton = button(
         // Wait for scraping to complete (signaled by the callback)
         console.log(`Waiting for ${site.name} scraping to complete...`);
         const pageHandled = await scrapingPromise;
+        
+
+        console.log(`${site.name} callback signaled.`);
+
         if (pageHandled === undefined) {
+          console.log(`${site.name} reported undefined pageHandled.`);
           showValidationError(validation.error);
-          return;
+          // return;
         }
+
         // Reset callback
         scrapingCompleteCallback = null;
 

@@ -33,7 +33,7 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, scrapin
 
   
   // Extract account reference number 
-  await page.waitForSelector('.welcome-headline', { visible: true });
+  await page.waitForSelector('.welcome-headline, h1 span span', { visible: true , timeout: 60000});;
 
 
   console.log("Found li elements, looking for account reference...");
