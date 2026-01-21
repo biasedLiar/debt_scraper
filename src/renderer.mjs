@@ -441,7 +441,7 @@ const visitAllButton = button(
       },
       {
         name: "PRA Group",
-        handler: () => handlePraGroupLogin(nationalID, setupPageHandlers),
+        handler: () => handlePraGroupLogin(nationalID, setupPageHandlers, scrapingCompleteCallback),
       },
       {
         name: "Zolva AS",
