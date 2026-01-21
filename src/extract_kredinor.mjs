@@ -17,20 +17,36 @@ export async function extractFields(pdfPath, outputPath) {
     
     const doc = await pdfjs.getDocument({ data: uint8Array }).promise;
     
-    // Extract first page separately to get the grand total
-    const firstPage = await doc.getPage(1);
-    const firstPageContent = await firstPage.getTextContent();
-    const firstPageText = firstPageContent.items.map(item => item.str).join(' ').replace(/\u00A0/g, ' ');
+    // First, search all pages to find where Totalbeløp appears
+    let totalbeløpPageNum = null;
+    let totalbeløpPageText = '';
+    let grandTotalMatch = null;
     
-    console.log('FIRST PAGE TEXT:', firstPageText);
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(' ').replace(/\u00A0/g, ' ');
+      
+      // Check if this page contains Totalbeløp
+      const totalMatch = findFirstValue(pageText, /Totalbeløp\s*:?\s*([\d\s]+,\d{2})/i);
+      if (totalMatch !== null) {
+        totalbeløpPageNum = i;
+        totalbeløpPageText = pageText;
+        grandTotalMatch = totalMatch;
+        console.log(`Found Totalbeløp on page ${i}:`, grandTotalMatch);
+        break;
+      }
+    }
     
-    // Extract grand total from first page
-    const grandTotalMatch = findFirstValue(firstPageText, /Totalbeløp\s*:?\s*([\d\s]+,\d{2})/i);
-    console.log('Grand total from page 1:', grandTotalMatch);
+    if (!totalbeløpPageNum) {
+      throw new Error('Could not find Totalbeløp in PDF');
+    }
     
-    // Now extract text from page 2 onwards for individual cases
+    console.log(`Totalbeløp found on page ${totalbeløpPageNum}:`, grandTotalMatch);
+    
+    // Now extract text from pages after the Totalbeløp page for individual cases
     let casesText = '';
-    for (let i = 2; i <= doc.numPages; i++) {
+    for (let i = totalbeløpPageNum + 1; i <= doc.numPages; i++) {
       const page = await doc.getPage(i);
       const textContent = await page.getTextContent();
       const pageText = textContent.items.map(item => item.str).join(' ');
@@ -40,7 +56,7 @@ export async function extractFields(pdfPath, outputPath) {
     // Normalize whitespace
     casesText = casesText.replace(/\u00A0/g, ' ');
     
-    console.log('CASES TEXT (from page 2+):', casesText);
+    console.log(`CASES TEXT (from page ${totalbeløpPageNum + 1}+):`, casesText);
     
     // Find all saksnummer occurrences with their positions
     const saksnummerRegex = /(\d{5,}\/\d{2})/g;
@@ -124,26 +140,26 @@ export async function extractFields(pdfPath, outputPath) {
       });
     }
     
-    // If no saksnummer found on pages 2+, check if there's only the first page
-    if (allCases.length === 1 && doc.numPages === 1) {
+    // If no saksnummer found on subsequent pages, check if Totalbeløp is the only thing
+    if (allCases.length === 1 && totalbeløpPageNum === doc.numPages) {
       const dateRegex = /\b\d{2}\.\d{2}\.\d{4}\b/g;
-      const dates = [...firstPageText.matchAll(dateRegex)].map(m => m[0]);
+      const dates = [...totalbeløpPageText.matchAll(dateRegex)].map(m => m[0]);
       
       const utstedetDato = dates[3] || null;
       const forfallsDato = dates[4] || null;
 
       const fields = {
-        restHovedstol: findFirstValue(firstPageText, /Rest\s+hovedstol\s*:?\s*([\d\s]+,\d{2})/i),
-        renter: findFirstValue(firstPageText, /Renter\s*:?\s*([\d\s]+,\d{2})/i),
-        gebyrer: findFirstValue(firstPageText, /Gebyrer\s*:?\s*([\d\s]+,\d{2})/i),
-        inkasso: findFirstValue(firstPageText, /Inkassosalær\s*\/\s*Omkostninger\s*:?\s*([\d\s]+,\d{2})/i),
-        renterAvOmkostninger: findFirstValue(firstPageText, /Renter\s+av\s+omkostninger\s*:?\s*([\d\s]+,\d{2})/i),
+        restHovedstol: findFirstValue(totalbeløpPageText, /Rest\s+hovedstol\s*:?\s*([\d\s]+,\d{2})/i),
+        renter: findFirstValue(totalbeløpPageText, /Renter\s*:?\s*([\d\s]+,\d{2})/i),
+        gebyrer: findFirstValue(totalbeløpPageText, /Gebyrer\s*:?\s*([\d\s]+,\d{2})/i),
+        inkasso: findFirstValue(totalbeløpPageText, /Inkassosalær\s*\/\s*Omkostninger\s*:?\s*([\d\s]+,\d{2})/i),
+        renterAvOmkostninger: findFirstValue(totalbeløpPageText, /Renter\s+av\s+omkostninger\s*:?\s*([\d\s]+,\d{2})/i),
       };
       
-      const oppdragsgiverMatch = firstPageText.match(/Oppdragsgiver:\s*([^\n]+)/i);
+      const oppdragsgiverMatch = totalbeløpPageText.match(/Oppdragsgiver:\s*([^\n]+)/i);
       const oppdragsgiver = oppdragsgiverMatch ? oppdragsgiverMatch[1].trim() : null;
       
-      const opprinneligOppdragsgiverMatch = firstPageText.match(/Opprinnelig\s+oppdragsgiver:\s*([^\n]+)/i);
+      const opprinneligOppdragsgiverMatch = totalbeløpPageText.match(/Opprinnelig\s+oppdragsgiver:\s*([^\n]+)/i);
       const opprinneligOppdragsgiver = opprinneligOppdragsgiverMatch ? opprinneligOppdragsgiverMatch[1].trim() : null;
 
       allCases.push({
