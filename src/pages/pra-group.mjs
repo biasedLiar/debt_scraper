@@ -32,8 +32,43 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers) {
   await loginWithBankID(page, nationalID);
 
   
-  // Extract account reference number
-  await page.waitForSelector('#accountReferenceId strong', { visible: true });
+  // Extract account reference number 
+  await page.waitForSelector('.welcome-headline', { visible: true });
+
+
+  console.log("Found li elements, looking for account reference...");
+  const possibleElements = (await page.$$('.validation-summary-errors li'));
+
+  console.log(`Found ${possibleElements.length} possible account reference elements.`);
+
+  const repeatedLoginElements = possibleElements.filter(async (el) => {
+    console.log('Element has value:', await page.evaluate(el => el.textContent, element));
+    const text = await page.evaluate(element => element.textContent, el);
+    // return text.includes('For mange mislykkede påloggingsforsøk');
+    return text.includes('For mange mislykkede påloggingsforsøk.');
+  });
+  console.log(`Found ${repeatedLoginElements.length} possible account repeatedLoginElements elements.`);
+
+  const noAccountElements = possibleElements.filter(async (el) => {
+    console.log('Element has value:', await page.evaluate(el => el.textContent, element));
+    const text = await page.evaluate(element => element.textContent, el);
+    // return text.includes('For mange mislykkede påloggingsforsøk');
+    return text.includes('Opplysningene du har oppgitt stemmer ikke med våre');
+  });
+  console.log(`Found ${noAccountElements.length} possible account noAccountElements elements.`);
+
+  for (let index = 0; index < possibleElements.length; index++) {
+    const element = possibleElements[index];
+    console.log('Element has value:', await page.evaluate(el => el.textContent, element));
+    
+  }
+  if (possibleElements.length === 0) {
+    console.log("Could not find account reference element");
+    throw new Error("Account reference element not found");
+  }
+  
+  
+  await page.waitForSelector('#accountReferenceId strong, .validation-summary-errors > li[contains(text(), "Opplysningene du har oppgitt stemmer ikke med våre. Vennligst prøv på nytt.")]', { visible: true });
   const accountReference = await page.evaluate(() => {
     const element = document.querySelector('#accountReferenceId strong');
     return element ? element.textContent.trim() : null;

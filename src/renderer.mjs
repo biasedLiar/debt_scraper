@@ -89,6 +89,30 @@ const showValidationError = (message) => {
   }, 4000);
 };
 
+/**
+ * Shows validation error message to user
+ * @param {string} message - Error message to display
+ */
+const showTimedOutError = (message) => {
+  const existingTimedOutError = document.querySelector(".timed-out-error");
+  if (existingTimedOutError) {
+    existingTimedOutError.remove();
+  }
+
+  const errorDiv = document.createElement("div");
+  errorDiv.className = "timed-out-error";
+  errorDiv.textContent = message;
+  errorDiv.style.color = "red";
+  errorDiv.style.marginLeft = "0.5rem";
+  errorDiv.style.fontSize = "0.9rem";
+
+  nationalIdContainer.insertAdjacentElement("afterend", errorDiv);
+
+  setTimeout(() => {
+    errorDiv.remove();
+  }, 4000);
+};
+
 // Set to true to show paid debts as well
 const showPaidDebts = true;
 
@@ -447,8 +471,11 @@ const visitAllButton = button(
 
         // Wait for scraping to complete (signaled by the callback)
         console.log(`Waiting for ${site.name} scraping to complete...`);
-        await scrapingPromise;
-
+        const pageHandled = await scrapingPromise;
+        if (pageHandled === undefined) {
+          showValidationError(validation.error);
+          return;
+        }
         // Reset callback
         scrapingCompleteCallback = null;
 
