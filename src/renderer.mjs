@@ -274,16 +274,6 @@ const openPage = async (url) => {
 };
 
 
-const tfBankButton = button("tfBank", async (ev) => {
-  currentWebsite = "tfBank";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
-  const validation = validateNationalID(nationalID);
-  if (!validation.valid) {
-    showValidationError(validation.error);
-    return;
-  }
-  await handleTfBankLogin(nationalID, setupPageHandlers);
-});
 
 const di = div();
 di.innerText = "Hello World from dom!";
@@ -393,7 +383,10 @@ const visitAllButton = button(
     ev.target.innerText = "Starter applikasjon...";
 
     const websites = [
-      
+          {
+        name: "Zolva AS",
+        handler: () => handleZolvaLogin(nationalID, setupPageHandlers, scrapingCompleteCallback),
+      },
       {
         name: "Kredinor",
         handler: () =>
@@ -407,18 +400,16 @@ const visitAllButton = button(
         name: "SI",
         handler: () => handleSILogin(nationalID, setupPageHandlers),
       },
+      /*
       {
         name: "Digipost",
         handler: () => handleDigipostLogin(nationalID, setupPageHandlers),
-      },
+      }, 
       {
         name: "PRA Group",
         handler: () => handlePraGroupLogin(nationalID, setupPageHandlers),
-      },
-      {
-        name: "Zolva AS",
-        handler: () => handleZolvaLogin(nationalID, setupPageHandlers),
-      },
+      },*/
+  
     ];
 
     try {
