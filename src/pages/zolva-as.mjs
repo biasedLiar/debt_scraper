@@ -7,7 +7,7 @@ const fs = require('fs/promises');
  * @param {string} nationalID - The national identity number to use for login
  * @returns {Promise<{browser: any, page: any}>}
  */
-export async function handleZolvaLogin(nationalID, setupPageHandlers) {
+export async function handleZolvaLogin(nationalID, setupPageHandlers, scrapingCompleteCallback) {
   const { browser, page } = await PUP.openPage(zolva.url);
 
   console.log(`Opened ${zolva.name} at ${zolva.url}`);
@@ -33,6 +33,26 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers) {
 
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
+
+  // Check for error message indicating no debtor found
+  try {
+    await page.waitForSelector('.validation-summary-errors', { visible: true });
+    const errorMessage = await page.evaluate(() => {
+      const errorElement = document.querySelector('.validation-summary-errors li');
+      return errorElement ? errorElement.textContent.trim() : null;
+    });
+    
+    if (errorMessage === 'Ingen debitor funnet for SSN-nummer') {
+      console.log('No debtor found for this SSN number');
+      setTimeout(() => scrapingCompleteCallback(), 2000);
+      return { browser, page };
+    }
+  } catch (error) {
+    // No error message found, continue with normal flow
+    console.log('No error message found, proceeding with data extraction');
+  }
+
+
 
   // Wait for the table to load
   try {
