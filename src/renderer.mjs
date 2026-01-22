@@ -418,12 +418,12 @@ const visitAllButton = button(
        
       {
         name: "Kredinor",
-        handler: () =>
-          handleKredinorLogin(nationalID, () => userName, setupPageHandlers, scrapingCompleteCallback),
+        handler: (callback) =>
+          handleKredinorLogin(nationalID, () => userName, setupPageHandlers, callback),
       },
       {
         name: "Intrum",
-        handler: () => handleIntrumLogin(nationalID, setupPageHandlers, scrapingCompleteCallback),
+        handler: (callback) => handleIntrumLogin(nationalID, setupPageHandlers, callback),
       },
       {
         name: "SI",
@@ -436,11 +436,11 @@ const visitAllButton = button(
       }, */
       {
         name: "PRA Group",
-        handler: () => handlePraGroupLogin(nationalID, setupPageHandlers, scrapingCompleteCallback),
+        handler: (callback) => handlePraGroupLogin(nationalID, setupPageHandlers, callback),
       },
       {
         name: "Zolva AS",
-        handler: () => handleZolvaLogin(nationalID, setupPageHandlers),
+        handler: (callback) => handleZolvaLogin(nationalID, setupPageHandlers, callback),
       },
       {
         name: "Digipost",
@@ -461,20 +461,20 @@ const visitAllButton = button(
           scrapingCompleteCallback = resolve;
         });
 
-        // Open the website and do the scraping
-        await site.handler();
+        // Open the website and do the scraping (pass callback to handler)
+        site.handler(scrapingCompleteCallback);
 
         // Wait for scraping to complete (signaled by the callback)
         console.log(`Waiting for ${site.name} scraping to complete...`);
-        const pageHandled = await scrapingPromise;
         
-
-        console.log(`${site.name} callback signaled.`);
-
-        if (pageHandled === undefined) {
-          console.log(`${site.name} reported undefined pageHandled.`);
-          showValidationError(validation.error);
-          // return;
+        // Wait for either the callback or a timeout
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve('timeout'), 60000));
+        const result = await Promise.race([scrapingPromise, timeoutPromise]);
+        
+        if (result === 'timeout') {
+          console.warn(`${site.name} timed out waiting for scraping completion.`);
+        } else {
+          console.warn(`${site.name} scraping completed successfully.`);
         }
 
         // Reset callback

@@ -5,6 +5,8 @@ const fs = require('fs/promises');
 /**
  * Handles the Zolva AS login automation flow
  * @param {string} nationalID - The national identity number to use for login
+ * @param {Function} setupPageHandlers - Function to setup page response handlers
+ * @param {Function} scrapingCompleteCallback - Callback to signal scraping is complete
  * @returns {Promise<{browser: any, page: any}>}
  */
 export async function handleZolvaLogin(nationalID, setupPageHandlers, scrapingCompleteCallback) {
@@ -44,7 +46,9 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, scrapingCo
     
     if (errorMessage === 'Ingen debitor funnet for SSN-nummer') {
       console.log('No debtor found for this SSN number');
-      setTimeout(() => scrapingCompleteCallback(), 2000);
+      if (scrapingCompleteCallback) {
+        setTimeout(() => scrapingCompleteCallback(), 1000);
+      }
       return { browser, page };
     }
   } catch (error) {
@@ -70,7 +74,9 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, scrapingCo
 
     if (hasNoData) {
       console.log('Table shows "Ingen data å vise" - no debt data available');
-      setTimeout(() => scrapingCompleteCallback(), 2000);
+      if (scrapingCompleteCallback) {
+        setTimeout(() => scrapingCompleteCallback(), 1000);
+      }
       return { browser, page };
     }
 
@@ -96,5 +102,9 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, scrapingCo
     const detailedInfoFilePath = createFoldersAndGetName("Zolva", nationalID, "Zolva", "DetailedDebtInfo", true);
     await fs.writeFile(detailedInfoFilePath, JSON.stringify(tableData, null, 2));
     console.log(`Saved table data to ${detailedInfoFilePath}`);
+  
+  if (scrapingCompleteCallback) {
+    setTimeout(() => scrapingCompleteCallback(), 1000);
+  }
   return { browser, page };
 }

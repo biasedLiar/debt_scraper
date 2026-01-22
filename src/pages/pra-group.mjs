@@ -7,6 +7,8 @@ const fs = require('fs/promises');
 /**
  * Handles the PRA Group login automation flow
  * @param {string} nationalID - The national identity number to use for login
+ * @param {Function} setupPageHandlers - Function to setup page response handlers
+ * @param {Function} scrapingCompleteCallback - Callback to signal scraping is complete
  * @returns {Promise<{browser: any, page: any}>}
  */
 export async function handlePraGroupLogin(nationalID, setupPageHandlers, scrapingCompleteCallback) {
@@ -48,17 +50,17 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, scrapin
     if (hasText1) {
       console.log("Detected too many failed login attempts message. Ending execution.");
       // TODO, handle
-      console.log(scrapingCompleteCallback);
-      setTimeout(() => scrapingCompleteCallback(), 2000);
-
+      if (scrapingCompleteCallback) {
+        setTimeout(() => scrapingCompleteCallback(), 1000);
+      }
       return { browser, page };
     }
     const hasText2 = await page.evaluate(el => el.textContent.includes('Opplysningene du har oppgitt stemmer ikke med våre'), element);
     if (hasText2) {
       console.log("No account exists for profile.");
-
-      setTimeout(() => scrapingCompleteCallback(), 2000);
-
+      if (scrapingCompleteCallback) {
+        setTimeout(() => scrapingCompleteCallback(), 1000);
+      }
       return { browser, page };
     }
   }
@@ -71,11 +73,11 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, scrapin
   
   console.log("Account reference:", accountReference);
 
-  // Extract amount (second number in the box)
-  await page.waitForSelector('.text--big strong', { visible: true, timeout: 120000 });
+  // Extract amount
+  await page.waitForSelector('.text--big strong', { visible: true });
   const amount = await page.evaluate(() => {
-    const elements = document.querySelectorAll('.text--big strong');
-    return elements[1] ? elements[1].textContent.trim() : null;
+    const element = document.querySelector('.text--big strong');
+    return element ? element.textContent.trim() : null;
   });
 
   console.log("Amount:", amount);
@@ -145,5 +147,8 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, scrapin
 
   console.log('PRA Group data saved successfully');
 
+  if (scrapingCompleteCallback) {
+    setTimeout(() => scrapingCompleteCallback(), 1000);
+  }
   return { browser, page };
 }

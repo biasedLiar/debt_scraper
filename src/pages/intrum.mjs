@@ -9,6 +9,8 @@ const fs = require('fs/promises');
 /**
  * Handles the Intrum login automation flow
  * @param {string} nationalID - The national identity number to use for login
+ * @param {Function} setupPageHandlers - Function to setup page response handlers
+ * @param {Function} scrapingCompleteCallback - Callback to signal scraping is complete
  * @returns {Promise<{browser: any, page: any}>}
  */
 export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingCompleteCallback) {
@@ -43,7 +45,9 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingC
         const warningText = await page.evaluate(el => el.textContent, noCasesElement);
         if (warningText.includes('Vi finner ingen saker i vårt system.')) {
           console.log('No cases found in Intrum system. Finishing execution.');
-          setTimeout(() => scrapingCompleteCallback(), 2000);
+          if (scrapingCompleteCallback) {
+            setTimeout(() => scrapingCompleteCallback(), 1000);
+          }
           return { browser, page };
         }
       }
@@ -184,7 +188,9 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingC
   } catch (error) {
     console.error(`Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`, error);
   }
-  setTimeout(() => scrapingCompleteCallback(), 2000);
 
+  if (scrapingCompleteCallback) {
+    setTimeout(() => scrapingCompleteCallback(), 1000);
+  }
   return { browser, page };
 }
