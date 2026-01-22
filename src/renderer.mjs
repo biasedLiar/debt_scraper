@@ -89,6 +89,30 @@ const showValidationError = (message) => {
   }, 4000);
 };
 
+/**
+ * Shows scrape debt error message to user
+ * @param {string} message - Error message to display
+ */
+const showScrapeDebtError = (message) => {
+  const existingScrapeDebtError = document.querySelector(".scrape-debt-error");
+  if (existingScrapeDebtError) {
+    existingScrapeDebtError.remove();
+  }
+
+  const errorDiv = document.createElement("div");
+  errorDiv.className = "scrape-debt-error";
+  errorDiv.textContent = message;
+  errorDiv.style.color = "red";
+  errorDiv.style.marginLeft = "0.5rem";
+  errorDiv.style.fontSize = "0.9rem";
+
+  totalVisualization.insertAdjacentElement("afterend", errorDiv);
+
+  setTimeout(() => {
+    errorDiv.remove();
+  }, 4000);
+};
+
 // Set to true to show paid debts as well
 const showPaidDebts = true;
 
@@ -171,6 +195,14 @@ export const setupPageHandlers = (page, nationalID) => {
       console.log("Could not get text:", e);
       return;
     }
+
+    try {
+      await page.title();
+    } catch (e) {
+      console.log("Could not get page title:", e);
+      return;
+    }
+
     if (!(await page.title())) {
       console.error("Current website not set, cannot save page");
       return;
@@ -274,16 +306,6 @@ const openPage = async (url) => {
 };
 
 
-const tfBankButton = button("tfBank", async (ev) => {
-  currentWebsite = "tfBank";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : '';
-  const validation = validateNationalID(nationalID);
-  if (!validation.valid) {
-    showValidationError(validation.error);
-    return;
-  }
-  await handleTfBankLogin(nationalID, setupPageHandlers);
-});
 
 const di = div();
 di.innerText = "Hello World from dom!";
@@ -393,31 +415,31 @@ const visitAllButton = button(
     ev.target.innerText = "Starter applikasjon...";
 
     const websites = [
-      
+       
       {
         name: "Kredinor",
-        handler: () =>
-          handleKredinorLogin(nationalID, () => userName, setupPageHandlers, scrapingCompleteCallback),
+        handler: (callback) =>
+          handleKredinorLogin(nationalID, () => userName, setupPageHandlers, callback),
       },
       {
         name: "Intrum",
-        handler: () => handleIntrumLogin(nationalID, setupPageHandlers, scrapingCompleteCallback),
+        handler: (callback) => handleIntrumLogin(nationalID, setupPageHandlers, callback),
       },
       {
         name: "SI",
-        handler: () => handleSILogin(nationalID, setupPageHandlers),
-      },
-      {
-        name: "Digipost",
-        handler: () => handleDigipostLogin(nationalID, setupPageHandlers),
+        handler: (callback) => handleSILogin(nationalID, setupPageHandlers, callback ),
       },
       {
         name: "PRA Group",
-        handler: () => handlePraGroupLogin(nationalID, setupPageHandlers),
+        handler: (callback) => handlePraGroupLogin(nationalID, setupPageHandlers, callback),
       },
       {
         name: "Zolva AS",
-        handler: () => handleZolvaLogin(nationalID, setupPageHandlers),
+        handler: (callback) => handleZolvaLogin(nationalID, setupPageHandlers, callback),
+      },
+      {
+        name: "Digipost",
+        handler: (callback) => handleDigipostLogin(nationalID, setupPageHandlers, callback),
       },
     ];
 
@@ -434,12 +456,35 @@ const visitAllButton = button(
           scrapingCompleteCallback = resolve;
         });
 
-        // Open the website and do the scraping
-        await site.handler();
-
         // Wait for scraping to complete (signaled by the callback)
         console.log(`Waiting for ${site.name} scraping to complete...`);
-        await scrapingPromise;
+
+        // Open the website and do the scraping (pass callback to handler)
+        site.handler(scrapingCompleteCallback);
+        
+        // Wait for either the callback or a timeout
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve('timeout'), 120000));
+        const result = await Promise.race([scrapingPromise, timeoutPromise]);
+
+        switch (result) {
+          case 'timeout':
+            console.warn(`${site.name} timed out waiting for scraping completion.`);
+            showScrapeDebtError(`Tidsavbrudd ved henting av gjeldsinformasjon fra ${site.name}.`);
+            break;
+          case 'DEBT_FOUND':
+              console.info(`${site.name} scraping completed successfully, found debt.`);
+              break;
+          case 'NO_DEBT_FOUND':
+              console.info(`${site.name} scraping completed successfully, found no debt.`);
+              break;
+          case 'TOO_MANY_FAILED_ATTEMPTS':
+              console.warn(`${site.name} unsuccessful, too many failed attempts.`);
+              showScrapeDebtError(`For mange mislykkede påloggingsforsøk fra ${site.name}. Avbryter videre forsøk.`);
+              break;
+          default:
+              console.error(`${site.name} scraping unsuccessfull, something went wrong.`);
+              showScrapeDebtError(`Noe gikk galt under innhenting av gjeldsinformasjon fra ${site.name}.`);
+}
 
         // Reset callback
         scrapingCompleteCallback = null;
@@ -455,6 +500,7 @@ const visitAllButton = button(
       }
 
       alert("Finished visiting all websites!");
+
     } catch (error) {
       console.error("Error during website visits:", error);
       alert("An error occurred. Check console for details.");

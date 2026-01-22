@@ -7,9 +7,11 @@ const fs = require('fs/promises');
 /**
  * Handles the PRA Group login automation flow
  * @param {string} nationalID - The national identity number to use for login
+ * @param {Function} setupPageHandlers - Function to setup page response handlers
+ * @param {Function} scrapingCompleteCallback - Callback to signal scraping is complete
  * @returns {Promise<{browser: any, page: any}>}
  */
-export async function handlePraGroupLogin(nationalID, setupPageHandlers) {
+export async function handlePraGroupLogin(nationalID, setupPageHandlers, scrapingCompleteCallback) {
   const { browser, page } = await PUP.openPage(praGroup.url);
 
   console.log(`Opened ${praGroup.name} at ${praGroup.url}`);
@@ -32,8 +34,38 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers) {
   await loginWithBankID(page, nationalID);
 
   
-  // Extract account reference number
-  await page.waitForSelector('#accountReferenceId strong', { visible: true });
+  // Extract account reference number 
+  await page.waitForSelector('.welcome-headline, h1 span span', { visible: true , timeout: 60000});;
+
+
+  console.log("Found li elements, looking for account reference...");
+  const possibleElements = (await page.$$('.validation-summary-errors li'));
+
+  console.log(`Found ${possibleElements.length} possible account reference elements.`);
+
+  for (let index = 0; index < possibleElements.length; index++) {
+    const element = possibleElements[index];
+    console.log('Element has value:', await page.evaluate(el => el.textContent, element));
+    const hasText1 = await page.evaluate(el => el.textContent.includes('For mange mislykkede påloggingsforsøk.'), element);
+    if (hasText1) {
+      console.log("Detected too many failed login attempts message. Ending execution.");
+      // TODO, handle
+      if (scrapingCompleteCallback) {
+        setTimeout(() => scrapingCompleteCallback("TOO_MANY_FAILED_ATTEMPTS"), 1000);
+      }
+      return { browser, page };
+    }
+    const hasText2 = await page.evaluate(el => el.textContent.includes('Opplysningene du har oppgitt stemmer ikke med våre'), element);
+    if (hasText2) {
+      console.log("No account exists for profile.");
+      if (scrapingCompleteCallback) {
+        setTimeout(() => scrapingCompleteCallback("NO_DEBT_FOUND"), 1000);
+      }
+      return { browser, page };
+    }
+  }
+  
+
   const accountReference = await page.evaluate(() => {
     const element = document.querySelector('#accountReferenceId strong');
     return element ? element.textContent.trim() : null;
@@ -115,5 +147,8 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers) {
 
   console.log('PRA Group data saved successfully');
 
+  if (scrapingCompleteCallback) {
+    setTimeout(() => scrapingCompleteCallback("DEBT_FOUND"), 1000);
+  }
   return { browser, page };
 }

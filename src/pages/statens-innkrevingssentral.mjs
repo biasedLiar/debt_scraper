@@ -7,7 +7,7 @@ import { loginWithBankID } from "./bankid-login.mjs";
  * @param {string} nationalID - The national identity number to use for login
  * @returns {Promise<{browser: any, page: any}>}
  */
-export async function handleSILogin(nationalID, setupPageHandlers) {
+export async function handleSILogin(nationalID, setupPageHandlers, scrapingCompleteCallback) {
   const { browser, page } = await PUP.openPage(si.url);
 
   console.log(`Opened ${si.name} at ${si.url}`);
@@ -25,8 +25,14 @@ export async function handleSILogin(nationalID, setupPageHandlers) {
   if (debtElement) {
     const debtText = await page.evaluate((el) => el.textContent, debtElement);
     console.log("Debt amount:", debtText);
+    if (scrapingCompleteCallback) {
+      setTimeout(() => scrapingCompleteCallback("DEBT_FOUND"), 1000);
+    }
   } else {
     console.log("Debt element not found");
+    if (scrapingCompleteCallback) {
+      setTimeout(() => scrapingCompleteCallback("NO_DEBT_FOUND"), 1000);
+    }
   }
 
   return { browser, page };

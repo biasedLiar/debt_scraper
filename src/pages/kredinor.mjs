@@ -8,9 +8,11 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Handles the Digipost login automation flow
+ * Handles the Kredinor login automation flow
  * @param {string} nationalID - The national identity number to use for login
  * @param {() => string} getUserName - Function to get the user name
+ * @param {Function} setupPageHandlers - Function to setup page response handlers
+ * @param {Function} scrapingCompleteCallback - Callback to signal scraping is complete
  * @returns {Promise<{browser: any, page: any}>}
  */
 export async function handleKredinorLogin(nationalID, getUserName, setupPageHandlers, scrapingCompleteCallback) {
@@ -47,8 +49,6 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   
   await loginWithBankID(page, nationalID);
 
- 
-
   await page.waitForSelector('.info-row-item-group', { visible: true }).catch(() => {
     console.log('No debt information found or page took too long to load');
   });
@@ -63,9 +63,9 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   const data = { debtAmount, activeCases, timestamp: new Date().toISOString() };
   if (debtAmount === undefined && activeCases === undefined) {
     data.note = "No debt information found on page.";
-    
-    setTimeout(() => scrapingCompleteCallback(), 2000);
-
+    if (scrapingCompleteCallback) {
+      setTimeout(() => scrapingCompleteCallback("NO_DEBT_FOUND"), 1000);
+    }
     return { browser, page };
   }
   await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);
@@ -148,8 +148,8 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   const filePath2 = createFoldersAndGetName(kredinor.name, folderName, "Kredinor", "FullDebtDetails", true);
   await saveValidatedJSON(filePath2, {debtList, creditorList, saksnummerList}, KredinorFullDebtDetailsSchema);
 
-  
-  setTimeout(() => scrapingCompleteCallback(), 2000);
-
+  if (scrapingCompleteCallback) {
+    setTimeout(() => scrapingCompleteCallback("DEBT_FOUND"), 1000);
+  }
   return { browser, page };
 }
