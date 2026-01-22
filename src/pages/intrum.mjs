@@ -46,7 +46,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingC
         if (warningText.includes('Vi finner ingen saker i vårt system.')) {
           console.log('No cases found in Intrum system. Finishing execution.');
           if (scrapingCompleteCallback) {
-            setTimeout(() => scrapingCompleteCallback(), 1000);
+            setTimeout(() => scrapingCompleteCallback("NO_DEBT_FOUND"), 1000);
           }
           return { browser, page };
         }
@@ -190,7 +190,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingC
   }
 
   if (scrapingCompleteCallback) {
-    setTimeout(() => scrapingCompleteCallback(), 1000);
+    setTimeout(() => scrapingCompleteCallback("DEBT_FOUND"), 1000);
   }
   return { browser, page };
 }

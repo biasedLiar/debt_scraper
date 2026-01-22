@@ -51,7 +51,7 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, scrapin
       console.log("Detected too many failed login attempts message. Ending execution.");
       // TODO, handle
       if (scrapingCompleteCallback) {
-        setTimeout(() => scrapingCompleteCallback(), 1000);
+        setTimeout(() => scrapingCompleteCallback("TOO_MANY_FAILED_ATTEMPTS"), 1000);
       }
       return { browser, page };
     }
@@ -59,7 +59,7 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, scrapin
     if (hasText2) {
       console.log("No account exists for profile.");
       if (scrapingCompleteCallback) {
-        setTimeout(() => scrapingCompleteCallback(), 1000);
+        setTimeout(() => scrapingCompleteCallback("NO_DEBT_FOUND"), 1000);
       }
       return { browser, page };
     }
@@ -148,7 +148,7 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, scrapin
   console.log('PRA Group data saved successfully');
 
   if (scrapingCompleteCallback) {
-    setTimeout(() => scrapingCompleteCallback(), 1000);
+    setTimeout(() => scrapingCompleteCallback("DEBT_FOUND"), 1000);
   }
   return { browser, page };
 }

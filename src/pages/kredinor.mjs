@@ -64,7 +64,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   if (debtAmount === undefined && activeCases === undefined) {
     data.note = "No debt information found on page.";
     if (scrapingCompleteCallback) {
-      setTimeout(() => scrapingCompleteCallback(), 1000);
+      setTimeout(() => scrapingCompleteCallback("NO_DEBT_FOUND"), 1000);
     }
     return { browser, page };
   }
@@ -149,7 +149,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   await saveValidatedJSON(filePath2, {debtList, creditorList, saksnummerList}, KredinorFullDebtDetailsSchema);
 
   if (scrapingCompleteCallback) {
-    setTimeout(() => scrapingCompleteCallback(), 1000);
+    setTimeout(() => scrapingCompleteCallback("DEBT_FOUND"), 1000);
   }
   return { browser, page };
 }

@@ -427,13 +427,8 @@ const visitAllButton = button(
       },
       {
         name: "SI",
-        handler: () => handleSILogin(nationalID, setupPageHandlers),
+        handler: (callback) => handleSILogin(nationalID, setupPageHandlers, callback ),
       },
-      /*
-      {
-        name: "Digipost",
-        handler: () => handleDigipostLogin(nationalID, setupPageHandlers),
-      }, */
       {
         name: "PRA Group",
         handler: (callback) => handlePraGroupLogin(nationalID, setupPageHandlers, callback),
@@ -444,7 +439,7 @@ const visitAllButton = button(
       },
       {
         name: "Digipost",
-        handler: () => handleDigipostLogin(nationalID, setupPageHandlers),
+        handler: (callback) => handleDigipostLogin(nationalID, setupPageHandlers, callback),
       },
     ];
 
@@ -461,21 +456,32 @@ const visitAllButton = button(
           scrapingCompleteCallback = resolve;
         });
 
-        // Open the website and do the scraping (pass callback to handler)
-        site.handler(scrapingCompleteCallback);
-
         // Wait for scraping to complete (signaled by the callback)
         console.log(`Waiting for ${site.name} scraping to complete...`);
+
+        // Open the website and do the scraping (pass callback to handler)
+        site.handler(scrapingCompleteCallback);
         
         // Wait for either the callback or a timeout
         const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve('timeout'), 60000));
         const result = await Promise.race([scrapingPromise, timeoutPromise]);
-        
-        if (result === 'timeout') {
-          console.warn(`${site.name} timed out waiting for scraping completion.`);
-        } else {
-          console.warn(`${site.name} scraping completed successfully.`);
-        }
+
+        switch (result) {
+          case 'timeout':
+            console.warn(`${site.name} timed out waiting for scraping completion.`);
+            break;
+          case 'DEBT_FOUND':
+              console.warn(`${site.name} scraping completed successfully, found debt.`);
+              break;
+          case 'NO_DEBT_FOUND':
+              console.warn(`${site.name} scraping completed successfully, found no debt.`);
+              break;
+          case 'TOO_MANY_FAILED_ATTEMPTS':
+              console.warn(`${site.name} unsuccessful, too many failed attempts.`);
+              break;
+          default:
+              console.error(`${site.name} scraping unsuccessfull, something went wrong.`);
+}
 
         // Reset callback
         scrapingCompleteCallback = null;
