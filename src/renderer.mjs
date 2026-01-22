@@ -90,23 +90,23 @@ const showValidationError = (message) => {
 };
 
 /**
- * Shows validation error message to user
+ * Shows scrape debt error message to user
  * @param {string} message - Error message to display
  */
-const showTimedOutError = (message) => {
-  const existingTimedOutError = document.querySelector(".timed-out-error");
-  if (existingTimedOutError) {
-    existingTimedOutError.remove();
+const showScrapeDebtError = (message) => {
+  const existingScrapeDebtError = document.querySelector(".scrape-debt-error");
+  if (existingScrapeDebtError) {
+    existingScrapeDebtError.remove();
   }
 
   const errorDiv = document.createElement("div");
-  errorDiv.className = "timed-out-error";
+  errorDiv.className = "scrape-debt-error";
   errorDiv.textContent = message;
   errorDiv.style.color = "red";
   errorDiv.style.marginLeft = "0.5rem";
   errorDiv.style.fontSize = "0.9rem";
 
-  nationalIdContainer.insertAdjacentElement("afterend", errorDiv);
+  totalVisualization.insertAdjacentElement("afterend", errorDiv);
 
   setTimeout(() => {
     errorDiv.remove();
@@ -469,6 +469,7 @@ const visitAllButton = button(
         switch (result) {
           case 'timeout':
             console.warn(`${site.name} timed out waiting for scraping completion.`);
+            showScrapeDebtError(`Tidsavbrudd ved henting av gjeldsinformasjon fra ${site.name}.`);
             break;
           case 'DEBT_FOUND':
               console.info(`${site.name} scraping completed successfully, found debt.`);
@@ -478,9 +479,11 @@ const visitAllButton = button(
               break;
           case 'TOO_MANY_FAILED_ATTEMPTS':
               console.warn(`${site.name} unsuccessful, too many failed attempts.`);
+              showScrapeDebtError(`For mange mislykkede påloggingsforsøk fra ${site.name}. Avbryter videre forsøk.`);
               break;
           default:
               console.error(`${site.name} scraping unsuccessfull, something went wrong.`);
+              showScrapeDebtError(`Noe gikk galt under innhenting av gjeldsinformasjon fra ${site.name}.`);
 }
 
         // Reset callback

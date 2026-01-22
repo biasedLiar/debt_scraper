@@ -45,9 +45,9 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, scrapingCo
     });
     
     if (errorMessage === 'Ingen debitor funnet for SSN-nummer') {
-      console.log('No debtor found for this SSN number');
+      console.log('No debitor found for this SSN number');
       if (scrapingCompleteCallback) {
-        setTimeout(() => scrapingCompleteCallback(), 1000);
+        setTimeout(() => scrapingCompleteCallback("NO_DEBT_FOUND"), 1000);
       }
       return { browser, page };
     }
