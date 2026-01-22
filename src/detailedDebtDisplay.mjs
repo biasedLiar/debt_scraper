@@ -14,22 +14,60 @@ const path = require("path");
 
 /**
  * Displays detailed debt information for a specific creditor
- * @param {Object} detailedDebtConfig - Configuration object with nationalID, date, and creditor
+ * @param {Object} detailedDebtConfig - Configuration object with nationalID, date, and creditor (or array of creditors)
  */
 export function displayDetailedDebtInfo(detailedDebtConfig) {
   // Only display if detailedDebtConfig is not empty
-  if (!detailedDebtConfig || !detailedDebtConfig.nationalID || !detailedDebtConfig.date || !detailedDebtConfig.creditor) {
+  if (!detailedDebtConfig || !detailedDebtConfig.nationalID || !detailedDebtConfig.date) {
     return;
   }
 
-  const detailedDebtInfoPath = path.join(__dirname, "..", "exports", detailedDebtConfig.nationalID, detailedDebtConfig.date, detailedDebtConfig.creditor, detailedDebtConfig.creditor, "detaileddebtinfo.json");
+  // Support both single creditor and array of creditors
+  const creditors = Array.isArray(detailedDebtConfig.creditor) 
+    ? detailedDebtConfig.creditor 
+    : detailedDebtConfig.creditor ? [detailedDebtConfig.creditor] : [];
+
+  if (creditors.length === 0) {
+    return;
+  }
+
+  // Process each creditor
+  creditors.forEach(creditor => {
+    displayCreditorDebtInfo(detailedDebtConfig.nationalID, detailedDebtConfig.date, creditor);
+  });
+}
+
+/**
+ * Displays detailed debt information for a single creditor
+ * @param {string} nationalID - National ID
+ * @param {string} date - Date folder name
+ * @param {string} creditor - Creditor name
+ */
+function displayCreditorDebtInfo(nationalID, date, creditor) {
+  // Determine the correct file path and nested folder based on creditor
+  let detailedDebtInfoPath;
+  let nestedFolder;
+  
+  // Handle different creditor-specific folder structures
+  if (creditor === "Kredinor") {
+    // Kredinor data is in KredinorPDF folder
+    detailedDebtInfoPath = path.join(__dirname, "..", "exports", nationalID, date, "KredinorPDF", "Kredinor", "not_json", "extracted_data.json");
+  } else if (creditor === "PRA Group") {
+    nestedFolder = "Pra_Group";
+    detailedDebtInfoPath = path.join(__dirname, "..", "exports", nationalID, date, creditor, nestedFolder, "manuallyfounddebt.json");
+  } else {
+    // Default structure for Intrum, SI, etc.
+    nestedFolder = creditor;
+    detailedDebtInfoPath = path.join(__dirname, "..", "exports", nationalID, date, creditor, nestedFolder, "detaileddebtinfo.json");
+  }
   
   if (!fs.existsSync(detailedDebtInfoPath)) {
+    console.log(`Detailed debt info not found for ${creditor} at ${detailedDebtInfoPath}`);
     return;
   }
 
   const detailedDebtContainer = div({ class: "detailed-debt-container" });
-  const creditorHeader = h2(detailedDebtConfig.creditor, "creditor-header");
+  const creditorHeader = h2(creditor, "creditor-header");
   detailedDebtContainer.appendChild(creditorHeader);
 
   const addDebtLine = (label, calculateFn) => {

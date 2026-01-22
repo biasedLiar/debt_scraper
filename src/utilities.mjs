@@ -282,10 +282,25 @@ export function readAllDebtForPerson(personId) {
     return result;
   }
 
+  // Find the latest date folder
+  const dateFolders = fs.readdirSync(exportsPath).filter(item => {
+    const fullPath = path.join(exportsPath, item);
+    return fs.statSync(fullPath).isDirectory() && /^\d{4}_\d{2}_\d{2}$/.test(item);
+  }).sort().reverse(); // Sort descending to get latest first
+
+  if (dateFolders.length === 0) {
+    console.log(`No date folders found for person ${personId}`);
+    return result;
+  }
+
+  const latestDateFolder = dateFolders[0];
+  const latestDatePath = path.join(exportsPath, latestDateFolder);
+  console.log(`Using latest date folder: ${latestDateFolder}`);
+
   // Import kravtype mapping
   const { getKravtypeDescription } = require('./kravtypeMapping.mjs');
 
-  // Recursively find all JSON files
+  // Recursively find all JSON files in the latest date folder only
   const findJsonFiles = (dir) => {
     const files = [];
     try {
@@ -306,8 +321,8 @@ export function readAllDebtForPerson(personId) {
     return files;
   };
 
-  const jsonFiles = findJsonFiles(exportsPath);
-  console.log(`Found ${jsonFiles.length} JSON files for person ${personId}`);
+  const jsonFiles = findJsonFiles(latestDatePath);
+  console.log(`Found ${jsonFiles.length} JSON files for person ${personId} in ${latestDateFolder}`);
 
   jsonFiles.forEach(filePath => {
     try {
@@ -373,6 +388,53 @@ export function readAllDebtForPerson(personId) {
         });
       }
 
+      // Handle Kredinor extracted data structure (direct array or data.value array)
+      const kredinorData = Array.isArray(data) ? data : (data.value && Array.isArray(data.value) ? data.value : null);
+      if (kredinorData) {
+        const seenKredinorCases = new Set();
+        kredinorData.forEach(item => {
+          // Skip grandTotal entry and entries with null totalbeløp
+          if (item.type !== 'grandTotal' && item.totalbeløp && item.saksnummer) {
+            const caseKey = `${item.saksnummer}-${item.totalbeløp}`;
+            if (!seenKredinorCases.has(caseKey)) {
+              seenKredinorCases.add(caseKey);
+              const amount = parseFloat(item.totalbeløp);
+              if (!isNaN(amount) && amount > 0) {
+                result.totalDebt += amount;
+                const creditor = 'Kredinor';
+                result.debtsByCreditor[creditor] = (result.debtsByCreditor[creditor] || 0) + amount;
+                result.detailedDebts.push({
+                  creditor,
+                  amount,
+                  id: item.saksnummer,
+                  type: item.oppdragsgiver || 'Unknown',
+                  typeText: item.opprinneligOppdragsgiver,
+                  source: filePath
+                });
+              }
+            }
+          }
+        });
+      }
+
+      // Handle PRA Group manually found debt structure
+      if (data.accountReference && data.amountNumber) {
+        const amount = parseFloat(data.amountNumber);
+        if (!isNaN(amount) && amount > 0) {
+          result.totalDebt += amount;
+          const creditor = 'PRA Group';
+          result.debtsByCreditor[creditor] = (result.debtsByCreditor[creditor] || 0) + amount;
+          result.detailedDebts.push({
+            creditor,
+            amount,
+            id: data.accountReference,
+            type: data.accountDetails?.['Tidligere eier'] || 'Unknown',
+            typeText: data.accountDetails?.['Nåværende eier'],
+            source: filePath
+          });
+        }
+      }
+
 
     } catch (err) {
       console.error(`Error processing file ${filePath}:`, err);
@@ -383,5 +445,5 @@ export function readAllDebtForPerson(personId) {
   console.log('Debts by creditor:', result.debtsByCreditor);
   
   return result;
-}
+} 
 
