@@ -75,7 +75,7 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, scrapingCo
     if (hasNoData) {
       console.log('Table shows "Ingen data å vise" - no debt data available');
       if (scrapingCompleteCallback) {
-        setTimeout(() => scrapingCompleteCallback(), 1000);
+        setTimeout(() => scrapingCompleteCallback("NO_DEBT_FOUND"), 1000);
       }
       return { browser, page };
     }
@@ -104,7 +104,7 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, scrapingCo
     console.log(`Saved table data to ${detailedInfoFilePath}`);
   
   if (scrapingCompleteCallback) {
-    setTimeout(() => scrapingCompleteCallback(), 1000);
+    setTimeout(() => scrapingCompleteCallback("DEBT_FOUND"), 1000);
   }
   return { browser, page };
 }

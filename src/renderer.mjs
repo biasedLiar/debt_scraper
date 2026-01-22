@@ -463,7 +463,7 @@ const visitAllButton = button(
         site.handler(scrapingCompleteCallback);
         
         // Wait for either the callback or a timeout
-        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve('timeout'), 60000));
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve('timeout'), 120000));
         const result = await Promise.race([scrapingPromise, timeoutPromise]);
 
         switch (result) {
@@ -471,10 +471,10 @@ const visitAllButton = button(
             console.warn(`${site.name} timed out waiting for scraping completion.`);
             break;
           case 'DEBT_FOUND':
-              console.warn(`${site.name} scraping completed successfully, found debt.`);
+              console.info(`${site.name} scraping completed successfully, found debt.`);
               break;
           case 'NO_DEBT_FOUND':
-              console.warn(`${site.name} scraping completed successfully, found no debt.`);
+              console.info(`${site.name} scraping completed successfully, found no debt.`);
               break;
           case 'TOO_MANY_FAILED_ATTEMPTS':
               console.warn(`${site.name} unsuccessful, too many failed attempts.`);
