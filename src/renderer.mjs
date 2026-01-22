@@ -35,6 +35,67 @@ import { displayDetailedDebtInfo } from "./detailedDebtDisplay.mjs";
 const fs = require("fs");
 const path = require("path");
 
+/**
+ * Scans all JSON files in a nationalID folder for grandTotal.totalbeløp values and sums them
+ * @param {string} nationalID - The national identity number (folder name)
+ * @returns {number} - The sum of all totalbeløp values found
+ */
+const calculateGrandTotalFromFiles = (nationalID) => {
+  let grandTotal = 0;
+  const exportsPath = path.join(process.cwd(), 'exports', nationalID);
+  
+  if (!fs.existsSync(exportsPath)) {
+    console.log(`No exports folder found for nationalID: ${nationalID}`);
+    return 0;
+  }
+  
+  // Function to recursively search for JSON files
+  const searchDirectory = (dirPath) => {
+    const items = fs.readdirSync(dirPath);
+    
+    items.forEach(item => {
+      const fullPath = path.join(dirPath, item);
+      const stat = fs.statSync(fullPath);
+      
+      if (stat.isDirectory()) {
+        searchDirectory(fullPath);
+      } else if (item.endsWith('.json')) {
+        try {
+          const content = fs.readFileSync(fullPath, 'utf8');
+          const data = JSON.parse(content);
+          
+          // Check if this file has a grandTotal object with totalbeløp (root level)
+          if (data.grandTotal && typeof data.grandTotal === 'object' && 
+              data.grandTotal.type === 'grandTotal' && 
+              typeof data.grandTotal.totalbeløp === 'number') {
+            console.log(`Found grandTotal in ${fullPath}: ${data.grandTotal.totalbeløp}`);
+            grandTotal += data.grandTotal.totalbeløp;
+          }
+          
+          // Also check if data is an array and search for grandTotal within it
+          if (Array.isArray(data)) {
+            data.forEach((item, index) => {
+              if (item && typeof item === 'object' &&
+                  item.type === 'grandTotal' && 
+                  typeof item.totalbeløp === 'number') {
+                console.log(`Found grandTotal in array at ${fullPath}[${index}]: ${item.totalbeløp}`);
+                grandTotal += item.totalbeløp;
+              }
+            });
+          }
+        } catch (e) {
+          // Ignore files that can't be parsed as JSON
+          console.log(`Could not parse ${fullPath}:`, e.message);
+        }
+      }
+    });
+  };
+  
+  searchDirectory(exportsPath);
+  console.log(`Total grandTotal for ${nationalID}: ${grandTotal}`);
+  return grandTotal;
+};
+
 // Try to import detailedDebtConfig, but use empty object if it fails or is empty
 let detailedDebtConfig = {};
 try {
@@ -229,6 +290,43 @@ export const setupPageHandlers = (page, nationalID) => {
           );
           displayDebtData(debts_unpaid);
           displayDebtData(debts_paid);
+          
+          //TODO, løse dette på en litt mer optimal måte
+          // Save grand total for SI data
+          if (currentWebsite === "SI") {
+            const totalAmount = debts_unpaid.totalAmount + debts_paid.totalAmount;
+            const outerFolder = userName ? userName : nationalID;
+            const grandTotalFilePath = createFoldersAndGetName(
+              "SI",
+              outerFolder,
+              "SI",
+              "GrandTotal",
+              true
+            );
+            
+            const grandTotalData = {
+              grandTotal: {
+                type: "grandTotal",
+                totalbeløp: totalAmount
+              },
+              timestamp: new Date().toISOString(),
+              unpaidAmount: debts_unpaid.totalAmount,
+              paidAmount: debts_paid.totalAmount,
+              kravCount: JSON.parse(data).krav.length
+            };
+            
+            try {
+              fs.writeFile(grandTotalFilePath, JSON.stringify(grandTotalData, null, 2), (err) => {
+                if (err) {
+                  console.error(`Failed to write SI grand total to file "${grandTotalFilePath}":`, err);
+                } else {
+                  console.log(`SI grand total saved to ${grandTotalFilePath}`);
+                }
+              });
+            } catch (error) {
+              console.error(`Error saving SI grand total:`, error);
+            }
+          }
 
           if (offlineMode) {
             const doucment2 = offlineKredinorFile;
@@ -446,6 +544,15 @@ const visitAllButton = button(
         console.log(`Proceeding to next website...`);
       }
 
+      // Calculate and display grand total from all files
+      const calculatedGrandTotal = calculateGrandTotalFromFiles(nationalID);
+      if (calculatedGrandTotal > 0) {
+        const totalDebtElement = document.body.querySelector(".total-debt-amount");
+        if (totalDebtElement) {
+          totalDebtElement.innerText = calculatedGrandTotal.toLocaleString("no-NO") + " kr";
+        }
+      }
+      
       alert("Finished visiting all websites!");
     } catch (error) {
       console.error("Error during website visits:", error);
@@ -470,6 +577,18 @@ const visitAllButton = button(
 nationalIdInput.addEventListener('keypress', (event) => {
   if (event.key === 'Enter') {
     visitAllButton.click();
+  }
+});
+
+// Add input listener to auto-update total when fødselsnummer changes
+nationalIdInput.addEventListener('input', (event) => {
+  const nationalID = event.target.value.trim();
+  if (nationalID.length === 11) {
+    const calculatedGrandTotal = calculateGrandTotalFromFiles(nationalID);
+    const totalDebtElement = document.body.querySelector(".total-debt-amount");
+    if (totalDebtElement) {
+      totalDebtElement.innerText = calculatedGrandTotal.toLocaleString("no-NO") + " kr";
+    }
   }
 });
 
