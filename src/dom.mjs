@@ -21,11 +21,14 @@ export const div = (styles) => {
  * @param onClick {(this: GlobalEventHandlers, ev: MouseEvent) => any}
  * @returns {HTMLButtonElement}
  */
-export const button = (text, onClick) => {
+export const button = (text, onClick, className) => {
   const b = document.createElement("button");
   b.innerHTML = text;
   b.onclick = onClick;
   b.className = "btn btn-primary";
+  if (className) {
+    b.className += " " + className;
+  }
   return b;
 };
 
@@ -47,16 +50,35 @@ export const h1 = (text, className) => {
 /**
  *
  * @param text {string}
- * @param class {string}
+ * @param className {string}
  * @returns {HTMLHeadingElement}
  */
 export const h2 = (text, className) => {
   const element = document.createElement("h2");
+  console.log("Creating h2 element with text:", className);
   element.textContent = text;
   if (className) {
     element.className = "h2 m-2 " + className;
+    console.log("Assigned className:", element.className);
   } else {
     element.className = "h2 m-2";
+  }
+  return element;
+};
+
+/**
+ *
+ * @param text {string}
+ * @param class {string}
+ * @returns {HTMLHeadingElement}
+ */
+export const h3 = (text, className) => {
+  const element = document.createElement("h3");
+  element.textContent = text;
+  if (className) {
+    element.className = "h3 m-2 " + className;
+  } else {
+    element.className = "h3 m-2";
   }
   return element;
 };
@@ -67,7 +89,7 @@ export const h2 = (text, className) => {
  * @param {string} [type]
  * @returns {HTMLInputElement}
  */
-export const input = (placeholder, id, type="text") => {
+export const input = (placeholder, id, type = "text") => {
   const inp = document.createElement("input");
   inp.placeholder = placeholder;
   inp.id = id;
@@ -76,6 +98,20 @@ export const input = (placeholder, id, type="text") => {
   return inp;
 };
 
+/**
+ *
+ * @param class {string}
+ * @returns {HTMLHeadingElement}
+ */
+export const hLine = (className) => {
+  const element = document.createElement("hr");
+  if (className) {
+    element.className = "hLine " + className;
+  } else {
+    element.className = "hLine";
+  }
+  return element;
+};
 
 /**
  * @param {DebtCollection} debtData
@@ -84,11 +120,16 @@ export const visualizeDebt = (debtData) => {
   const paidStatus = debtData.isCurrent ? "Ubetalt" : "Betalt";
   console.log("Visualizing debt data: ", debtData);
 
-  const outerContainer = div({ class: `debt-container ${paidStatus.toLowerCase()}` });
+  const outerContainer = div({
+    class: `debt-container ${paidStatus.toLowerCase()}`,
+  });
 
   const innerContainer = div({ class: "debt-inner-container" });
 
-  const headerCompany = h2(`${debtData.creditSite} - ${paidStatus}`, "creditor-header");
+  const headerCompany = h2(
+    `${debtData.creditSite} - ${paidStatus}`,
+    "creditor-header"
+  );
   innerContainer.appendChild(headerCompany);
 
   const headerNumber = h2(`Total:`, "debt-small-header");
@@ -130,8 +171,7 @@ export const visualizeTotalDebts = (totalAmountString) => {
   outerContainer.appendChild(headerNumber);
   outerContainer.appendChild(headerSubtext);
   return outerContainer;
-}
-
+};
 
 const inputElement = document.createElement("input");
 const table = document.createElement("table");

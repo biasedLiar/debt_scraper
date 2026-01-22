@@ -1,10 +1,6 @@
 const fs = require("fs");
 import { getKravtypeDescription } from "./kravtypeMapping.mjs";
 
-
-
-
-
 /**
  * @param {string} [creditSite]
  * @param {JSON} [krav]
@@ -12,20 +8,31 @@ import { getKravtypeDescription } from "./kravtypeMapping.mjs";
  */
 
 export const read_json = (creditSite, krav) => {
+  const debts_paid = {
+    creditSite: creditSite,
+    isCurrent: false,
+    totalAmount: 0,
+    debts: [],
+  };
 
-    const debts_paid = {
-        creditSite: creditSite,
-        isCurrent: false,
-        totalAmount: 0,
-        debts: [],
-    } 
+  const debts_unpaid = {
+    creditSite: creditSite,
+    isCurrent: true,
+    totalAmount: 0,
+    debts: [],
+  };
 
-    const debts_unpaid = {
-        creditSite: creditSite,
-        isCurrent: true,
-        totalAmount: 0,
-        debts: [],
-    } 
+  for (let i = 0; i < krav.length; i++) {
+    const element = krav[i];
+    // console.log(element);
+    console.log("beløp: ", element.belop, "id: ", element.identifikator);
+    const krav_object = {
+      id: element.identifikator,
+      amount: element.belop,
+      dueDate: element.forfall[0].forfallsdato,
+      type: element.kravtype,
+      typeText: element.kravtypetekst,
+    };
 
     for (let i = 0; i < krav.length; i++) {
         const element = krav[i];
@@ -57,13 +64,20 @@ export const read_json = (creditSite, krav) => {
         }
     }
 
-    console.log("Paid data: ", debts_paid);
-    console.log("Unpaid data: ", debts_unpaid);
+    if (isPaid) {
+      debts_paid.totalAmount += element.belop;
+      debts_paid.debts.push(krav_object);
+    } else {
+      debts_unpaid.totalAmount += element.belop;
+      debts_unpaid.debts.push(krav_object);
+    }
+  }
 
+  console.log("Paid data: ", debts_paid);
+  console.log("Unpaid data: ", debts_unpaid);
 
-    return {debts_paid, debts_unpaid};
+  return { debts_paid, debts_unpaid };
 };
-
 
 /**
  * @param {string[]} [debtList]
@@ -72,42 +86,46 @@ export const read_json = (creditSite, krav) => {
  * @param {string} [creditSite]
  * @returns {DebtCollection}
  */
-export function convertListsToJson(debtList, creditorList, saksnummerList, creditSite) {
+export function convertListsToJson(
+  debtList,
+  creditorList,
+  saksnummerList,
+  creditSite
+) {
+  if (
+    Math.max(debtList.length, creditorList.length, saksnummerList.length) !==
+    Math.min(debtList.length, creditorList.length, saksnummerList.length)
+  ) {
+    console.log("Error: Lists are not of the same length");
+    return null;
+  }
 
-    if (Math.max(debtList.length, creditorList.length, saksnummerList.length) !== 
-        Math.min(debtList.length, creditorList.length, saksnummerList.length)) {
-        console.log("Error: Lists are not of the same length");
-        return null;
-    }
+  const debts_unpaid = {
+    creditSite: creditSite,
+    isCurrent: true,
+    totalAmount: 0,
+    debts: [],
+  };
 
+  for (let i = 0; i < debtList.length; i++) {
+    const formattedDebt = parseFloat(
+      debtList[i].replace(/[^0-9,]/g, "").replace(",", ".")
+    );
+    const krav_object = {
+      id: saksnummerList[i],
+      amount: formattedDebt,
+      dueDate: null,
+      type: creditorList[i],
+      typeText: null,
+    };
 
+    debts_unpaid.totalAmount += formattedDebt;
+    debts_unpaid.debts.push(krav_object);
+  }
 
-    const debts_unpaid = {
-        creditSite: creditSite,
-        isCurrent: true,
-        totalAmount: 0,
-        debts: [],
-    } 
+  console.log("Unpaid data: ", debts_unpaid);
 
-    for (let i = 0; i < debtList.length; i++) {
-        const formattedDebt = parseFloat(debtList[i].replace(/[^0-9,]/g, '').replace(',', '.'));
-        const krav_object = {
-            id: saksnummerList[i],
-            amount: formattedDebt,
-            dueDate: null,
-            type: creditorList[i],
-            typeText: null,
-        };
-
-        debts_unpaid.totalAmount += formattedDebt; 
-        debts_unpaid.debts.push(krav_object);
-    }
-
-    console.log("Unpaid data: ", debts_unpaid);
-
-
-    return debts_unpaid;
-
+  return debts_unpaid;
 }
 
 /**
@@ -118,62 +136,62 @@ export function convertListsToJson(debtList, creditorList, saksnummerList, credi
  * @returns {number} Sum of all values for the specified field
  */
 export function calculateFieldSum(filePath, fieldName, useStartsWith = false) {
-    try {
-        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        
-        if (!data.allDetailedInfo || !Array.isArray(data.allDetailedInfo)) {
-            console.log("No allDetailedInfo found in file");
-            return 0;
-        }
+  try {
+    const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
 
-        let sum = 0;
-        data.allDetailedInfo.forEach(item => {
-            let key;
-            if (useStartsWith) {
-                key = Object.keys(item).find(k => k.startsWith(fieldName));
-            } else {
-                key = Object.keys(item).find(k => k === fieldName);
-            }
-            
-            if (key) {
-                const value = parseFloat(item[key]);
-                if (!isNaN(value)) {
-                    sum += value;
-                }
-            }
-        });
-
-        console.log(`Total ${fieldName}:`, sum);
-        return sum;
-    } catch (error) {
-        console.error(`Error calculating ${fieldName} sum:`, error);
-        return 0;
+    if (!data.allDetailedInfo || !Array.isArray(data.allDetailedInfo)) {
+      console.log("No allDetailedInfo found in file");
+      return 0;
     }
+
+    let sum = 0;
+    data.allDetailedInfo.forEach((item) => {
+      let key;
+      if (useStartsWith) {
+        key = Object.keys(item).find((k) => k.startsWith(fieldName));
+      } else {
+        key = Object.keys(item).find((k) => k === fieldName);
+      }
+
+      if (key) {
+        const value = parseFloat(item[key]);
+        if (!isNaN(value)) {
+          sum += value;
+        }
+      }
+    });
+
+    console.log(`Total ${fieldName}:`, sum);
+    return sum;
+  } catch (error) {
+    console.error(`Error calculating ${fieldName} sum:`, error);
+    return 0;
+  }
 }
 
 // Convenience wrapper functions for backward compatibility
 export function calculateForsinkelsesrenterSum(filePath) {
-    return calculateFieldSum(filePath, 'Forsinkelsesrenter', true);
+  return calculateFieldSum(filePath, "Forsinkelsesrenter", true);
 }
 
 export function calculateHovedkravSum(filePath) {
-    return calculateFieldSum(filePath, 'Hovedkrav');
+  return calculateFieldSum(filePath, "Hovedkrav");
 }
 
 export function calculateOmkostningerSum(filePath) {
-    return calculateFieldSum(filePath, 'Omkostninger');
+  return calculateFieldSum(filePath, "Omkostninger");
 }
 
 export function calculateSalærSum(filePath) {
-    return calculateFieldSum(filePath, 'Salær');
+  return calculateFieldSum(filePath, "Salær");
 }
 
 export function calculateRettsligGebyrSum(filePath) {
-    return calculateFieldSum(filePath, 'Rettslig gebyr');
+  return calculateFieldSum(filePath, "Rettslig gebyr");
 }
 
 export function calculateTotalSaldoSum(filePath) {
-    return calculateFieldSum(filePath, 'Total saldo');
+  return calculateFieldSum(filePath, "Total saldo");
 }
 
 /**
@@ -183,39 +201,41 @@ export function calculateTotalSaldoSum(filePath) {
  * @returns {Array} Array of cases with high Forsinkelsesrenter
  */
 export function findHighForsinkelsesrenterCases(filePath, threshold = 20000) {
-    try {
-        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        
-        if (!data.allDetailedInfo || !Array.isArray(data.allDetailedInfo)) {
-            console.log("No allDetailedInfo found in file");
-            return [];
-        }
+  try {
+    const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
 
-        const highCases = [];
-        data.allDetailedInfo.forEach((item, index) => {
-            const forsinkelsesKey = Object.keys(item).find(key => 
-                key.startsWith('Forsinkelsesrenter')
-            );
-            
-            if (forsinkelsesKey) {
-                const value = parseFloat(item[forsinkelsesKey]);
-                if (!isNaN(value) && value > threshold) {
-                    highCases.push({
-                        caseNumber: index + 1,
-                        forsinkelsesrenter: value,
-                        hovedkrav: parseFloat(item.Hovedkrav) || 0,
-                        totalSaldo: parseFloat(item['Total saldo']) || 0,
-                        salær: parseFloat(item.Salær) || 0,
-                        rettsligGebyr: parseFloat(item['Rettslig gebyr']) || 0
-                    });
-                }
-            }
-        });
-
-        console.log(`Found ${highCases.length} cases with Forsinkelsesrenter above ${threshold}`);
-        return highCases;
-    } catch (error) {
-        console.error("Error finding high Forsinkelsesrenter cases:", error);
-        return [];
+    if (!data.allDetailedInfo || !Array.isArray(data.allDetailedInfo)) {
+      console.log("No allDetailedInfo found in file");
+      return [];
     }
+
+    const highCases = [];
+    data.allDetailedInfo.forEach((item, index) => {
+      const forsinkelsesKey = Object.keys(item).find((key) =>
+        key.startsWith("Forsinkelsesrenter")
+      );
+
+      if (forsinkelsesKey) {
+        const value = parseFloat(item[forsinkelsesKey]);
+        if (!isNaN(value) && value > threshold) {
+          highCases.push({
+            caseNumber: index + 1,
+            forsinkelsesrenter: value,
+            hovedkrav: parseFloat(item.Hovedkrav) || 0,
+            totalSaldo: parseFloat(item["Total saldo"]) || 0,
+            salær: parseFloat(item.Salær) || 0,
+            rettsligGebyr: parseFloat(item["Rettslig gebyr"]) || 0,
+          });
+        }
+      }
+    });
+
+    console.log(
+      `Found ${highCases.length} cases with Forsinkelsesrenter above ${threshold}`
+    );
+    return highCases;
+  } catch (error) {
+    console.error("Error finding high Forsinkelsesrenter cases:", error);
+    return [];
+  }
 }

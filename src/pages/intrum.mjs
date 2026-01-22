@@ -3,14 +3,17 @@ import { intrum } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
 import { saveValidatedJSON, IntrumManualDebtSchema } from "../schemas.mjs";
+
 const fs = require('fs/promises');
 
 /**
  * Handles the Intrum login automation flow
  * @param {string} nationalID - The national identity number to use for login
+ * @param {Function} setupPageHandlers - Function to setup page response handlers
+ * @param {Function} scrapingCompleteCallback - Callback to signal scraping is complete
  * @returns {Promise<{browser: any, page: any}>}
  */
-export async function handleIntrumLogin(nationalID, setupPageHandlers) {
+export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingCompleteCallback) {
   const { browser, page } = await PUP.openPage(intrum.url);
 
   console.log(`Opened ${intrum.name} at ${intrum.url}`);
@@ -23,7 +26,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
 
   try {
       // Click the "Logg inn" button with id="signicatOIDC"
-      await page.waitForSelector('#signicatOIDC', { timeout: 10000 });
+      await page.waitForSelector('#signicatOIDC', { visible: true });
       await page.click('#signicatOIDC');
       console.log('Clicked "Logg inn" button');
     } catch (error) {
@@ -35,8 +38,24 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
+    // Check if there are no cases in the system
+    try {
+      const noCasesElement = await page.waitForSelector('.warning-message', { visible: true }).catch(() => console.log('No warning message found'));
+      if (noCasesElement) {
+        const warningText = await page.evaluate(el => el.textContent, noCasesElement);
+        if (warningText.includes('Vi finner ingen saker i vårt system.')) {
+          console.log('No cases found in Intrum system. Finishing execution.');
+          if (scrapingCompleteCallback) {
+            setTimeout(() => scrapingCompleteCallback("NO_DEBT_FOUND"), 1000);
+          }
+          return { browser, page };
+        }
+      }
+    } catch (error) {
+      console.log('No warning message found, continuing with debt case extraction');
+    }
 
-   await page.waitForSelector('.case-container, .debt-case, [class*="case"]', { timeout: 10000, visible: true }).catch(() => {
+   await page.waitForSelector('.case-container, .debt-case, [class*="case"]', { visible: true }).catch(() => {
     console.log('No debt cases found or page took too long to load');
   });
 
@@ -91,6 +110,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
  
 
   // Find all "Detaljer på sak" buttons and process each one
+  await page.waitForSelector('span.button-text', { visible: true });
   const detailsButtons = await page.$$('span.button-text');
   const detailsButtonsToClick = [];
   
@@ -167,6 +187,10 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers) {
     await fs.writeFile(detailedInfoFilePath, JSON.stringify(detailedData, null, 2));
   } catch (error) {
     console.error(`Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`, error);
+  }
+
+  if (scrapingCompleteCallback) {
+    setTimeout(() => scrapingCompleteCallback("DEBT_FOUND"), 1000);
   }
   return { browser, page };
 }

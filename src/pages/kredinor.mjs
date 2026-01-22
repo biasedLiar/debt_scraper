@@ -3,15 +3,19 @@ import { kredinor } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
 import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../schemas.mjs";
-const fs = require('fs/promises');
+import { extractFields } from "../extract_kredinor.mjs";
+const fs = require('fs');
+const path = require('path');
 
 /**
- * Handles the Digipost login automation flow
+ * Handles the Kredinor login automation flow
  * @param {string} nationalID - The national identity number to use for login
  * @param {() => string} getUserName - Function to get the user name
+ * @param {Function} setupPageHandlers - Function to setup page response handlers
+ * @param {Function} scrapingCompleteCallback - Callback to signal scraping is complete
  * @returns {Promise<{browser: any, page: any}>}
  */
-export async function handleKredinorLogin(nationalID, getUserName, setupPageHandlers) {
+export async function handleKredinorLogin(nationalID, getUserName, setupPageHandlers, scrapingCompleteCallback) {
   const { browser, page } = await PUP.openPage(kredinor.url);
   
   console.log(`Opened ${kredinor.name} at ${kredinor.url}`);
@@ -26,7 +30,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
 
 // Accept cookies first
   try {
-    await page.waitForSelector('button.coi-banner__accept', { timeout: 5000, visible: true });
+    await page.waitForSelector('button.coi-banner__accept', {visible: true });
     await page.click('button.coi-banner__accept');
     console.log('Accepted cookies');
   } catch (error) {
@@ -34,7 +38,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   }
   
   try {
-    await page.waitForSelector('button.login-button', { timeout: 10000 });
+    await page.waitForSelector('button.login-button', { visible: true});
     await page.click('button.login-button');
   } catch (error) {
     console.error('Error clicking login button:', error.message);
@@ -45,9 +49,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   
   await loginWithBankID(page, nationalID);
 
- 
-
-  await page.waitForSelector('.info-row-item-group', { timeout: 10000, visible: true }).catch(() => {
+  await page.waitForSelector('.info-row-item-group', { visible: true }).catch(() => {
     console.log('No debt information found or page took too long to load');
   });
   const [debtAmount, activeCases] = await page.$$eval('.info-row-item-title', els => 
@@ -59,6 +61,13 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   const filePath = createFoldersAndGetName(kredinor.name, folderName, "Kredinor", "ManuallyFoundDebt", true);
   console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
   const data = { debtAmount, activeCases, timestamp: new Date().toISOString() };
+  if (debtAmount === undefined && activeCases === undefined) {
+    data.note = "No debt information found on page.";
+    if (scrapingCompleteCallback) {
+      setTimeout(() => scrapingCompleteCallback("NO_DEBT_FOUND"), 1000);
+    }
+    return { browser, page };
+  }
   await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);
   console.log(`Debt amount: ${debtAmount}`);
   console.log(`Active cases: ${activeCases}`);
@@ -73,6 +82,65 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     els.map(el => el.textContent.trim())
   );
 
+  // Click button to download PDF of closed cases
+  // active for active cases, closed for closed cases
+    try {
+      const downloadButton = await page.waitForSelector('span[data-text-key="claims.active.overview_report.download.button"], span[data-text-key="claims.closed.overview_report.download.button"]', { visible: true });
+      
+      
+      // Set download path for this specific download - CDP requires absolute path
+      const client = await page.createCDPSession();
+      const pdfFolderRelative = createFoldersAndGetName(kredinor.name, folderName, "KredinorPDF", "", false).replace(/[^\/\\]+$/, '');
+      const pdfFolder = path.resolve(pdfFolderRelative);
+      
+      // Ensure folder exists
+      if (!fs.existsSync(pdfFolder)) {
+        fs.mkdirSync(pdfFolder, { recursive: true });
+      }
+      
+      await client.send('Page.setDownloadBehavior', {
+        behavior: 'allow',
+        downloadPath: pdfFolder
+      });
+      
+      console.log(`Download path set to: ${pdfFolder}`);
+      
+      await downloadButton.click();
+      console.log('Clicked download button');
+      
+      // Wait for download to complete  //TODO, prøv å gjøre dette mer deterministisk
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
+      console.log('PDF download completed');
+      
+      // Extract data from the downloaded PDF
+      try {
+        // Find the downloaded PDF file
+        const files = fs.readdirSync(pdfFolderRelative);
+        const pdfFile = files.find(f => f.endsWith('.pdf'));
+        
+        if (pdfFile) {
+          const pdfPath = path.join(pdfFolderRelative, pdfFile);
+          const outputPath = path.join(pdfFolderRelative, 'extracted_data.json');
+          
+          console.log(`Extracting data from ${pdfFile}...`);
+          //await extractFields(pdfPath, outputPath);
+
+          await extractFields(pdfPath, outputPath)
+          console.log('PDF extraction completed');
+        } else {
+          console.log('No PDF file found in download folder');
+        }
+      } catch (extractError) {
+        console.log('Error extracting PDF data:', extractError.message);
+      }
+
+      
+      
+    } catch (error) {
+      console.log('Could not download closed cases PDF:', error);
+    }
+
   console.log("Debt List:", debtList);
   console.log("Creditor List:", creditorList);
   console.log("Saksnummer List:", saksnummerList);
@@ -80,5 +148,8 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   const filePath2 = createFoldersAndGetName(kredinor.name, folderName, "Kredinor", "FullDebtDetails", true);
   await saveValidatedJSON(filePath2, {debtList, creditorList, saksnummerList}, KredinorFullDebtDetailsSchema);
 
+  if (scrapingCompleteCallback) {
+    setTimeout(() => scrapingCompleteCallback("DEBT_FOUND"), 1000);
+  }
   return { browser, page };
 }
