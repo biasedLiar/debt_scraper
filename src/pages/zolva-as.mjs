@@ -6,10 +6,12 @@ const fs = require('fs/promises');
  * Handles the Zolva AS login automation flow
  * @param {string} nationalID - The national identity number to use for login
  * @param {Function} setupPageHandlers - Function to setup page response handlers
- * @param {Function} scrapingCompleteCallback - Callback to signal scraping is complete
+ * @param {{onComplete?: Function}} callbacks - Callbacks object with onComplete function
  * @returns {Promise<{browser: any, page: any}>}
  */
-export async function handleZolvaLogin(nationalID, setupPageHandlers, scrapingCompleteCallback) {
+export async function handleZolvaLogin(nationalID, setupPageHandlers, callbacks = {}) {
+  const { onComplete, onTimeout } = callbacks;
+  let timeoutTimer = null;
   const { browser, page } = await PUP.openPage(zolva.url);
 
   console.log(`Opened ${zolva.name} at ${zolva.url}`);
@@ -36,6 +38,14 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, scrapingCo
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
+  // Start 60-second timeout timer after BankID login
+  if (onTimeout) {
+    timeoutTimer = setTimeout(() => {
+      console.log('Zolva handler timed out after 60 seconds');
+      onTimeout('HANDLER_TIMEOUT');
+    }, 60000);
+  }
+
   // Check for error message indicating no debtor found
   try {
     await page.waitForSelector('.validation-summary-errors', { visible: true });
@@ -46,8 +56,9 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, scrapingCo
     
     if (errorMessage === 'Ingen debitor funnet for SSN-nummer') {
       console.log('No debitor found for this SSN number');
-      if (scrapingCompleteCallback) {
-        setTimeout(() => scrapingCompleteCallback("NO_DEBT_FOUND"), 1000);
+      if (timeoutTimer) clearTimeout(timeoutTimer);
+      if (onComplete) {
+        setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
       }
       return { browser, page };
     }
@@ -74,8 +85,9 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, scrapingCo
 
     if (hasNoData) {
       console.log('Table shows "Ingen data å vise" - no debt data available');
-      if (scrapingCompleteCallback) {
-        setTimeout(() => scrapingCompleteCallback("NO_DEBT_FOUND"), 1000);
+      if (timeoutTimer) clearTimeout(timeoutTimer);
+      if (onComplete) {
+        setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
       }
       return { browser, page };
     }
@@ -103,8 +115,9 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, scrapingCo
     await fs.writeFile(detailedInfoFilePath, JSON.stringify(tableData, null, 2));
     console.log(`Saved table data to ${detailedInfoFilePath}`);
   
-  if (scrapingCompleteCallback) {
-    setTimeout(() => scrapingCompleteCallback("DEBT_FOUND"), 1000);
+  if (timeoutTimer) clearTimeout(timeoutTimer);
+  if (onComplete) {
+    setTimeout(() => onComplete('DEBT_FOUND'), 1000);
   }
   return { browser, page };
 }

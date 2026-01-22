@@ -6,9 +6,13 @@ import { createFoldersAndGetName, createDownloadFoldersAndGetName } from "../uti
 /**
  * Handles the Digipost login automation flow
  * @param {string} nationalID - The national identity number to use for login
+ * @param {Function} setupPageHandlers - Function to setup page response handlers
+ * @param {{onComplete?: Function}} callbacks - Callbacks object with onComplete function
  * @returns {Promise<{browser: any, page: any}>}
  */
-export async function handleDigipostLogin(nationalID, setupPageHandlers) {
+export async function handleDigipostLogin(nationalID, setupPageHandlers, callbacks = {}) {
+  const { onComplete, onTimeout } = callbacks;
+  let timeoutTimer = null;
   const { browser, page } = await PUP.openPage(digiPost.url);
 
   console.log(`Opened ${digiPost.name} at ${digiPost.url}`);
@@ -34,6 +38,14 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
 
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
+
+  // Start 60-second timeout timer after BankID login
+  if (onTimeout) {
+    timeoutTimer = setTimeout(() => {
+      console.log('Digipost handler timed out after 60 seconds');
+      onTimeout('HANDLER_TIMEOUT');
+    }, 60000);
+  }
 
   // Wait for the page to fully load and render after BankID login
   console.log("Waiting for Digipost inbox to load...");
