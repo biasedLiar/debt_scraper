@@ -59,7 +59,6 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
     const hasText1 = await page.evaluate(el => el.textContent.includes('For mange mislykkede påloggingsforsøk.'), element);
     if (hasText1) {
       console.log("Detected too many failed login attempts message. Ending execution.");
-      // TODO, handle
       if (timeoutTimer) clearTimeout(timeoutTimer);
       if (onComplete) {
         setTimeout(() => onComplete("TOO_MANY_FAILED_ATTEMPTS"), 1000);
