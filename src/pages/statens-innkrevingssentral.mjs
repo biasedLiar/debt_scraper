@@ -37,6 +37,10 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
   if (debtElement) {
     const debtText = await page.evaluate((el) => el.textContent, debtElement);
     console.log("Debt amount:", debtText);
+    if (timeoutTimer) clearTimeout(timeoutTimer);
+    if (onComplete) {
+      setTimeout(() => onComplete("DEBT_FOUND"), 1000);
+    }
     // Note: SI also gets completion signal from setupPageHandlers when JSON response arrives
   } else {
     console.log("Debt element not found");
