@@ -2,6 +2,7 @@ import { PUP } from "../scraper.mjs";
 import { digiPost } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName, createDownloadFoldersAndGetName } from "../utilities.mjs";
+import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 
 /**
  * Handles the Digipost login automation flow
@@ -42,9 +43,9 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
   // Start 60-second timeout timer after BankID login
   if (onTimeout) {
     timeoutTimer = setTimeout(() => {
-      console.log('Digipost handler timed out after 60 seconds');
+      console.log('Digipost handler timed out after ' + (HANDLER_TIMEOUT_MS / 1000) + ' seconds');
       onTimeout('HANDLER_TIMEOUT');
-    }, 60000);
+    }, HANDLER_TIMEOUT_MS);
   }
 
   // Wait for the page to fully load and render after BankID login

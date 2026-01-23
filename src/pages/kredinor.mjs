@@ -4,6 +4,7 @@ import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
 import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../schemas.mjs";
 import { extractFields } from "../extract_kredinor.mjs";
+import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 const fs = require('fs');
 const path = require('path');
 
@@ -54,9 +55,9 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
   // Start 60-second timeout timer after BankID login
   if (onTimeout) {
     timeoutTimer = setTimeout(() => {
-      console.log('Kredinor handler timed out after 60 seconds');
+      console.log('Kredinor handler timed out after ' + (HANDLER_TIMEOUT_MS / 1000) + ' seconds');
       onTimeout('HANDLER_TIMEOUT');
-    }, 60000);
+    }, HANDLER_TIMEOUT_MS);
   }
 
   await page.waitForSelector('.info-row-item-group', { visible: true }).catch(() => {

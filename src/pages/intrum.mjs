@@ -3,6 +3,7 @@ import { intrum } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
 import { saveValidatedJSON, IntrumManualDebtSchema } from "../schemas.mjs";
+import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 
 const fs = require('fs/promises');
 
@@ -43,9 +44,9 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   // Start 60-second timeout timer after BankID login
   if (onTimeout) {
     timeoutTimer = setTimeout(() => {
-      console.log('Intrum handler timed out after 60 seconds');
+      console.log('Intrum handler timed out after ' + (HANDLER_TIMEOUT_MS / 1000) + ' seconds');
       onTimeout('HANDLER_TIMEOUT');
-    }, 60000);
+    }, HANDLER_TIMEOUT_MS);
   }
 
     // Check if there are no cases in the system

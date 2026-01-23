@@ -1,6 +1,7 @@
 import { si } from "../data.mjs";
 import { PUP } from "../scraper.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
+import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 
 /**
  * Handles the Statens Innkrevingssentral login automation flow
@@ -27,9 +28,9 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
   // Start 60-second timeout timer after BankID login
   if (onTimeout) {
     timeoutTimer = setTimeout(() => {
-      console.log('SI handler timed out after 60 seconds');
+      console.log('SI handler timed out after ' + (HANDLER_TIMEOUT_MS / 1000) + ' seconds');
       onTimeout('HANDLER_TIMEOUT');
-    }, 60000);
+    }, HANDLER_TIMEOUT_MS);
   }
 
   // Find and log the debt amount
