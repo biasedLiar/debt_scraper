@@ -113,6 +113,51 @@ const showScrapeDebtError = (message) => {
   }, 4000);
 };
 
+/**
+ * Handles the result from a scraping operation
+ * @param {string} result - The result status
+ * @param {string} siteName - The name of the site being scraped
+ * @param {HTMLElement} [buttonElement] - Optional button element to update with visited/failed class
+ * @returns {boolean} - Whether the visit was successful (DEBT_FOUND or NO_DEBT_FOUND)
+ */
+const handleScrapingResult = (result, siteName, buttonElement = null) => {
+  let isSuccessful = false;
+  
+  switch (result) {
+    case 'HANDLER_TIMEOUT':
+      console.warn(`${siteName} handler timed out after BankID login (60s).`);
+      showScrapeDebtError(`Tidsavbrudd ved henting av gjeldsinformasjon fra ${siteName}.`);
+      break;
+    case 'DEBT_FOUND':
+      console.info(`${siteName} scraping completed successfully, found debt.`);
+      isSuccessful = true;
+      break;
+    case 'NO_DEBT_FOUND':
+      console.info(`${siteName} scraping completed successfully, found no debt.`);
+      isSuccessful = true;
+      break;
+    case 'TOO_MANY_FAILED_ATTEMPTS':
+      console.warn(`${siteName} unsuccessful, too many failed attempts.`);
+      showScrapeDebtError(`For mange mislykkede påloggingsforsøk fra ${siteName}.`);
+      break;
+    default:
+      console.error(`${siteName} scraping unsuccessful, something went wrong.`);
+      showScrapeDebtError(`Noe gikk galt under innhenting av gjeldsinformasjon fra ${siteName}.`);
+      break;
+  }
+  
+  // Update button class if provided
+  if (buttonElement) {
+    if (isSuccessful) {
+      buttonElement.classList.add('btn-visited');
+    } else {
+      buttonElement.classList.add('btn-visit-failed');
+    }
+  }
+  
+  return isSuccessful;
+};
+
 // Set to true to show paid debts as well
 const showPaidDebts = true;
 
@@ -344,7 +389,24 @@ const siButton = button("Statens Innkrevingssentral", async (ev) => {
     showValidationError(validation.error);
     return;
   }
-  await handleSILogin(nationalID, setupPageHandlers);
+
+  // Create promises for completion and timeout
+  let completeCallback, timeoutCallback;
+  const completePromise = new Promise((resolve) => { completeCallback = resolve; });
+  const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
+
+  // Start the handler
+  handleSILogin(nationalID, setupPageHandlers, {
+    onComplete: completeCallback,
+    onTimeout: timeoutCallback
+  });
+
+  // Wait for result
+  const result = await Promise.race([completePromise, timeoutPromise]);
+
+  // Handle result
+  handleScrapingResult(result, 'SI', ev.target);
+  await PUP.closeBrowser();
 });
 const digipostButton = button("Digipost", async (ev) => {
   currentWebsite = "Digipost";
@@ -354,7 +416,24 @@ const digipostButton = button("Digipost", async (ev) => {
     showValidationError(validation.error);
     return;
   }
-  await handleDigipostLogin(nationalID, setupPageHandlers);
+
+  // Create promises for completion and timeout
+  let completeCallback, timeoutCallback;
+  const completePromise = new Promise((resolve) => { completeCallback = resolve; });
+  const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
+
+  // Start the handler
+  handleDigipostLogin(nationalID, setupPageHandlers, {
+    onComplete: completeCallback,
+    onTimeout: timeoutCallback
+  });
+
+  // Wait for result
+  const result = await Promise.race([completePromise, timeoutPromise]);
+
+  // Handle result
+  handleScrapingResult(result, 'Digipost', ev.target);
+  await PUP.closeBrowser();
 });
 
 const intrumButton = button("Intrum", async (ev) => {
@@ -365,7 +444,24 @@ const intrumButton = button("Intrum", async (ev) => {
     showValidationError(validation.error);
     return;
   }
-  await handleIntrumLogin(nationalID, setupPageHandlers);
+
+  // Create promises for completion and timeout
+  let completeCallback, timeoutCallback;
+  const completePromise = new Promise((resolve) => { completeCallback = resolve; });
+  const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
+
+  // Start the handler
+  handleIntrumLogin(nationalID, setupPageHandlers, {
+    onComplete: completeCallback,
+    onTimeout: timeoutCallback
+  });
+
+  // Wait for result
+  const result = await Promise.race([completePromise, timeoutPromise]);
+
+  // Handle result
+  handleScrapingResult(result, 'Intrum', ev.target);
+  await PUP.closeBrowser();
 });
 
 const kredinorButton = button("Kredinor", async (ev) => {
@@ -376,7 +472,24 @@ const kredinorButton = button("Kredinor", async (ev) => {
     showValidationError(validation.error);
     return;
   }
-  await handleKredinorLogin(nationalID, () => userName, setupPageHandlers);
+
+  // Create promises for completion and timeout
+  let completeCallback, timeoutCallback;
+  const completePromise = new Promise((resolve) => { completeCallback = resolve; });
+  const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
+
+  // Start the handler
+  handleKredinorLogin(nationalID, () => userName, setupPageHandlers, {
+    onComplete: completeCallback,
+    onTimeout: timeoutCallback
+  });
+
+  // Wait for result
+  const result = await Promise.race([completePromise, timeoutPromise]);
+
+  // Handle result
+  handleScrapingResult(result, 'Kredinor', ev.target);
+  await PUP.closeBrowser();
 });
 
 const praGroupButton = button("PRA Group", async (ev) => {
@@ -387,7 +500,24 @@ const praGroupButton = button("PRA Group", async (ev) => {
     showValidationError(validation.error);
     return;
   }
-  await handlePraGroupLogin(nationalID, () => userName, setupPageHandlers);
+
+  // Create promises for completion and timeout
+  let completeCallback, timeoutCallback;
+  const completePromise = new Promise((resolve) => { completeCallback = resolve; });
+  const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
+
+  // Start the handler
+  handlePraGroupLogin(nationalID, setupPageHandlers, {
+    onComplete: completeCallback,
+    onTimeout: timeoutCallback
+  });
+
+  // Wait for result
+  const result = await Promise.race([completePromise, timeoutPromise]);
+
+  // Handle result
+  handleScrapingResult(result, 'PRA Group', ev.target);
+  await PUP.closeBrowser();
 });
 const zolvaButton = button("Zolva AS", async (ev) => {
   currentWebsite = "Zolva AS";
@@ -397,7 +527,24 @@ const zolvaButton = button("Zolva AS", async (ev) => {
     showValidationError(validation.error);
     return;
   }
-  await handleZolvaLogin(nationalID, setupPageHandlers);
+
+  // Create promises for completion and timeout
+  let completeCallback, timeoutCallback;
+  const completePromise = new Promise((resolve) => { completeCallback = resolve; });
+  const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
+
+  // Start the handler
+  handleZolvaLogin(nationalID, setupPageHandlers, {
+    onComplete: completeCallback,
+    onTimeout: timeoutCallback
+  });
+
+  // Wait for result
+  const result = await Promise.race([completePromise, timeoutPromise]);
+
+  // Handle result
+  handleScrapingResult(result, 'Zolva AS', ev.target);
+  await PUP.closeBrowser();
 });
 
 const visitAllButton = button(
@@ -419,27 +566,33 @@ const visitAllButton = button(
        
       {
         name: "Kredinor",
+        button: kredinorButton,
         handler: (callbacks) =>
           handleKredinorLogin(nationalID, () => userName, setupPageHandlers, callbacks),
       },
       {
         name: "Intrum",
+        button: intrumButton,
         handler: (callbacks) => handleIntrumLogin(nationalID, setupPageHandlers, callbacks),
       },
       {
         name: "SI",
+        button: siButton,
         handler: (callbacks) => handleSILogin(nationalID, setupPageHandlers, callbacks),
       },
       {
         name: "PRA Group",
+        button: praGroupButton,
         handler: (callbacks) => handlePraGroupLogin(nationalID, setupPageHandlers, callbacks),
       },
       {
         name: "Zolva AS",
+        button: zolvaButton,
         handler: (callbacks) => handleZolvaLogin(nationalID, setupPageHandlers, callbacks),
       },
       {
         name: "Digipost",
+        button: digipostButton,
         handler: (callbacks) => handleDigipostLogin(nationalID, setupPageHandlers, callbacks),
       },
     ];
@@ -473,26 +626,10 @@ const visitAllButton = button(
         
         // Wait for either the callback or a timeout
         const result = await Promise.race([scrapingPromise, timedOutPromise]);
+        
+        // Handle result and get success status
+        const siteVisitSuccessful = handleScrapingResult(result, site.name, site.button);
 
-        switch (result) {
-          case 'HANDLER_TIMEOUT':
-            console.warn(`${site.name} handler timed out after BankID login (60s).`);
-            showScrapeDebtError(`Tidsavbrudd ved henting av gjeldsinformasjon fra ${site.name}.`);
-            break;
-          case 'DEBT_FOUND':
-              console.info(`${site.name} scraping completed successfully, found debt.`);
-              break;
-          case 'NO_DEBT_FOUND':
-              console.info(`${site.name} scraping completed successfully, found no debt.`);
-              break;
-          case 'TOO_MANY_FAILED_ATTEMPTS':
-              console.warn(`${site.name} unsuccessful, too many failed attempts.`);
-              showScrapeDebtError(`For mange mislykkede påloggingsforsøk fra ${site.name}. Avbryter videre forsøk.`);
-              break;
-          default:
-              console.error(`${site.name} scraping unsuccessfull, something went wrong.`);
-              showScrapeDebtError(`Noe gikk galt under innhenting av gjeldsinformasjon fra ${site.name}.`);
-}
 
         // Reset callback
         scrapingCompleteCallback = null;
