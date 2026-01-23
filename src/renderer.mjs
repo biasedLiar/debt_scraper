@@ -567,6 +567,11 @@ const visitAllButton = button(
     const websites = [
        
       {
+        name: "SI",
+        button: siButton,
+        handler: (callbacks) => handleSILogin(nationalID, setupPageHandlers, callbacks),
+      },
+      {
         name: "Kredinor",
         button: kredinorButton,
         handler: (callbacks) =>
@@ -576,11 +581,6 @@ const visitAllButton = button(
         name: "Intrum",
         button: intrumButton,
         handler: (callbacks) => handleIntrumLogin(nationalID, setupPageHandlers, callbacks),
-      },
-      {
-        name: "SI",
-        button: siButton,
-        handler: (callbacks) => handleSILogin(nationalID, setupPageHandlers, callbacks),
       },
       {
         name: "PRA Group",
@@ -680,11 +680,11 @@ nationalIdContainer.append(visitAllButton);
 
 const buttonsContainer = div();
 buttonsContainer.append(siButton);
-buttonsContainer.append(digipostButton);
 buttonsContainer.append(kredinorButton);
 buttonsContainer.append(intrumButton);
 buttonsContainer.append(praGroupButton);
 buttonsContainer.append(zolvaButton);
+buttonsContainer.append(digipostButton);
 document.body.append(heading);
 // document.body.append(heading2);
 // document.body.append(hLine1);
