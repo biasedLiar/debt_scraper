@@ -3,6 +3,7 @@ import { intrum } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
 import { saveValidatedJSON, IntrumManualDebtSchema } from "../schemas.mjs";
+import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 
 const fs = require('fs/promises');
 
@@ -10,10 +11,12 @@ const fs = require('fs/promises');
  * Handles the Intrum login automation flow
  * @param {string} nationalID - The national identity number to use for login
  * @param {Function} setupPageHandlers - Function to setup page response handlers
- * @param {Function} scrapingCompleteCallback - Callback to signal scraping is complete
+ * @param {{onComplete?: Function, onTimeout?: Function}} callbacks - Callbacks object with onComplete and onTimeout functions
  * @returns {Promise<{browser: any, page: any}>}
  */
-export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingCompleteCallback) {
+export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks = {}) {
+  const { onComplete, onTimeout } = callbacks;
+  let timeoutTimer = null;
   const { browser, page } = await PUP.openPage(intrum.url);
 
   console.log(`Opened ${intrum.name} at ${intrum.url}`);
@@ -38,6 +41,14 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingC
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
+  // Start 60-second timeout timer after BankID login
+  if (onTimeout) {
+    timeoutTimer = setTimeout(() => {
+      console.log('Intrum handler timed out after ' + (HANDLER_TIMEOUT_MS / 1000) + ' seconds');
+      onTimeout('HANDLER_TIMEOUT');
+    }, HANDLER_TIMEOUT_MS);
+  }
+
     // Check if there are no cases in the system
     try {
       const noCasesElement = await page.waitForSelector('.warning-message', { visible: true }).catch(() => console.log('No warning message found'));
@@ -45,8 +56,9 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingC
         const warningText = await page.evaluate(el => el.textContent, noCasesElement);
         if (warningText.includes('Vi finner ingen saker i vårt system.')) {
           console.log('No cases found in Intrum system. Finishing execution.');
-          if (scrapingCompleteCallback) {
-            setTimeout(() => scrapingCompleteCallback("NO_DEBT_FOUND"), 1000);
+          if (timeoutTimer) clearTimeout(timeoutTimer);
+          if (onComplete) {
+            setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
           }
           return { browser, page };
         }
@@ -189,8 +201,9 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, scrapingC
     console.error(`Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`, error);
   }
 
-  if (scrapingCompleteCallback) {
-    setTimeout(() => scrapingCompleteCallback("DEBT_FOUND"), 1000);
+  if (timeoutTimer) clearTimeout(timeoutTimer);
+  if (onComplete) {
+    setTimeout(() => onComplete('DEBT_FOUND'), 1000);
   }
   return { browser, page };
 }

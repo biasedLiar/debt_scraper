@@ -124,7 +124,8 @@ const offlineKredinorFile = "";
 let currentWebsite = null;
 let userName = null;
 let totalDebtAmount = 0;
-let scrapingCompleteCallback = null; // Callback to signal scraping is done
+let scrapingCompleteCallback = null; 
+let timedOutCallback = null; // Callback to signal scraping is done
 
 const foundUnpaidDebts = {
   foundCreditors: [],
@@ -279,7 +280,7 @@ export const setupPageHandlers = (page, nationalID) => {
           // Signal that scraping is complete for this website
           if (scrapingCompleteCallback) {
             console.log("Scraping complete, signaling callback...");
-            setTimeout(() => scrapingCompleteCallback(), 2000); // Small delay to ensure all data is processed
+            setTimeout(() => scrapingCompleteCallback('DEBT_FOUND'), 2000); // Small delay to ensure all data is processed
           }
         }
       } catch (e) {
@@ -418,28 +419,28 @@ const visitAllButton = button(
        
       {
         name: "Kredinor",
-        handler: (callback) =>
-          handleKredinorLogin(nationalID, () => userName, setupPageHandlers, callback),
+        handler: (callbacks) =>
+          handleKredinorLogin(nationalID, () => userName, setupPageHandlers, callbacks),
       },
       {
         name: "Intrum",
-        handler: (callback) => handleIntrumLogin(nationalID, setupPageHandlers, callback),
+        handler: (callbacks) => handleIntrumLogin(nationalID, setupPageHandlers, callbacks),
       },
       {
         name: "SI",
-        handler: (callback) => handleSILogin(nationalID, setupPageHandlers, callback ),
+        handler: (callbacks) => handleSILogin(nationalID, setupPageHandlers, callbacks),
       },
       {
         name: "PRA Group",
-        handler: (callback) => handlePraGroupLogin(nationalID, setupPageHandlers, callback),
+        handler: (callbacks) => handlePraGroupLogin(nationalID, setupPageHandlers, callbacks),
       },
       {
         name: "Zolva AS",
-        handler: (callback) => handleZolvaLogin(nationalID, setupPageHandlers, callback),
+        handler: (callbacks) => handleZolvaLogin(nationalID, setupPageHandlers, callbacks),
       },
       {
         name: "Digipost",
-        handler: (callback) => handleDigipostLogin(nationalID, setupPageHandlers, callback),
+        handler: (callbacks) => handleDigipostLogin(nationalID, setupPageHandlers, callbacks),
       },
     ];
 
@@ -456,19 +457,26 @@ const visitAllButton = button(
           scrapingCompleteCallback = resolve;
         });
 
+        // Create a promise that will be resolved when timeout occurs
+        const timedOutPromise = new Promise((resolve) => {
+          timedOutCallback = resolve;
+        });
+
         // Wait for scraping to complete (signaled by the callback)
         console.log(`Waiting for ${site.name} scraping to complete...`);
 
-        // Open the website and do the scraping (pass callback to handler)
-        site.handler(scrapingCompleteCallback);
+        // Open the website and do the scraping (pass callbacks object to handler)
+        site.handler({ 
+          onComplete: scrapingCompleteCallback,
+          onTimeout: timedOutCallback 
+        });
         
         // Wait for either the callback or a timeout
-        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve('timeout'), 120000));
-        const result = await Promise.race([scrapingPromise, timeoutPromise]);
+        const result = await Promise.race([scrapingPromise, timedOutPromise]);
 
         switch (result) {
-          case 'timeout':
-            console.warn(`${site.name} timed out waiting for scraping completion.`);
+          case 'HANDLER_TIMEOUT':
+            console.warn(`${site.name} handler timed out after BankID login (60s).`);
             showScrapeDebtError(`Tidsavbrudd ved henting av gjeldsinformasjon fra ${site.name}.`);
             break;
           case 'DEBT_FOUND':
