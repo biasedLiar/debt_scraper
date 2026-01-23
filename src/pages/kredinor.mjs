@@ -12,7 +12,7 @@ const path = require('path');
  * @param {string} nationalID - The national identity number to use for login
  * @param {() => string} getUserName - Function to get the user name
  * @param {Function} setupPageHandlers - Function to setup page response handlers
- * @param {{onComplete?: Function}} callbacks - Callbacks object with onComplete function
+ * @param {{onComplete?: Function, onTimeout?: Function}} callbacks - Callbacks object with onComplete and onTimeout functions
  * @returns {Promise<{browser: any, page: any}>}
  */
 export async function handleKredinorLogin(nationalID, getUserName, setupPageHandlers, callbacks = {}) {

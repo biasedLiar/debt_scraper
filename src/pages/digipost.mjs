@@ -7,7 +7,7 @@ import { createFoldersAndGetName, createDownloadFoldersAndGetName } from "../uti
  * Handles the Digipost login automation flow
  * @param {string} nationalID - The national identity number to use for login
  * @param {Function} setupPageHandlers - Function to setup page response handlers
- * @param {{onComplete?: Function}} callbacks - Callbacks object with onComplete function
+ * @param {{onComplete?: Function, onTimeout?: Function}} callbacks - Callbacks object with onComplete and onTimeout functions
  * @returns {Promise<{browser: any, page: any}>}
  */
 export async function handleDigipostLogin(nationalID, setupPageHandlers, callbacks = {}) {
