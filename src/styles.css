@@ -51,6 +51,24 @@ hr {
   }
 }
 
+.btn-visited {
+  background-color: #d4e0e4;
+  opacity: 0.7;
+
+  &:hover {
+    background-color: #a5b0b3;
+  }
+}
+
+.btn-visit-failed {
+  background-color: #e4a5a5;
+  opacity: 0.8;
+
+  &:hover {
+    background-color: #d68585;
+  }
+}
+
 .main-start-button {
   background-color: #37c9ab;
 
