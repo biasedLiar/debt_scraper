@@ -2,6 +2,7 @@ import { PUP } from "../scraper.mjs";
 import { zolva } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
+import { createFoldersAndGetName } from "../utilities.mjs";
 const fs = require('fs/promises');
 /**
  * Handles the Zolva AS login automation flow
