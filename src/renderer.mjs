@@ -14,6 +14,8 @@ import {
   input,
   visualizeDebt,
   visualizeTotalDebts,
+  errorBox,
+  infoBox
 } from "./dom.mjs";
 import { PUP } from "./scraper.mjs";
 import { savePage, createFoldersAndGetName, fileKnownToContainName, transferFilesAfterLogin, readAllDebtForPerson } from "./utilities.mjs";
@@ -88,24 +90,36 @@ const showValidationError = (message) => {
  * Shows scrape debt error message to user
  * @param {string} message - Error message to display
  */
-const showScrapeDebtError = (message) => {
-  const existingScrapeDebtError = document.querySelector(".scrape-debt-error");
+const showScrapeDebtError = (title, message) => {
+  const existingScrapeDebtError = document.querySelector(".error-box");
   if (existingScrapeDebtError) {
     existingScrapeDebtError.remove();
   }
+  const errorBoxElement = errorBox(title, message);
 
-  const errorDiv = document.createElement("div");
-  errorDiv.className = "scrape-debt-error";
-  errorDiv.textContent = message;
-  errorDiv.style.color = "red";
-  errorDiv.style.marginLeft = "0.5rem";
-  errorDiv.style.fontSize = "0.9rem";
-
-  totalVisualization.insertAdjacentElement("afterend", errorDiv);
+  totalVisualization.insertAdjacentElement("beforebegin", errorBoxElement);
 
   setTimeout(() => {
-    errorDiv.remove();
-  }, 4000);
+    errorBoxElement.remove();
+  }, 60000);
+};
+
+
+/**
+ * Shows scrape debt error message to user
+ * @param {string} message - Error message to display
+ */
+const showInfoBox = (title, message) => {
+  const existingInfoBox = document.querySelector(".info-box");
+  if (existingInfoBox) {
+    existingInfoBox.remove();
+  }
+  const infoBoxElement = infoBox(title, message);
+
+  totalVisualization.insertAdjacentElement("beforebegin", infoBoxElement);
+  setTimeout(() => {
+    infoBoxElement.remove();
+  }, 60000);
 };
 
 /**
@@ -121,7 +135,7 @@ const handleScrapingResult = (result, siteName, buttonElement = null) => {
   switch (result) {
     case 'HANDLER_TIMEOUT':
       console.warn(`${siteName} handler timed out after BankID login (60s).`);
-      showScrapeDebtError(`Tidsavbrudd ved henting av gjeldsinformasjon fra ${siteName}.`);
+      showScrapeDebtError("Tidsavbrudd", `Tidsavbrudd ved henting av gjeldsinformasjon fra ${siteName}.`);
       break;
     case 'DEBT_FOUND':
       console.info(`${siteName} scraping completed successfully, found debt.`);
@@ -133,11 +147,11 @@ const handleScrapingResult = (result, siteName, buttonElement = null) => {
       break;
     case 'TOO_MANY_FAILED_ATTEMPTS':
       console.warn(`${siteName} unsuccessful, too many failed attempts.`);
-      showScrapeDebtError(`For mange mislykkede påloggingsforsøk fra ${siteName}.`);
+      showScrapeDebtError("For mange mislykkede påloggingsforsøk", `For mange mislykkede påloggingsforsøk fra ${siteName}.`);
       break;
     default:
       console.error(`${siteName} scraping unsuccessful, something went wrong.`);
-      showScrapeDebtError(`Noe gikk galt under innhenting av gjeldsinformasjon fra ${siteName}.`);
+      showScrapeDebtError("Feil under innhenting", `Noe gikk galt under innhenting av gjeldsinformasjon fra ${siteName}.`);
       break;
   }
   
@@ -223,7 +237,7 @@ const displayDebtData = (debtData) => {
  * @param {any} page - Puppeteer page object
  * @param {string} nationalID - The national identity number
  */
-export const setupPageHandlers = (page, nationalID) => {
+export const setupPageHandlers = (page, nationalID, onComplete) => {
   // @ts-ignore
   page.on("request", (r) => {
     console.log(r.url());
@@ -320,9 +334,17 @@ export const setupPageHandlers = (page, nationalID) => {
           }
 
           // Signal that scraping is complete for this website
-          if (scrapingCompleteCallback) {
-            console.log("Scraping complete, signaling callback...");
-            setTimeout(() => scrapingCompleteCallback('DEBT_FOUND'), 2000); // Small delay to ensure all data is processed
+          if (onComplete) {
+            if (debts_unpaid.totalAmount > 0) {
+              console.log("Scraping complete, signaling callback...");
+              setTimeout(() => onComplete('DEBT_FOUND'), 500);
+            } else { 
+              // SI often finds debt via json so fast it seems as if the site has crashed.
+              // So info box is displayed to show that scraping is complete with no debt found.
+              console.log("Scraping complete, signaling callback...");
+              showInfoBox("Ingen gjeld", `Det er ingen gjeld hos ${currentWebsite}.`);
+              setTimeout(() => onComplete('NO_DEBT_FOUND'), 500);
+            }
           }
         }
       } catch (e) {

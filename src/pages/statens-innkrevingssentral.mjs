@@ -19,11 +19,13 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
 
   // Setup page handlers for saving responses
   if (setupPageHandlers) {
-    setupPageHandlers(page, nationalID);
+    setupPageHandlers(page, nationalID, onComplete);
   }
+
 
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
+  
 
   // Start 60-second timeout timer after BankID login
   if (onTimeout) {
@@ -32,22 +34,25 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
       onTimeout('HANDLER_TIMEOUT');
     }, HANDLER_TIMEOUT_MS);
   }
+  
 
   // Find and log the debt amount
-  const debtElement = await page.$("span.ce26PEIo");
+  const debtElement = await page.waitForSelector("span.ce26PEIo", {visible: true, timeout: 60000}).catch(() => null);
+  
   if (debtElement) {
+    
     const debtText = await page.evaluate((el) => el.textContent, debtElement);
-    console.log("Debt amount:", debtText);
+    console.log(`Found debt through UI, not JSON as expected: ${debtText}`);
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
-      setTimeout(() => onComplete("DEBT_FOUND"), 1000);
+      setTimeout(() => onComplete("HANDLER_TIMEOUT"), 10000);
     }
     // Note: SI also gets completion signal from setupPageHandlers when JSON response arrives
   } else {
-    console.log("Debt element not found");
+    console.log("No debt found through UI.");
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
-      setTimeout(() => onComplete("NO_DEBT_FOUND"), 1000);
+        setTimeout(() => onComplete("HANDLER_TIMEOUT"), 10000);
     }
   }
 
