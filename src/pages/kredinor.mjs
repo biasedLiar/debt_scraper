@@ -136,9 +136,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
           const outputPath = path.join(pdfFolderRelative, 'extracted_data.json');
           
           console.log(`Extracting data from ${pdfFile}...`);
-          //await extractFields(pdfPath, outputPath);
-
-          await extractFields(pdfPath, outputPath)
+          await extractFields(pdfPath, outputPath);
           console.log('PDF extraction completed');
         } else {
           console.log('No PDF file found in download folder');

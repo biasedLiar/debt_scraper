@@ -83,11 +83,20 @@ export async function extractFields(pdfPath, outputPath) {
       console.log('Case text preview:', caseText.substring(0, 500));
       
       // Extract Fakturadato and Forfallsdato from the table section
-      // Look for dates after a reference number (8+ digits followed by two dates)
-      const dateTableMatch = caseText.match(/(\d{8,})\s*(\d{2}\.\d{2}\.\d{4})\s*(\d{2}\.\d{2}\.\d{4})/);
-      
-      const fakturadato = dateTableMatch ? dateTableMatch[2] : null;
-      const forfallsdato = dateTableMatch ? dateTableMatch[3] : null;
+        // Find the first two dates after the title "Grunnlaget for saken"
+        let fakturadato = null;
+        let forfallsdato = null;
+        const grunnlagIdx = caseText.indexOf("Grunnlaget for saken");
+        if (grunnlagIdx !== -1) {
+          // Get substring after the title
+          const afterGrunnlag = caseText.substring(grunnlagIdx + "Grunnlaget for saken".length);
+          // Find all dates in Norwegian format
+          const dateMatches = afterGrunnlag.match(/\d{2}\.\d{2}\.\d{4}/g);
+          if (dateMatches && dateMatches.length >= 2) {
+            fakturadato = dateMatches[0];
+            forfallsdato = dateMatches[1];
+          }
+        }
 
       // Financial fields from this case section only
       const fields = {
