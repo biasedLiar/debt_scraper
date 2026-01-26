@@ -38,5 +38,22 @@ export async function loginWithBankID(page, nationalID) {
   } catch (e) {
     console.error("Could not find/click continue button:", e);
   }
+
+
+  // Wait for and click the "Bekreft innlogging" button if it appears
+  try {
+    const loginButton = await page.$('button#login-button');
+    if (loginButton) {
+      await page.waitForSelector('button#login-button', { visible: true, timeout: 3000 });
+      await page.click('button#login-button');
+      console.log('Clicked Bekreft innlogging button');
+    } else {
+      console.log('Bekreft innlogging button not found, skipping');
+    } 
+  } catch (e) {
+    console.error('Could not find/click Bekreft innlogging button:', e);
+  }
+
+
   await page.bringToFront()
 }
