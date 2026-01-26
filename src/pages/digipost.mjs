@@ -2,13 +2,18 @@ import { PUP } from "../scraper.mjs";
 import { digiPost } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName, createDownloadFoldersAndGetName } from "../utilities.mjs";
+import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 
 /**
  * Handles the Digipost login automation flow
  * @param {string} nationalID - The national identity number to use for login
+ * @param {Function} setupPageHandlers - Function to setup page response handlers
+ * @param {{onComplete?: Function, onTimeout?: Function}} callbacks - Callbacks object with onComplete and onTimeout functions
  * @returns {Promise<{browser: any, page: any}>}
  */
-export async function handleDigipostLogin(nationalID, setupPageHandlers) {
+export async function handleDigipostLogin(nationalID, setupPageHandlers, callbacks = {}) {
+  const { onComplete, onTimeout } = callbacks;
+  let timeoutTimer = null;
   const { browser, page } = await PUP.openPage(digiPost.url);
 
   console.log(`Opened ${digiPost.name} at ${digiPost.url}`);
@@ -34,6 +39,14 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers) {
 
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
+
+  // Start 60-second timeout timer after BankID login
+  if (onTimeout) {
+    timeoutTimer = setTimeout(() => {
+      console.log('Digipost handler timed out after ' + (HANDLER_TIMEOUT_MS / 1000) + ' seconds');
+      onTimeout('HANDLER_TIMEOUT');
+    }, HANDLER_TIMEOUT_MS);
+  }
 
   // Wait for the page to fully load and render after BankID login
   console.log("Waiting for Digipost inbox to load...");
