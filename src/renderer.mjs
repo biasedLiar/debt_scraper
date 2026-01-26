@@ -306,9 +306,9 @@ export const setupPageHandlers = (page, nationalID) => {
           displayDebtData(debts_paid);
 
           if (offlineMode) {
-            const doucment2 = offlineKredinorFile;
+            const document2 = offlineKredinorFile;
             const { debtList, creditorList, saksnummerList } = require(
-              doucment2
+              document2
             );
             const debts_unpaid2 = convertListsToJson(
               debtList,
@@ -779,14 +779,14 @@ nationalIdInput.addEventListener('input', () => {
 });
 
 if (offlineMode) {
-  const doucment = offlineSIFile;
-  const data = require(doucment);
+  const document = offlineSIFile;
+  const data = require(document);
   const { debts_paid, debts_unpaid } = read_json("SI", data.krav);
   displayDebtData(debts_unpaid);
   displayDebtData(debts_paid);
 
-  const doucment2 = offlineKredinorFile;
-  const { debtList, creditorList, saksnummerList } = require(doucment2);
+  const document2 = offlineKredinorFile;
+  const { debtList, creditorList, saksnummerList } = require(document2);
   const debts_unpaid2 = convertListsToJson(
     debtList,
     creditorList,
