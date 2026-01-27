@@ -2,10 +2,94 @@ import { PUP } from "../scraper.mjs";
 import { intrum } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
-import { saveValidatedJSON, IntrumManualDebtSchema } from "../schemas.mjs";
+import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema } from "../schemas.mjs";
 import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 
 const fs = require('fs/promises');
+
+/**
+ * Maps raw Intrum debt data to DebtSchema format
+ * @param {Array<Object>} rawDebts
+ * @param {string} debtCollectorName
+ * @returns {Array<Object>} Array of objects matching DebtSchema
+ */
+function mapToDebtSchema(rawDebts, debtCollectorName = "Intrum") {
+  return rawDebts.map((item) => {
+    // Parse numbers, fallback to 0 if not present
+    const parseNum = (val) => {
+      if (val === undefined || val === null || val === "") return 0;
+      if (typeof val === "number") return val;
+      const n = Number(("" + val).replace(/\s/g, "").replace(",", "."));
+      return isNaN(n) ? 0 : n;
+    };
+
+    // Use caseNumber for caseID
+    let caseID = item.caseNumber || "";
+    if (caseID === null || caseID === undefined) caseID = "";
+
+    // Use creditorName for originalCreditorName
+    let originalCreditorName = item.creditorName || "";
+    if (originalCreditorName === null || originalCreditorName === undefined) originalCreditorName = "";
+
+    // Use 'Total' or 'totalAmount' for totalAmount
+    let totalAmount = item["Total"] || item.totalAmount || 0;
+    totalAmount = parseNum(totalAmount);
+
+    // Use 'Hovedkrav' for originalAmount
+    let originalAmount = item["Hovedkrav"] || 0;
+    originalAmount = parseNum(originalAmount);
+
+    // Sum interest, omkostninger, salær, rettslig gebyr for interestAndFines
+    let interestAndFines = 0;
+    interestAndFines += parseNum(item["Forsinkelsesrenter (21.01.2026)"]);
+    interestAndFines += parseNum(item["Omkostninger"]);
+    interestAndFines += parseNum(item["Salær"]);
+    interestAndFines += parseNum(item["Rettslig gebyr"]);
+    // Always keep 0 if sum is 0
+
+    // debtType and comment are optional
+    let debtType = item.debtType || undefined;
+    let comment = item.comment || undefined;
+
+    return {
+      caseID: String(caseID),
+      totalAmount,
+      originalAmount,
+      interestAndFines,
+      originalDueDate: undefined, // Not available
+      debtCollectorName,
+      originalCreditorName: String(originalCreditorName),
+      debtType,
+      comment,
+    };
+  });
+}
+
+/**
+ * Validates and saves Intrum debts in DebtSchema format
+ * @param {string} filePath
+ * @param {Array<Object>} rawDebts
+ */
+async function saveIntrumDebtsAsDebtSchema(filePath, rawDebts) {
+  const mapped = mapToDebtSchema(rawDebts);
+  // Validate each debt, filter out invalid
+  const validDebts = mapped.filter((d) => {
+    const result = DebtSchema.safeParse(d);
+    if (!result.success) {
+      console.warn("DebtSchema validation failed for entry:", d, result.error.issues);
+      return false;
+    }
+    return true;
+  });
+  if (validDebts.length === 0) {
+    console.warn("No valid debts to save for Intrum.");
+    return;
+  }
+  const out = { debts: validDebts, timestamp: new Date().toISOString() };
+  const outPath = filePath.replace(/(\.json)?$/, "_DebtSchema.json");
+  await fs.writeFile(outPath, JSON.stringify(out, null, 2), "utf-8");
+  console.log(`✓ Saved Intrum debts in DebtSchema format to ${outPath}`);
+}
 
 /**
  * Handles the Intrum login automation flow
@@ -116,6 +200,8 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
 
   try {
      await saveValidatedJSON(filePath, data, IntrumManualDebtSchema);
+      // Also save in DebtSchema format
+      await saveIntrumDebtsAsDebtSchema(filePath, debtCases);
   } catch (error) {
     console.error('Error writing debt data from Intrum to file:', error);
   }
