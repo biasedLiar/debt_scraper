@@ -5,12 +5,30 @@ const { z } = LIBS;
  * Schema for individual debt items
  */
 export const DebtSchema = z.object({
-  id: z.string().optional(),
-  amount: z.union([z.number(), z.string()]).optional(),
-  dueDate: z.string().optional(),
-  type: z.string().optional(),
-  typeText: z.string().optional(),
+  caseID: z.string(),
+  totalAmount: z.number(),
+  originalAmount: z.number(),
+  interestAndFines: z.number().optional(),
+  originalDueDate: z.date().optional(),
+  debtCollectorName: z.string(),
+  originalCreditorName: z.string(), 
+  debtType: z.string().optional(),
+  comment: z.string().optional(),
 });
+
+
+/*
+{
+totalAmount: float,
+originalAmount: float,
+interestAndFines: float,
+caseID: String,
+debtCollectorName: String,
+creditorName: String,
+debtType: String,
+comment: String
+}
+*/
 
 /**
  * Schema for debt collection data
