@@ -173,6 +173,36 @@ export const visualizeTotalDebts = (totalAmountString) => {
   return outerContainer;
 };
 
+/**
+ * @param {string} header
+ * @param {string} message
+ */
+export const errorBox = (header, message) => {
+  const outerContainer = div({ class: `error-box` });
+
+  const headerNumber = h1(header, "debt-small-header");
+  const headerSubtext = h2(message, "total-debt-amount");
+  outerContainer.appendChild(headerNumber);
+  outerContainer.appendChild(headerSubtext);
+  return outerContainer;
+};
+
+/**
+ * @param {string} header
+ * @param {string} message
+ */
+export const infoBox = (header, message) => {
+  const outerContainer = div({ class: `info-box` });
+
+  const headerNumber = h1(header, "debt-small-header");
+  const headerSubtext = h2(message, "total-debt-amount");
+  outerContainer.appendChild(headerNumber);
+  outerContainer.appendChild(headerSubtext);
+  return outerContainer;
+};
+
+
+
 const inputElement = document.createElement("input");
 const table = document.createElement("table");
 const tableHead = document.createElement("thead");

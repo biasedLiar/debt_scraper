@@ -215,3 +215,28 @@ input[type="number"] {
   margin-bottom: 4px;
   color: #333;
 }
+
+.error-box {
+  border: 5px solid red;
+  background-color: #f8d7da;
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 8px;
+
+  & h1{
+    color: black;
+  }
+}
+
+
+.info-box {
+  border: 5px solid #37c9ab;
+  background-color: #abd6cd;
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 8px;
+
+  & h1{ 
+    color: black;
+  }
+}
