@@ -174,8 +174,6 @@ input[type="number"] {
   }
 }
 
-
-
 .high-cases-container {
   margin-top: 20px;
   padding: 15px;
@@ -218,8 +216,6 @@ input[type="number"] {
   color: #333;
 }
 
-
-
 .error-box {
   border: 5px solid red;
   background-color: #f8d7da;
@@ -228,8 +224,7 @@ input[type="number"] {
   border-radius: 8px;
 
   & h1{
-    
-  color: black;
+    color: black;
   }
 }
 
@@ -241,8 +236,7 @@ input[type="number"] {
   margin-top: 20px;
   border-radius: 8px;
 
-  & h1{
-    
-  color: black;
+  & h1{ 
+    color: black;
   }
 }
