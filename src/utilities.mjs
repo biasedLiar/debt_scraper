@@ -585,4 +585,3 @@ export function readAllDebtForPerson(personId) {
   
   return result;
 } 
-
