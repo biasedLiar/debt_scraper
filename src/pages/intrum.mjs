@@ -39,13 +39,16 @@ function mapToDebtSchema(rawDebts, debtCollectorName = "Intrum") {
     let originalAmount = item["Hovedkrav"] || 0;
     originalAmount = parseNum(originalAmount);
 
-    // Sum interest, omkostninger, salær, rettslig gebyr for interestAndFines
+    // Sum all values that start with 'Forsinkelsesrenter', plus Omkostninger, Salær, Rettslig gebyr
     let interestAndFines = 0;
-    interestAndFines += parseNum(item["Forsinkelsesrenter (21.01.2026)"]);
+    for (const key of Object.keys(item)) {
+      if (key.toLowerCase().startsWith("forsinkelsesrenter")) {
+        interestAndFines += parseNum(item[key]);
+      }
+    }
     interestAndFines += parseNum(item["Omkostninger"]);
     interestAndFines += parseNum(item["Salær"]);
     interestAndFines += parseNum(item["Rettslig gebyr"]);
-    // Always keep 0 if sum is 0
 
     // debtType and comment are optional
     let debtType = item.debtType || undefined;

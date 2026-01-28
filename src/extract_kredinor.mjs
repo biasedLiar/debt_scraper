@@ -196,7 +196,7 @@ export async function extractFields(pdfPath, outputPath) {
          .reduce((sum, v) => sum + v, 0);
 
         // Parse forfallsdato to Date if available
-        let originalDueDate = undefined;
+        let originalDueDate = null;
         if (c.forfallsdato) {
           const [day, month, year] = c.forfallsdato.split('.');
           originalDueDate = new Date(`${year}-${month}-${day}`);
