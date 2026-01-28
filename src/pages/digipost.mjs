@@ -2,6 +2,11 @@ import { PUP } from "../scraper.mjs";
 import { digiPost } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName, createDownloadFoldersAndGetName } from "../utilities.mjs";
+
+// Local function to sanitize folder and file names (Windows-safe)
+function safe(name) {
+  return String(name).replace(/[<>:"/\\|?*]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+}
 import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 
 /**
@@ -50,59 +55,69 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
 
   // Wait for the page to fully load and render after BankID login
   console.log("Waiting for Digipost inbox to load...");
-  
-  // Wait for message list to load (this implicitly waits for navigation to complete)
-  // TODO dont hardcode single message
-  await page.waitForSelector('[aria-labelledby="message-label-3070544070"]', { 
-    visible: true 
+
+  // Wait for message list to load
+  await page.waitForSelector('.message-list-item__info', { visible: true });
+  const messageLinks = await page.$$('.message-list-item__info');
+  console.log(`Found ${messageLinks.length} messages in inbox`);
+
+  // Set up download folder and behavior ONCE before the loop, using sanitized names
+  const safeDigiPostName = safe(digiPost.name);
+  const safeNationalID = safe(nationalID);
+  const safeWebsite = safe("Digipost");
+  const pdfFolder = createDownloadFoldersAndGetName(safeDigiPostName, safeNationalID, safeWebsite);
+  const client = await page.createCDPSession();
+  await client.send('Page.setDownloadBehavior', {
+    behavior: 'allow',
+    downloadPath: pdfFolder,
   });
-
-// TODO dont hardcode single message
-const button = await page.$('[aria-labelledby="message-label-3070544070"] .message-list-item__info');
-await button.click();
+  console.log("Set download behavior for Digipost, downloading to:", pdfFolder);
 
 
+  for (let i = 0; i < messageLinks.length; i++) {
+    const message = messageLinks[i];
+    // Open message
+    await message.click();
 
-await page.waitForSelector('[aria-label="Dokumenthandlinger"]', {
-  visible: true 
-});
+    // Click the menu button to reveal the download option, then click the download button
+    try {
+      await page.waitForSelector('[aria-label="Dokumenthandlinger"]', { visible: true });
+      const button2 = await page.$('[aria-label="Dokumenthandlinger"]');
+      if (button2) {
+        await button2.click();
+      } else {
+        console.error("Dokumenthandlinger button not found even after waiting");
+      }
 
-const button2 = await page.$('[aria-label="Dokumenthandlinger"]');
+      // 2. Click the download option from the revealed menu
+      await page.waitForSelector('[data-testid="download-document"]', { visible: true });
+      const button3 = await page.$('[data-testid="download-document"]');
+      if (button3) {
+        try {
+          button3.click();
+          console.log("Clicked download document button (DOM click)");
+        } catch (err) {
+          console.error("Both click methods failed for download button", err);
+        }
+      } else {
+        console.error("Download button not found even after waiting");
+      }
 
-if (button2) {
-  await 
-  button2.click();
-} else {
-  console.error("Dokumenthandlinger button not found even after waiting");
-}
+      // Wait for the download to start with a timeout (resolve if download starts or timeout reached)
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
-
-const pdfFilePath = createDownloadFoldersAndGetName(digiPost.name, nationalID, "Digipost");
-
-const client = await page.target().createCDPSession()
-await client.send('Page.setDownloadBehavior', {
-  behavior: 'allow',
-  downloadPath: pdfFilePath,
-})
-
-console.log("Set download behavior for Digipost, downloading to:", pdfFilePath);
-// await page._client().send('Page.setDownloadBehavior', {behavior: 'allow', 
-//   downloadPath: pdfFilePath});
-
-
-
-await page.waitForSelector('[data-testid="download-document"]', { 
-  timeout: 30000, 
-  visible: true 
-});
-
-const button3 = await page.$('[data-testid="download-document"]');
-if (button3) {
-  await button3.click();
-  console.log("Clicked download document button");
-} else {
-  console.error("Dokumenthandlinger button not found even after waiting");
-}
+     
+    } catch (e) {
+      console.error("Error clicking menu/download for message", i + 1, e);
+    }
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Optionally: go back to inbox if needed
+    try {
+      await page.goBack({ waitUntil: 'networkidle2' });
+    } catch (e) {
+      console.error('Error going back to inbox after message', i + 1, e);
+    }
+  }
 
 
 
