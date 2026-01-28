@@ -85,11 +85,11 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
   
   console.log("Account reference:", accountReference);
 
-  // Extract amount
+  // Extract amount (second .text--big strong element)
   await page.waitForSelector('.text--big strong', { visible: true });
   const amount = await page.evaluate(() => {
-    const element = document.querySelector('.text--big strong');
-    return element ? element.textContent.trim() : null;
+    const elements = document.querySelectorAll('.text--big strong');
+    return elements.length > 1 ? elements[1].textContent.trim() : null;
   });
 
   console.log("Amount:", amount);
