@@ -34,12 +34,6 @@ const path = require("path");
 
 // Try to import detailedDebtConfig, but use empty object if it fails or is empty
 let detailedDebtConfig = {};
-try {
-  const imported = await import("./detailedDebtConfig.js");
-  detailedDebtConfig = imported.detailedDebtConfig || {};
-} catch (e) {
-  console.log("detailedDebtConfig not available (this is OK)");
-}
 
 /**
  * Validates Norwegian national ID (fødselsnummer)
