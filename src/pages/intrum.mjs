@@ -59,7 +59,7 @@ function mapToDebtSchema(rawDebts, debtCollectorName = "Intrum") {
       totalAmount,
       originalAmount,
       interestAndFines,
-      originalDueDate: undefined, // Not available
+      originalDueDate: null, // Not available
       debtCollectorName,
       originalCreditorName: String(originalCreditorName),
       debtType,
