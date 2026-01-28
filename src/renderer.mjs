@@ -26,7 +26,7 @@ import { handleKredinorLogin } from "./pages/kredinor.mjs";
 import { handleIntrumLogin } from "./pages/intrum.mjs";
 import { handlePraGroupLogin } from "./pages/pra-group.mjs";
 import { handleZolvaLogin } from "./pages/zolva-as.mjs";
-import { read_json } from "./json_reader.mjs";
+import { read_json_for_si, read_json } from "./json_reader.mjs";
 import { displayDetailedDebtInfo } from "./detailedDebtDisplay.mjs";
 
 const fs = require("fs");
@@ -312,12 +312,23 @@ export const setupPageHandlers = (page, nationalID, onComplete) => {
         }
 
         if (isJson && JSON.parse(data).krav !== undefined) {
-          const { debts_paid, debts_unpaid } = read_json(
+          const { debts_paid, debts_unpaid } = read_json_for_si(
             currentWebsite,
             JSON.parse(data).krav
           );
-          displayDebtData(debts_unpaid);
-          displayDebtData(debts_paid);
+          const outputPath = createFoldersAndGetName("SI", nationalID, "SI", "DebtsInDebtSchemaFormat", true);
+          fs.writeFileSync(outputPath, JSON.stringify(debts_unpaid, null, 2), 'utf-8');
+
+
+
+
+          const { debts_paid: debts_paid_display, debts_unpaid: debts_unpaid_display } = read_json(
+            currentWebsite,
+            JSON.parse(data).krav
+          );
+
+          displayDebtData(debts_unpaid_display);
+          displayDebtData(debts_paid_display);
 
           if (offlineMode) {
             const document2 = offlineKredinorFile;
@@ -819,3 +830,5 @@ if (offlineMode) {
 }
 
 document.body.append(summaryDiv);
+
+

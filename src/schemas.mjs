@@ -7,7 +7,7 @@ const { z } = LIBS;
 export const DebtSchema = z.object({
   caseID: z.string(),
   totalAmount: z.number(),
-  originalAmount: z.number(),
+  originalAmount: z.number().optional(),
   interestAndFines: z.number().optional(),
   originalDueDate: z.date().optional(),
   debtCollectorName: z.string(),
@@ -24,7 +24,7 @@ originalAmount: float,
 interestAndFines: float,
 caseID: String,
 debtCollectorName: String,
-creditorName: String,
+originalCreditorName: String,
 debtType: String,
 comment: String
 }
