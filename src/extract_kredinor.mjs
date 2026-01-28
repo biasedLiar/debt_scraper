@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const pdfjs = require('pdfjs-dist/legacy/build/pdf.mjs');
+import { DebtSchema } from './schemas.mjs';
 
 // Set worker path for Node.js/Electron environment - use require.resolve for cross-system compatibility
 try {
@@ -181,8 +182,51 @@ export async function extractFields(pdfPath, outputPath) {
       });
     }
 
-    fs.writeFileSync(outputPath, JSON.stringify(allCases, null, 2), 'utf-8');
-    console.log(`Results saved to ${outputPath} - ${allCases.length} case(s) extracted`);
+    // Transform to DebtSchema format
+    const debtSchemaData = allCases
+      .filter(c => c.type !== 'grandTotal') // Skip grandTotal entry
+      .map(c => {
+        // Sum up interest and fines
+        const interestAndFines = [
+          c.renter,
+          c.gebyrer,
+          c.inkasso,
+          c.renterAvOmkostninger
+        ].filter(v => v !== null && v !== undefined)
+         .reduce((sum, v) => sum + v, 0);
+
+        // Parse forfallsdato to Date if available
+        let originalDueDate = null;
+        if (c.forfallsdato) {
+          const [day, month, year] = c.forfallsdato.split('.');
+          originalDueDate = new Date(`${year}-${month}-${day}`);
+        }
+
+        return {
+          caseID: c.saksnummer || '',
+          totalAmount: c.totalbeløp || 0,
+          originalAmount: c.restHovedstol || 0,
+          interestAndFines: interestAndFines || undefined,
+          originalDueDate: originalDueDate,
+          debtCollectorName: 'Kredinor',
+          originalCreditorName: c.opprinneligOppdragsgiver || c.oppdragsgiver || '',
+          debtType: undefined,
+          comment: undefined,
+        };
+      });
+
+    // Validate each entry against DebtSchema
+    const validatedData = debtSchemaData.map((debt, index) => {
+      const result = DebtSchema.safeParse(debt);
+      if (!result.success) {
+        console.warn(`Validation warning for case ${index + 1}:`, result.error.errors);
+        return debt; // Return unvalidated if validation fails
+      }
+      return result.data;
+    });
+
+    fs.writeFileSync(outputPath, JSON.stringify(validatedData, null, 2), 'utf-8');
+    console.log(`Results saved to ${outputPath} - ${validatedData.length} case(s) extracted in DebtSchema format`);
   } catch (error) {
     console.error('Error extracting PDF:', error.message);
     throw error;
