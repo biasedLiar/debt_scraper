@@ -306,37 +306,17 @@ export const setupPageHandlers = (page, nationalID, onComplete) => {
         }
 
         if (isJson && JSON.parse(data).krav !== undefined) {
+          const filename = "";
+          const jsonData = fs.readFileSync(filename, 'utf-8');
+
           const { debts_paid, debts_unpaid } = read_json_for_si(
             currentWebsite,
-            JSON.parse(data).krav
+            JSON.parse(jsonData).krav
           );
           const outputPath = createFoldersAndGetName("SI", nationalID, "SI", "DebtsInDebtSchemaFormat", true);
           fs.writeFileSync(outputPath, JSON.stringify(debts_unpaid, null, 2), 'utf-8');
 
-
-
-
-          const { debts_paid: debts_paid_display, debts_unpaid: debts_unpaid_display } = read_json(
-            currentWebsite,
-            JSON.parse(data).krav
-          );
-
-          displayDebtData(debts_unpaid_display);
-          displayDebtData(debts_paid_display);
-
-          if (offlineMode) {
-            const document2 = offlineKredinorFile;
-            const { debtList, creditorList, saksnummerList } = require(
-              document2
-            );
-            const debts_unpaid2 = convertListsToJson(
-              debtList,
-              creditorList,
-              saksnummerList,
-              "Kredinor"
-            );
-            displayDebtData(debts_unpaid2);
-          }
+          displayDebtData(debts_unpaid);
 
           // Signal that scraping is complete for this website
           if (onComplete) {
