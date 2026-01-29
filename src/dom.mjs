@@ -126,15 +126,17 @@ export const visualizeDebt = (debtData) => {
 
   const innerContainer = div({ class: "debt-inner-container" });
 
+  // Show creditor and status
   const headerCompany = h2(
-    `${debtData.creditSite} - ${paidStatus}`,
+    `${debtData.debtCollectorName || debtData.creditSite || "Kreditor"} - ${paidStatus}`,
     "creditor-header"
   );
   innerContainer.appendChild(headerCompany);
 
+  // Show total amount
   const headerNumber = h2(`Total:`, "debt-small-header");
   const headerSubtext = h2(
-    `${debtData.totalAmount.toLocaleString("no-NO")} kr`,
+    `${(debtData.totalAmount ?? 0).toLocaleString("no-NO")} kr`,
     "debt-amount"
   );
   innerContainer.appendChild(headerNumber);
@@ -142,19 +144,17 @@ export const visualizeDebt = (debtData) => {
 
   outerContainer.appendChild(innerContainer);
 
-  debtData.debts.forEach((debt) => {
+  // Show each case in the new format
+  (debtData.debts || []).forEach((debt) => {
     const debtDiv = div({ class: "debt-item" });
-    if (debt.dueDate === null) {
-      debt.dueDate = "Ukjent";
-    }
-    const typeText = debt.typeText ? `: ${debt.typeText}` : "";
-    
     debtDiv.innerHTML = `
-            <h3>Sum: ${debt.amount.toLocaleString("no-NO")} kr</h3>
-            <p>Gjeld ID: ${debt.id}</p>
-            <p>Betalingsfrist: ${debt.dueDate.substring(0, 10)}</p>
-            <p>Type ${debt.type}${typeText}</p>
-        `;
+      <h3>Sum: ${(debt.totalAmount ?? debt.amount ?? 0).toLocaleString("no-NO")} kr</h3>
+      <p>Saks-ID: ${debt.caseID || debt.id || "Ukjent"}</p>
+      <p>Opprinnelig beløp: ${debt.originalAmount !== undefined && debt.originalAmount !== null ? debt.originalAmount.toLocaleString("no-NO") + " kr" : "Ukjent"}</p>
+      <p>Renter og gebyrer: ${debt.interestAndFines !== undefined && debt.interestAndFines !== null ? debt.interestAndFines.toLocaleString("no-NO") + " kr" : "Ukjent"}</p>
+      <p>Opprinnelig forfallsdato: ${debt.originalDueDate ? (typeof debt.originalDueDate === "string" ? debt.originalDueDate.substring(0, 10) : new Date(debt.originalDueDate).toISOString().substring(0, 10)) : "Ukjent"}</p>
+      <p>Opprinnelig kreditor: ${debt.originalCreditorName || "Ukjent"}</p>
+    `;
     outerContainer.appendChild(debtDiv);
   });
   return outerContainer;

@@ -734,45 +734,47 @@ const loadSavedDebtData = (personId) => {
   
   try {
     const debtData = readAllDebtForPerson(personId);
-    
     if (debtData.totalDebt > 0) {
-      // Clear existing found debts
       foundUnpaidDebts.foundCreditors = [];
       foundUnpaidDebts.totalAmount = debtData.totalDebt;
       foundUnpaidDebts.debts = {};
-      
+
       // Update the total debt display
       const totalDebtElement = document.body.querySelector(".total-debt-amount");
       if (totalDebtElement) {
         totalDebtElement.innerText = debtData.totalDebt.toLocaleString('no-NO') + " kr";
       }
-      
+
       // Clear summary container
       summaryDiv.innerHTML = '';
-      
-      // Group debts by creditor and display
+
+      // Group debts by creditor and display, using new format for each case
       Object.entries(debtData.debtsByCreditor).forEach(([creditor, totalAmount]) => {
         const creditorDebts = debtData.detailedDebts.filter(d => d.creditor === creditor);
+        // Map each debt to the new format
+        const standardizedDebts = creditorDebts.map(d => ({
+          caseID: d.id || 'Unknown',
+          totalAmount: d.amount,
+          originalAmount: d.originalAmount ?? null,
+          interestAndFines: d.interestAndFines ?? null,
+          originalDueDate: d.originalDueDate ?? null,
+          debtCollectorName: creditor,
+          originalCreditorName: d.originalCreditorName ?? creditor
+        }));
         const debtCollection = {
-          creditSite: creditor,
+          debtCollectorName: creditor,
           isCurrent: true,
           totalAmount: totalAmount,
-          debts: creditorDebts.map(d => ({
-            id: d.id || 'Unknown',
-            amount: d.amount,
-            dueDate: 'Unknown',
-            type: d.type || '',
-            typeText: d.typeText || ''
-          }))
+          debts: standardizedDebts
         };
-        
+
         foundUnpaidDebts.foundCreditors.push(creditor);
         foundUnpaidDebts.debts[creditor] = debtCollection;
-        
+
         const debtVisualization = visualizeDebt(debtCollection);
         summaryDiv.append(debtVisualization);
       });
-      
+
       // Log details to console
       console.log(`\n=== DEBT ANALYSIS ===`);
       console.log(`Total Debt: ${debtData.totalDebt.toLocaleString('no-NO')} kr`);

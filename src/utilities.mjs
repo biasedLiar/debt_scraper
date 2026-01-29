@@ -472,7 +472,6 @@ export function readAllDebtForPerson(personId) {
       if (data.krav && Array.isArray(data.krav)) {
         data.krav.forEach(krav => {
           const amount = krav.belop || 0;
-          
           // Check if debt is unpaid
           let isPaid = true;
           if (krav.forfall && Array.isArray(krav.forfall)) {
@@ -483,7 +482,6 @@ export function readAllDebtForPerson(personId) {
               }
             }
           }
-
           if (!isPaid) {
             result.totalDebt += amount;
             const creditor = 'SI';
@@ -491,9 +489,13 @@ export function readAllDebtForPerson(personId) {
             result.detailedDebts.push({
               creditor,
               amount,
-              id: krav.identifikator,
-              type: krav.kravtype,
-              typeText: getKravtypeDescription(krav.kravtype, krav.kravtypetekst),
+              caseID: krav.identifikator,
+              totalAmount: amount,
+              originalAmount: null,
+              interestAndFines: null,
+              originalDueDate: krav.forfall && krav.forfall[0]?.forfallsdato ? krav.forfall[0].forfallsdato : null,
+              debtCollectorName: creditor,
+              originalCreditorName: krav.opprinneligKreditor || creditor,
               source: filePath
             });
           }
@@ -517,8 +519,13 @@ export function readAllDebtForPerson(personId) {
                 result.detailedDebts.push({
                   creditor,
                   amount,
-                  id: debtCase.caseNumber,
-                  type: debtCase.creditorName,
+                  caseID: debtCase.caseNumber,
+                  totalAmount: amount,
+                  originalAmount: debtCase.originalAmount ?? null,
+                  interestAndFines: debtCase.interestAndFines ?? null,
+                  originalDueDate: debtCase.originalDueDate ?? null,
+                  debtCollectorName: creditor,
+                  originalCreditorName: debtCase.creditorName ?? creditor,
                   source: filePath
                 });
               }
@@ -532,8 +539,31 @@ export function readAllDebtForPerson(personId) {
       if (kredinorData) {
         const seenKredinorCases = new Set();
         kredinorData.forEach(item => {
-          // Skip grandTotal entry and entries with null totalbeløp
-          if (item.type !== 'grandTotal' && item.totalbeløp && item.saksnummer) {
+          // If item is already in the new format, use it directly
+          if (item.caseID && item.totalAmount !== undefined) {
+            const caseKey = `${item.caseID}-${item.totalAmount}`;
+            if (!seenKredinorCases.has(caseKey)) {
+              seenKredinorCases.add(caseKey);
+              const amount = parseFloat(item.totalAmount);
+              if (!isNaN(amount) && amount > 0) {
+                result.totalDebt += amount;
+                const creditor = item.debtCollectorName || 'Kredinor';
+                result.debtsByCreditor[creditor] = (result.debtsByCreditor[creditor] || 0) + amount;
+                result.detailedDebts.push({
+                  creditor,
+                  amount,
+                  id: item.caseID,
+                  originalAmount: item.originalAmount,
+                  interestAndFines: item.interestAndFines,
+                  originalDueDate: item.originalDueDate,
+                  debtCollectorName: item.debtCollectorName,
+                  originalCreditorName: item.originalCreditorName,
+                  source: filePath
+                });
+              }
+            }
+          } else if (item.type !== 'grandTotal' && item.totalbeløp && item.saksnummer) {
+            // Fallback to old format
             const caseKey = `${item.saksnummer}-${item.totalbeløp}`;
             if (!seenKredinorCases.has(caseKey)) {
               seenKredinorCases.add(caseKey);
@@ -566,9 +596,13 @@ export function readAllDebtForPerson(personId) {
           result.detailedDebts.push({
             creditor,
             amount,
-            id: data.accountReference,
-            type: data.accountDetails?.['Tidligere eier'] || 'Unknown',
-            typeText: data.accountDetails?.['Nåværende eier'],
+            caseID: data.accountReference,
+            totalAmount: amount,
+            originalAmount: null,
+            interestAndFines: null,
+            originalDueDate: null,
+            debtCollectorName: creditor,
+            originalCreditorName: data.accountDetails?.['Tidligere eier'] || creditor,
             source: filePath
           });
         }
