@@ -2,6 +2,11 @@ import { PUP } from "../scraper.mjs";
 import { digiPost } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName, createDownloadFoldersAndGetName } from "../utilities.mjs";
+
+// Local function to sanitize folder and file names (Windows-safe)
+function safe(name) {
+  return String(name).replace(/[<>:"/\\|?*]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+}
 import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 
 /**
@@ -50,101 +55,139 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
 
   // Wait for the page to fully load and render after BankID login
   console.log("Waiting for Digipost inbox to load...");
-  
-  // Wait for message list to load (this implicitly waits for navigation to complete)
-  // TODO dont hardcode single message
-  await page.waitForSelector('[aria-labelledby="message-label-3070544070"]', { 
-    visible: true 
+
+  // Wait for message list to load
+  await page.waitForSelector('.message-list-item__info', { visible: true });
+
+  // Filter out thread/conversation items (keep only individual messages)
+  const allLinks = await page.$$('.message-list-item__info');
+  const filterPromises = allLinks.map(async (element) => {
+    const containsMessage = await element.$('.message-list-item__thread-icon-container').catch(() => null);
+    return containsMessage == null;
   });
-
-// TODO dont hardcode single message
-const button = await page.$('[aria-labelledby="message-label-3070544070"] .message-list-item__info');
-await button.click();
-
+  const filterResults = await Promise.all(filterPromises);
+  const messageLinks = allLinks.filter((_, index) => filterResults[index]);
+  console.warn(`Found ${messageLinks.length} messages in inbox`);
 
 
-await page.waitForSelector('[aria-label="Dokumenthandlinger"]', {
-  visible: true 
-});
+  
+  // Prepare target folder for organized files
+  const safeDigiPostName = safe(digiPost.name);
+  const safeNationalID = safe(nationalID);
+  const safeWebsite = safe("Digipost");
+  const targetFolder = createDownloadFoldersAndGetName(safeDigiPostName, safeNationalID, safeWebsite);
+  console.log("Will move downloaded files to:", targetFolder);
 
-const button2 = await page.$('[aria-label="Dokumenthandlinger"]');
-
-if (button2) {
-  await 
-  button2.click();
-} else {
-  console.error("Dokumenthandlinger button not found even after waiting");
-}
-
-
-const pdfFilePath = createDownloadFoldersAndGetName(digiPost.name, nationalID, "Digipost");
-
-const client = await page.target().createCDPSession()
-await client.send('Page.setDownloadBehavior', {
-  behavior: 'allow',
-  downloadPath: pdfFilePath,
-})
-
-console.log("Set download behavior for Digipost, downloading to:", pdfFilePath);
-// await page._client().send('Page.setDownloadBehavior', {behavior: 'allow', 
-//   downloadPath: pdfFilePath});
+  // Get default download path
+  const os = require('os');
+  const fs = require('fs');
+  const path = require('path');
+  const defaultDownloadsPath = path.join(os.homedir(), 'Downloads');
+  console.log("Default downloads path:", defaultDownloadsPath);
 
 
-
-await page.waitForSelector('[data-testid="download-document"]', { 
-  timeout: 30000, 
-  visible: true 
-});
-
-const button3 = await page.$('[data-testid="download-document"]');
-if (button3) {
-  await button3.click();
-  console.log("Clicked download document button");
-} else {
-  console.error("Dokumenthandlinger button not found even after waiting");
-}
+  for (let i = 0; i < messageLinks.length; i++) {
+    const newAllLinks = await page.$$('.message-list-item__info');
+    const newFilterPromises = newAllLinks.map(async (element) => {
+      const containsMessage = await element.$('.message-list-item__thread-icon-container').catch(() => null);
+      return containsMessage == null;
+    });
+    
+    const newFilterResults = await Promise.all(newFilterPromises);
+    const newListOfMessages = newAllLinks.filter((_, index) => newFilterResults[index]);
 
 
+    const message = newListOfMessages[i];
+    
+    // Extract message metadata before opening
+    const messageInfo = await message.evaluate(el => {
+      const senderEl = el.querySelector('.message-list-item__sender');
+      const subjectEl = el.querySelector('.message-list-item__subject');
+      const dateEl = el.querySelector('.message-list-item__date');
+      return {
+        sender: senderEl ? senderEl.textContent.trim() : 'Unknown',
+        subject: subjectEl ? subjectEl.textContent.trim() : 'No_Subject',
+        date: dateEl ? dateEl.textContent.trim() : ''
+      };
+    });
+    
+    console.log(`Processing message ${i + 1}: ${messageInfo.subject} from ${messageInfo.sender}`);
+    
+    // Open message
+    await message.click();
 
+    // Click the menu button to reveal the download option, then click the download button
+    try {
+      await page.waitForSelector('[aria-label="Dokumenthandlinger"]', { visible: true });
+      const button2 = await page.$('[aria-label="Dokumenthandlinger"]');
+      if (button2) {
+        await button2.click();
+      } else {
+        console.error("Dokumenthandlinger button not found even after waiting");
+      }
 
-// const pdfFilePath = createFoldersAndGetName(digiPost.name, nationalID, "Digipost", "downloadedPDF", false);
-// await newPage._client().send('Page.setDownloadBehavior', {behavior: 'allow', 
-//   downloadPath: pdfFilePath});
+      // 2. Click the download option from the revealed menu
+      await page.waitForSelector('[data-testid="download-document"]', { visible: true });
+      const button3 = await page.$('[data-testid="download-document"]');
+      if (button3) {
+        try {
+          // Get list of files in Downloads before clicking
+          const filesBefore = fs.existsSync(defaultDownloadsPath) ? fs.readdirSync(defaultDownloadsPath) : [];
+          
+          await button3.click();
+          console.log("Clicked download document button");
+          
+          // Wait for download to complete
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          
+          // Find the new file in Downloads
+          const filesAfter = fs.readdirSync(defaultDownloadsPath);
+          const newFiles = filesAfter.filter(f => !filesBefore.includes(f));
+          
+          if (newFiles.length > 0) {
+            const downloadedFile = newFiles[0];
+            const oldPath = path.join(defaultDownloadsPath, downloadedFile);
+            const extension = path.extname(downloadedFile);
+            
+            // Create custom filename
+            const safeSender = safe(messageInfo.sender);
+            const safeSubject = safe(messageInfo.subject);
+            const safeDate = safe(messageInfo.date);
+            const newFileName = (await page.$eval('.bZV0z', element => element.textContent.trim())).replace(/[<>:"/\\|?*]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+            // const newFileName = `${safeSender}_${safeSubject}_${safeDate}${extension}`;
+            const newPath = path.join(targetFolder, newFileName);
+            
+            // Move and rename file
+            fs.renameSync(oldPath, newPath);
+            console.warn(`Moved file to: ${newPath} from ${oldPath}`);
+            console.log(`Downloaded and moved: ${downloadedFile} -> ${newFileName}`);
+          } else {
+            console.warn("No new file detected in Downloads folder");
+          }
+        } catch (err) {
+          console.error("Error downloading/moving document", err);
+        }
+      } else {
+        console.error("Download button not found even after waiting");
+      }
 
-// await newPage.waitForSelector('#save', { 
-//   timeout: 30000, 
-//   visible: true 
-// });
-// const button3 = await newPage.$('#save');
-// if (button3) {
-//   await button3.click();
-// } else {
-//   console.error("Dokumenthandlinger button not found even after waiting");
-// }
-/* WIP
+      // Small delay before continuing
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-// Visit each message and extract information
-for (const message of messageLinks) {
-    if (message.href) {
-        console.log(`Opening message: ${message.subject} from ${message.sender}`);
-        await page.goto(`${digiPost.url}${message.href}`, { waitUntil: 'networkidle2' });
-        
-        // Wait for message content to load
-        await page.waitForTimeout(2000);
-        
-        // TODO: Extract message content here
-        // Get message content
-        const content = await page.evaluate(() => {
-            return document.body.innerText;
-        });
-
-        // Create filename from sender and subject
-        const filename = `${nationalID}_${message.sender}_${message.subject}_${message.date}`.replace(/[^a-z0-9]/gi, '_');
-
-        // Save to letters subfolder
-        await PUP.saveToFile(content, `letters/${filename}.txt`);
-        console.log(`Saved message to letters/${filename}.txt`);
+     
+    } catch (e) {
+      console.error("Error clicking menu/download for message", i + 1, e);
     }
-} */
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Optionally: go back to inbox if needed
+    try {
+      await page.goBack({ waitUntil: 'networkidle2' });
+    } catch (e) {
+      console.error('Error going back to inbox after message', i + 1, e);
+    }
+  }
+
+
+
   return { browser, page };
 }
