@@ -306,12 +306,9 @@ export const setupPageHandlers = (page, nationalID, onComplete) => {
         }
 
         if (isJson && JSON.parse(data).krav !== undefined) {
-          const filename = "";
-          const jsonData = fs.readFileSync(filename, 'utf-8');
-
           const { debts_paid, debts_unpaid } = read_json_for_si(
             currentWebsite,
-            JSON.parse(jsonData).krav
+            JSON.parse(data).krav
           );
           const outputPath = createFoldersAndGetName("SI", nationalID, "SI", "DebtsInDebtSchemaFormat", true);
           fs.writeFileSync(outputPath, JSON.stringify(debts_unpaid, null, 2), 'utf-8');
