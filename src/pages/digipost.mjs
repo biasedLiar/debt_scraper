@@ -194,17 +194,18 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
           if (downloadedFile) {
             const oldPath = path.join(defaultDownloadsPath, downloadedFile);
             const extension = path.extname(downloadedFile);
+            const baseName = path.basename(downloadedFile, extension);
             
             // Create custom filename
             const safeSender = safe(messageInfo.sender);
             const safeSubject = safe(messageInfo.subject);
             const safeDate = safe(messageInfo.date);
-            const newFileName = (await page.$eval('.bZV0z', element => element.textContent.trim())).replace(/[<>:"/\\|?*]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '') + i;
+            const preModifiedName = (await page.$eval('.bZV0z', element => element.textContent.trim())).replace(/[<>:"/\\|?*]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+            const newFileName = `${preModifiedName}_${i}${extension}`;
             // const newFileName = `${safeSender}_${safeSubject}_${safeDate}${extension}`;
             const newPath = path.join(targetFolder, newFileName);
             
-            console.warn(`Moved file to: ${newPath} from ${oldPath}`);
-            console.warn(`Downloaded and moved: ${downloadedFile} -> ${newFileName}`);
+            console.log(`Moved file to: ${newPath} from ${oldPath}`);
 
             // Move and rename file
             fs.renameSync(oldPath, newPath);
