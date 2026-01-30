@@ -1,3 +1,7 @@
+/* Larger font for debt case info */
+.debt-item {
+  font-size: 1.25rem;
+}
 * {
   margin: 0;
   padding: 0;
