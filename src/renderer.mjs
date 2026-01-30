@@ -306,7 +306,6 @@ export const setupPageHandlers = (page, nationalID, onComplete) => {
         }
 
         if (isJson && JSON.parse(data).krav !== undefined) {
-
           const { debts_paid, debts_unpaid } = read_json_for_si(
             currentWebsite,
             JSON.parse(data).krav
