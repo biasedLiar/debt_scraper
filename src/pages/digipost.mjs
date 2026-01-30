@@ -85,6 +85,25 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
   const defaultDownloadsPath = path.join(os.homedir(), 'Downloads');
   console.log("Default downloads path:", defaultDownloadsPath);
 
+  // Set up CDP to handle downloads and prevent PDFs from opening in new tabs
+  const client = await page.createCDPSession();
+  await client.send('Page.setDownloadBehavior', {
+    behavior: 'allow',
+    downloadPath: defaultDownloadsPath
+  });
+
+  // Block navigation to PDF files to prevent them from opening in new tabs
+  await page.setRequestInterception(true);
+  page.on('request', (request) => {
+    const url = request.url();
+    // Allow the initial download request but block subsequent navigation
+    if (request.isNavigationRequest() && url.includes('.pdf')) {
+      request.abort();
+    } else {
+      request.continue();
+    }
+  });
+
 
   for (let i = 0; i < messageLinks.length; i++) {
     const newAllLinks = await page.$$('.message-list-item__info');
@@ -133,19 +152,46 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
         try {
           // Get list of files in Downloads before clicking
           const filesBefore = fs.existsSync(defaultDownloadsPath) ? fs.readdirSync(defaultDownloadsPath) : [];
+          const timestampsBefore = {};
+          filesBefore.forEach(file => {
+            const filePath = path.join(defaultDownloadsPath, file);
+            try {
+              timestampsBefore[file] = fs.statSync(filePath).mtimeMs;
+            } catch (e) {
+              // Ignore errors
+            }
+          });
           
           await button3.click();
           console.log("Clicked download document button");
           
-          // Wait for download to complete
-          await new Promise(resolve => setTimeout(resolve, 5000));
+          // Poll for new files with a timeout
+          let downloadedFile = null;
+          const maxAttempts = 30; // 15 seconds total (30 * 500ms)
           
-          // Find the new file in Downloads
-          const filesAfter = fs.readdirSync(defaultDownloadsPath);
-          const newFiles = filesAfter.filter(f => !filesBefore.includes(f));
+          for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const filesAfter = fs.readdirSync(defaultDownloadsPath);
+            const newFiles = filesAfter.filter(f => {
+              // Skip temporary files (.tmp, .crdownload, .part)
+              if (f.endsWith('.tmp') || f.endsWith('.crdownload') || f.endsWith('.part')) {
+                return false;
+              }
+              // Check if file is new or modified
+              return !filesBefore.includes(f) || 
+                     (timestampsBefore[f] && fs.statSync(path.join(defaultDownloadsPath, f)).mtimeMs > timestampsBefore[f]);
+            });
+            
+            if (newFiles.length > 0) {
+              // Wait a bit more to ensure download is complete
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              downloadedFile = newFiles[0];
+              break;
+            }
+          }
           
-          if (newFiles.length > 0) {
-            const downloadedFile = newFiles[0];
+          if (downloadedFile) {
             const oldPath = path.join(defaultDownloadsPath, downloadedFile);
             const extension = path.extname(downloadedFile);
             
@@ -153,14 +199,15 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
             const safeSender = safe(messageInfo.sender);
             const safeSubject = safe(messageInfo.subject);
             const safeDate = safe(messageInfo.date);
-            const newFileName = (await page.$eval('.bZV0z', element => element.textContent.trim())).replace(/[<>:"/\\|?*]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+            const newFileName = (await page.$eval('.bZV0z', element => element.textContent.trim())).replace(/[<>:"/\\|?*]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '') + i;
             // const newFileName = `${safeSender}_${safeSubject}_${safeDate}${extension}`;
             const newPath = path.join(targetFolder, newFileName);
             
+            console.warn(`Moved file to: ${newPath} from ${oldPath}`);
+            console.warn(`Downloaded and moved: ${downloadedFile} -> ${newFileName}`);
+
             // Move and rename file
             fs.renameSync(oldPath, newPath);
-            console.warn(`Moved file to: ${newPath} from ${oldPath}`);
-            console.log(`Downloaded and moved: ${downloadedFile} -> ${newFileName}`);
           } else {
             console.warn("No new file detected in Downloads folder");
           }
