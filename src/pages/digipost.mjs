@@ -199,7 +199,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
             const safeSender = safe(messageInfo.sender);
             const safeSubject = safe(messageInfo.subject);
             const safeDate = safe(messageInfo.date);
-            const newFileName = (await page.$eval('.bZV0z', element => element.textContent.trim())).replace(/[<>:"/\\|?*]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+            const newFileName = (await page.$eval('.bZV0z', element => element.textContent.trim())).replace(/[<>:"/\\|?*]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '') + i;
             // const newFileName = `${safeSender}_${safeSubject}_${safeDate}${extension}`;
             const newPath = path.join(targetFolder, newFileName);
             
