@@ -139,6 +139,10 @@ const handleScrapingResult = (result, siteName, buttonElement = null) => {
       console.info(`${siteName} scraping completed successfully, found no debt.`);
       isSuccessful = true;
       break;
+    case 'MESSAGES_PROCESSED':
+      console.info(`${siteName} scraping completed successfully, processed mails.`);
+      isSuccessful = true;
+      break;
     case 'TOO_MANY_FAILED_ATTEMPTS':
       console.warn(`${siteName} unsuccessful, too many failed attempts.`);
       showScrapeDebtError("For mange mislykkede påloggingsforsøk", `For mange mislykkede påloggingsforsøk fra ${siteName}.`);

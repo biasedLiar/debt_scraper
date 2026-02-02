@@ -235,7 +235,11 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
     }
   }
 
+  console.log('Digipost operations completed successfully');
 
-
+  if (timeoutTimer) clearTimeout(timeoutTimer);
+  if (onComplete) {
+    setTimeout(() => onComplete('MESSAGES_PROCESSED'), 1000);
+  }
   return { browser, page };
 }
