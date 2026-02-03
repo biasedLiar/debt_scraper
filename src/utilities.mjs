@@ -669,4 +669,29 @@ export async function waitForNewDownloadedFile(downloadPath, maxAttempts = FILE_
   }
   
   return null;
+}
+
+/**
+ * Parses a Norwegian formatted currency string to a number
+ * Handles spaces, commas as decimal separators, and various formats
+ * @param {string|number|null|undefined} val - The value to parse
+ * @returns {number} - Parsed number or 0 if invalid
+ * @example
+ * parseNorwegianAmount("1 234,56") // returns 1234.56
+ * parseNorwegianAmount("1234.56") // returns 1234.56
+ * parseNorwegianAmount("1 234,56 kr") // returns 1234.56
+ */
+export function parseNorwegianAmount(val) {
+  if (val === undefined || val === null || val === "") return 0;
+  if (typeof val === "number") return val;
+  
+  // Remove "kr", "NOK", and other currency symbols, then parse
+  const cleaned = String(val)
+    .replace(/kr|NOK/gi, "")
+    .replace(/\s/g, "")  // Remove spaces
+    .replace(",", ".")   // Replace comma with period for decimal
+    .trim();
+  
+  const n = Number(cleaned);
+  return isNaN(n) ? 0 : n;
 } 

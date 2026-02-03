@@ -1,7 +1,7 @@
 import { PUP } from "../scraper.mjs";
 import { intrum } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName } from "../utilities.mjs";
+import { createFoldersAndGetName, parseNorwegianAmount } from "../utilities.mjs";
 import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema } from "../schemas.mjs";
 import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 
@@ -15,13 +15,6 @@ const fs = require('fs/promises');
  */
 function mapToDebtSchema(rawDebts, debtCollectorName = "Intrum") {
   return rawDebts.map((item) => {
-    // Parse numbers, fallback to 0 if not present
-    const parseNum = (val) => {
-      if (val === undefined || val === null || val === "") return 0;
-      if (typeof val === "number") return val;
-      const n = Number(("" + val).replace(/\s/g, "").replace(",", "."));
-      return isNaN(n) ? 0 : n;
-    };
 
     // Use caseNumber for caseID
     let caseID = item.caseNumber || "";
@@ -33,22 +26,22 @@ function mapToDebtSchema(rawDebts, debtCollectorName = "Intrum") {
 
     // Use 'Total' or 'totalAmount' for totalAmount
     let totalAmount = item["Total"] || item.totalAmount || 0;
-    totalAmount = parseNum(totalAmount);
+    totalAmount = parseNorwegianAmount(totalAmount);
 
     // Use 'Hovedkrav' for originalAmount
     let originalAmount = item["Hovedkrav"] || 0;
-    originalAmount = parseNum(originalAmount);
+    originalAmount = parseNorwegianAmount(originalAmount);
 
     // Sum all values that start with 'Forsinkelsesrenter', plus Omkostninger, Salær, Rettslig gebyr
     let interestAndFines = 0;
     for (const key of Object.keys(item)) {
       if (key.toLowerCase().startsWith("forsinkelsesrenter")) {
-        interestAndFines += parseNum(item[key]);
+        interestAndFines += parseNorwegianAmount(item[key]);
       }
     }
-    interestAndFines += parseNum(item["Omkostninger"]);
-    interestAndFines += parseNum(item["Salær"]);
-    interestAndFines += parseNum(item["Rettslig gebyr"]);
+    interestAndFines += parseNorwegianAmount(item["Omkostninger"]);
+    interestAndFines += parseNorwegianAmount(item["Salær"]);
+    interestAndFines += parseNorwegianAmount(item["Rettslig gebyr"]);
 
     // debtType and comment are optional
     let debtType = item.debtType || undefined;
@@ -154,15 +147,17 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
     console.log('No warning message found, continuing with debt case extraction');
   }
 
+  // Wait for debt case containers to appear
+  // Using multiple selectors as fallback since Intrum's class names may vary
   await page.waitForSelector('.case-container, .debt-case, [class*="case"]', { visible: true }).catch(() => {
     console.log('No debt cases found or page took too long to load');
   });
 
-
+  // Extract initial debt case overview from the main page
   const debtCases = await page.evaluate(() => {
     const cases = [];
     
-    // Find all case containers
+    // Find all case containers - using broad selector as Intrum's structure varies
     const caseElements = document.querySelectorAll('.case-container, .debt-case, [class*="case"]');
     
     caseElements.forEach(caseEl => {
@@ -211,33 +206,38 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
  
 
   // Find all "Detaljer på sak" buttons and process each one
-  await page.waitForSelector('span.button-text', { visible: true });
-  const detailsButtons = await page.$$('span.button-text');
-  const detailsButtonsToClick = [];
-  
-  for (const button of detailsButtons) {
-    const text = await button.evaluate(el => el.textContent.trim());
-    if (text === 'Detaljer på sak') {
-      detailsButtonsToClick.push(button);
+  // Helper function to get detail buttons
+  const getDetailButtons = async () => {
+    await page.waitForSelector('span.button-text', { visible: true });
+    const buttons = await page.$$('span.button-text');
+    const detailButtons = [];
+    
+    for (const button of buttons) {
+      const text = await button.evaluate(el => el.textContent.trim());
+      if (text === 'Detaljer på sak') {
+        detailButtons.push(button);
+      }
     }
-  }
+    return detailButtons;
+  };
   
-  console.log(`Found ${detailsButtonsToClick.length} detail buttons to process`);
+  const initialButtons = await getDetailButtons();
+  const totalCases = initialButtons.length;
+  console.log(`Found ${totalCases} detail buttons to process`);
   
   const allDetailedInfo = [];
-  
 
-
-  for (let i = 0; i < detailsButtonsToClick.length; i++) {
-    console.log(`Processing case ${i + 1}/${detailsButtonsToClick.length}`);
+  for (let i = 0; i < totalCases; i++) {
+    console.log(`Processing case ${i + 1}/${totalCases}`);
     
     try {
-
-      const clickableElement = await detailsButtonsToClick[i].evaluateHandle(el => el.closest('button, a, [role="button"]'));
-      await clickableElement.click();
-
-      //litt usikker på beste løsning her
-      await new Promise(r => setTimeout(r, 4000));
+      // Get fresh button reference for current index
+      const currentButtons = await getDetailButtons();
+      const clickableElement = await currentButtons[i].evaluateHandle(el => el.closest('button, a, [role="button"]'));
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: 'networkidle2' }),
+        clickableElement.click()
+      ]);
 
       const detailedInfo = await page.evaluate(() => {
         const details = {};
@@ -261,19 +261,10 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
       console.log(`Case ${i + 1} details:`, detailedInfo);
       
 
-      await page.goBack();
-      await new Promise(r => setTimeout(r, 4000));
-      
-      if (i < detailsButtonsToClick.length - 1) {
-        const newButtons = await page.$$('span.button-text');
-        detailsButtonsToClick.length = 0;
-        for (const button of newButtons) {
-          const text = await button.evaluate(el => el.textContent.trim());
-          if (text === 'Detaljer på sak') {
-            detailsButtonsToClick.push(button);
-          }
-        }
-      }
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: 'networkidle2' }),
+        page.goBack()
+      ]);
     } catch (e) {
       console.error(`Failed to process case ${i + 1}:`, e);
     }
@@ -281,11 +272,25 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   
   console.log('All detailed case information:', allDetailedInfo);
 
+  // Save detailed info with better structure
   const detailedInfoFilePath = createFoldersAndGetName(intrum.name, nationalID, "Intrum", "DetailedDebtInfo", true);
-  const detailedData = { allDetailedInfo, timestamp: new Date().toISOString() };
+  
+  // Map detailed info to include case numbers for better tracking
+  const structuredDetailedData = allDetailedInfo.map((details, index) => ({
+    caseNumber: debtCases[index]?.caseNumber || `unknown_${index + 1}`,
+    details,
+    timestamp: new Date().toISOString()
+  }));
+  
+  const detailedData = { 
+    cases: structuredDetailedData, 
+    totalCases: structuredDetailedData.length,
+    timestamp: new Date().toISOString() 
+  };
+  
   try {
-    // Note: not updated to use schema validation yet due to some bugs
     await fs.writeFile(detailedInfoFilePath, JSON.stringify(detailedData, null, 2));
+    console.log(`✓ Saved detailed info for ${structuredDetailedData.length} cases to ${detailedInfoFilePath}`);
   } catch (error) {
     console.error(`Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`, error);
   }
