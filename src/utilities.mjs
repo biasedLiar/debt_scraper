@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+import { FILE_DOWNLOAD_MAX_ATTEMPTS, FILE_DOWNLOAD_POLL_INTERVAL_MS, FILE_DOWNLOAD_FINALIZE_DELAY_MS } from "./constants.mjs";
 
 /**
  * @param {string} [pageName]
@@ -618,4 +619,54 @@ export function readAllDebtForPerson(personId) {
   console.log('Debts by creditor:', result.debtsByCreditor);
   
   return result;
+}
+
+/**
+ * Polls a directory for a new file to appear after a download action
+ * @param {string} downloadPath - The directory path to monitor
+ * @param {number} maxAttempts - Maximum polling attempts
+ * @param {number} pollInterval - Milliseconds between polls
+ * @returns {Promise<string|null>} - Returns the new file name or null if not found
+ */
+export async function waitForNewDownloadedFile(downloadPath, maxAttempts = FILE_DOWNLOAD_MAX_ATTEMPTS, pollInterval = FILE_DOWNLOAD_POLL_INTERVAL_MS) {
+  // Get list of files and their timestamps before download
+  const filesBefore = fs.existsSync(downloadPath) ? fs.readdirSync(downloadPath) : [];
+  const timestampsBefore = {};
+  
+  filesBefore.forEach(file => {
+    const filePath = path.join(downloadPath, file);
+    try {
+      timestampsBefore[file] = fs.statSync(filePath).mtimeMs;
+    } catch (e) {
+      // Ignore errors
+    }
+  });
+  
+  // Poll for new files with a timeout
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, pollInterval));
+    
+    if (!fs.existsSync(downloadPath)) {
+      continue;
+    }
+    
+    const filesAfter = fs.readdirSync(downloadPath);
+    const newFiles = filesAfter.filter(f => {
+      // Skip temporary files (.tmp, .crdownload, .part)
+      if (f.endsWith('.tmp') || f.endsWith('.crdownload') || f.endsWith('.part')) {
+        return false;
+      }
+      // Check if file is new or modified
+      return !filesBefore.includes(f) || 
+             (timestampsBefore[f] && fs.statSync(path.join(downloadPath, f)).mtimeMs > timestampsBefore[f]);
+    });
+    
+    if (newFiles.length > 0) {
+      // Wait a bit more to ensure download is complete
+      await new Promise(resolve => setTimeout(resolve, FILE_DOWNLOAD_FINALIZE_DELAY_MS));
+      return newFiles[0];
+    }
+  }
+  
+  return null;
 } 
