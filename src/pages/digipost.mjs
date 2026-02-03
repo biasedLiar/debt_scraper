@@ -7,6 +7,18 @@ import { createFoldersAndGetName, createDownloadFoldersAndGetName, waitForNewDow
 function safe(name) {
   return String(name).replace(/[<>:"/\\|?*]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
 }
+
+// Local function to filter out thread/conversation items (keep only individual messages)
+async function filterIndividualMessages(page) {
+  const allLinks = await page.$$('.message-list-item__info');
+  const filterPromises = allLinks.map(async (element) => {
+    const containsMessage = await element.$('.message-list-item__thread-icon-container').catch(() => null);
+    return containsMessage == null;
+  });
+  const filterResults = await Promise.all(filterPromises);
+  return allLinks.filter((_, index) => filterResults[index]);
+}
+
 import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 
 /**
@@ -57,17 +69,29 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
   console.log("Waiting for Digipost inbox to load...");
 
   // Wait for message list to load
-  await page.waitForSelector('.message-list-item__info', { visible: true });
+  try {
+    await page.waitForSelector('.message-list-item__info', { visible: true });
+  } catch (error) {
+    console.error('Failed to load Digipost inbox - message list not found:', error.message);
+    if (timeoutTimer) clearTimeout(timeoutTimer);
+    if (onComplete) {
+      setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
+    }
+    return { browser, page };
+  }
 
   // Filter out thread/conversation items (keep only individual messages)
-  const allLinks = await page.$$('.message-list-item__info');
-  const filterPromises = allLinks.map(async (element) => {
-    const containsMessage = await element.$('.message-list-item__thread-icon-container').catch(() => null);
-    return containsMessage == null;
-  });
-  const filterResults = await Promise.all(filterPromises);
-  const messageLinks = allLinks.filter((_, index) => filterResults[index]);
+  const messageLinks = await filterIndividualMessages(page);
   console.warn(`Found ${messageLinks.length} messages in inbox`);
+
+  if (messageLinks.length === 0) {
+    console.log('No individual messages found in inbox');
+    if (timeoutTimer) clearTimeout(timeoutTimer);
+    if (onComplete) {
+      setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
+    }
+    return { browser, page };
+  }
 
 
   
@@ -86,11 +110,21 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
   console.log("Default downloads path:", defaultDownloadsPath);
 
   // Set up CDP to handle downloads and prevent PDFs from opening in new tabs
-  const client = await page.createCDPSession();
-  await client.send('Page.setDownloadBehavior', {
-    behavior: 'allow',
-    downloadPath: defaultDownloadsPath
-  });
+  let client;
+  try {
+    client = await page.createCDPSession();
+    await client.send('Page.setDownloadBehavior', {
+      behavior: 'allow',
+      downloadPath: defaultDownloadsPath
+    });
+  } catch (error) {
+    console.error('Failed to set up download behavior:', error.message);
+    if (timeoutTimer) clearTimeout(timeoutTimer);
+    if (onComplete) {
+      setTimeout(() => onComplete('HANDLER_TIMEOUT'), 1000);
+    }
+    return { browser, page };
+  }
 
   // Block navigation to PDF files to prevent them from opening in new tabs
   await page.setRequestInterception(true);
@@ -110,15 +144,8 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
 
 
   for (let i = 0; i < messageLinks.length; i++) {
-    const newAllLinks = await page.$$('.message-list-item__info');
-    const newFilterPromises = newAllLinks.map(async (element) => {
-      const containsMessage = await element.$('.message-list-item__thread-icon-container').catch(() => null);
-      return containsMessage == null;
-    });
-    
-    const newFilterResults = await Promise.all(newFilterPromises);
-    const newListOfMessages = newAllLinks.filter((_, index) => newFilterResults[index]);
-
+    // Re-query and filter messages to get updated element references
+    const newListOfMessages = await filterIndividualMessages(page);
 
     const message = newListOfMessages[i];
     
@@ -146,7 +173,8 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
       if (button2) {
         await button2.click();
       } else {
-        console.error("Dokumenthandlinger button not found even after waiting");
+        console.error(`Message ${i + 1}: Dokumenthandlinger button not found`);
+        continue; // Skip to next message
       }
 
       // 2. Click the download option from the revealed menu
@@ -161,31 +189,34 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
           const downloadedFile = await waitForNewDownloadedFile(defaultDownloadsPath);
           
           if (downloadedFile) {
-            const oldPath = path.join(defaultDownloadsPath, downloadedFile);
-            const extension = path.extname(downloadedFile);
-            const baseName = path.basename(downloadedFile, extension);
-            
-            // Create custom filename
-            const safeSender = safe(messageInfo.sender);
-            const safeSubject = safe(messageInfo.subject);
-            const safeDate = safe(messageInfo.date);
-            const preModifiedName = (await page.$eval('.bZV0z', element => element.textContent.trim())).replace(/[<>:"/\\|?*]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
-            const newFileName = `${preModifiedName}_${i}${extension}`;
-            // const newFileName = `${safeSender}_${safeSubject}_${safeDate}${extension}`;
-            const newPath = path.join(targetFolder, newFileName);
-            
-            console.log(`Moved file to: ${newPath} from ${oldPath}`);
-
-            // Move and rename file
-            fs.renameSync(oldPath, newPath);
+            try {
+              const oldPath = path.join(defaultDownloadsPath, downloadedFile);
+              const extension = path.extname(downloadedFile);
+              const baseName = path.basename(downloadedFile, extension);
+              
+              // Create custom filename
+              const safeSender = safe(messageInfo.sender);
+              const safeSubject = safe(messageInfo.subject);
+              const safeDate = safe(messageInfo.date);
+              const preModifiedName = (await page.$eval('.bZV0z', element => element.textContent.trim())).replace(/[<>:"/\\|?*]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+              const newFileName = `${preModifiedName}_${i}${extension}`;
+              const newPath = path.join(targetFolder, newFileName);
+              
+              // Move and rename file
+              fs.renameSync(oldPath, newPath);
+              console.log(`Successfully moved file to: ${newPath}`);
+            } catch (moveError) {
+              console.error(`Message ${i + 1}: Failed to move/rename file:`, moveError.message);
+            }
           } else {
-            console.warn("No new file detected in Downloads folder");
+            console.warn(`Message ${i + 1}: No new file detected in Downloads folder - download may have failed`);
           }
-        } catch (err) {
-          console.error("Error downloading/moving document", err);
+        } catch (downloadError) {
+          console.error(`Message ${i + 1}: Error during download process:`, downloadError.message);
         }
       } else {
-        console.error("Download button not found even after waiting");
+        console.error(`Message ${i + 1}: Download button not found`);
+        continue; // Skip to next message
       }
 
       // Small delay before continuing
@@ -193,14 +224,16 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
 
      
     } catch (e) {
-      console.error("Error clicking menu/download for message", i + 1, e);
+      console.error(`Message ${i + 1} (${messageInfo.subject}): Failed to access menu/download -`, e.message);
+      // Continue to next message
     }
     await new Promise(resolve => setTimeout(resolve, 3000));
-    // Optionally: go back to inbox if needed
+    // Go back to inbox
     try {
-      await page.goBack({ waitUntil: 'networkidle2' });
+      await page.goBack({ waitUntil: 'networkidle2', timeout: 10000 });
     } catch (e) {
-      console.error('Error going back to inbox after message', i + 1, e);
+      console.error(`Message ${i + 1}: Failed to navigate back to inbox -`, e.message);
+      // Try to continue anyway
     }
   }
 
