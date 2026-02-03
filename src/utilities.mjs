@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+import { FILE_DOWNLOAD_MAX_ATTEMPTS, FILE_DOWNLOAD_POLL_INTERVAL_MS, FILE_DOWNLOAD_FINALIZE_DELAY_MS } from "./constants.mjs";
 
 /**
  * @param {string} [pageName]
@@ -623,11 +624,11 @@ export function readAllDebtForPerson(personId) {
 /**
  * Polls a directory for a new file to appear after a download action
  * @param {string} downloadPath - The directory path to monitor
- * @param {number} maxAttempts - Maximum polling attempts (default: 30)
- * @param {number} pollInterval - Milliseconds between polls (default: 500)
+ * @param {number} maxAttempts - Maximum polling attempts
+ * @param {number} pollInterval - Milliseconds between polls
  * @returns {Promise<string|null>} - Returns the new file name or null if not found
  */
-export async function waitForNewDownloadedFile(downloadPath, maxAttempts = 30, pollInterval = 500) {
+export async function waitForNewDownloadedFile(downloadPath, maxAttempts = FILE_DOWNLOAD_MAX_ATTEMPTS, pollInterval = FILE_DOWNLOAD_POLL_INTERVAL_MS) {
   // Get list of files and their timestamps before download
   const filesBefore = fs.existsSync(downloadPath) ? fs.readdirSync(downloadPath) : [];
   const timestampsBefore = {};
@@ -662,7 +663,7 @@ export async function waitForNewDownloadedFile(downloadPath, maxAttempts = 30, p
     
     if (newFiles.length > 0) {
       // Wait a bit more to ensure download is complete
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, FILE_DOWNLOAD_FINALIZE_DELAY_MS));
       return newFiles[0];
     }
   }
