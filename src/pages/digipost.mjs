@@ -1,7 +1,7 @@
 import { PUP } from "../scraper.mjs";
 import { digiPost } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName, createDownloadFoldersAndGetName } from "../utilities.mjs";
+import { createFoldersAndGetName, createDownloadFoldersAndGetName, waitForNewDownloadedFile } from "../utilities.mjs";
 
 // Local function to sanitize folder and file names (Windows-safe)
 function safe(name) {
@@ -150,46 +150,11 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
       const button3 = await page.$('[data-testid="download-document"]');
       if (button3) {
         try {
-          // Get list of files in Downloads before clicking
-          const filesBefore = fs.existsSync(defaultDownloadsPath) ? fs.readdirSync(defaultDownloadsPath) : [];
-          const timestampsBefore = {};
-          filesBefore.forEach(file => {
-            const filePath = path.join(defaultDownloadsPath, file);
-            try {
-              timestampsBefore[file] = fs.statSync(filePath).mtimeMs;
-            } catch (e) {
-              // Ignore errors
-            }
-          });
-          
           await button3.click();
           console.log("Clicked download document button");
           
-          // Poll for new files with a timeout
-          let downloadedFile = null;
-          const maxAttempts = 30; // 15 seconds total (30 * 500ms)
-          
-          for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            const filesAfter = fs.readdirSync(defaultDownloadsPath);
-            const newFiles = filesAfter.filter(f => {
-              // Skip temporary files (.tmp, .crdownload, .part)
-              if (f.endsWith('.tmp') || f.endsWith('.crdownload') || f.endsWith('.part')) {
-                return false;
-              }
-              // Check if file is new or modified
-              return !filesBefore.includes(f) || 
-                     (timestampsBefore[f] && fs.statSync(path.join(defaultDownloadsPath, f)).mtimeMs > timestampsBefore[f]);
-            });
-            
-            if (newFiles.length > 0) {
-              // Wait a bit more to ensure download is complete
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              downloadedFile = newFiles[0];
-              break;
-            }
-          }
+          // Wait for new file to appear in downloads
+          const downloadedFile = await waitForNewDownloadedFile(defaultDownloadsPath);
           
           if (downloadedFile) {
             const oldPath = path.join(defaultDownloadsPath, downloadedFile);
