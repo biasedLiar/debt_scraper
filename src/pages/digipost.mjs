@@ -94,7 +94,9 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
 
   // Block navigation to PDF files to prevent them from opening in new tabs
   await page.setRequestInterception(true);
-  page.on('request', (request) => {
+  
+  // Store handler reference for cleanup
+  const requestHandler = (request) => {
     const url = request.url();
     // Allow the initial download request but block subsequent navigation
     if (request.isNavigationRequest() && url.includes('.pdf')) {
@@ -102,7 +104,9 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
     } else {
       request.continue();
     }
-  });
+  };
+  
+  page.on('request', requestHandler);
 
 
   for (let i = 0; i < messageLinks.length; i++) {
@@ -201,6 +205,10 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
   }
 
   console.log('Digipost operations completed successfully');
+
+  // Clean up request interception to prevent memory leaks
+  page.off('request', requestHandler);
+  await page.setRequestInterception(false);
 
   if (timeoutTimer) clearTimeout(timeoutTimer);
   if (onComplete) {
