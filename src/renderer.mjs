@@ -18,8 +18,7 @@ import {
   infoBox
 } from "./dom.mjs";
 import { PUP } from "./scraper.mjs";
-import { savePage, createFoldersAndGetName, fileKnownToContainName, transferFilesAfterLogin, readAllDebtForPerson } from "./utilities.mjs";
-import { U } from "./U.mjs";
+import { savePage, createFoldersAndGetName, fileKnownToContainName, transferFilesAfterLogin, readAllDebtForPerson, isJson } from "./utilities.mjs";
 import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
@@ -276,14 +275,14 @@ export const setupPageHandlers = (page, nationalID, onComplete) => {
         }
 
         const data = await r.text();
-        const isJson = U.isJson(data);
+        const isJsonData = isJson(data);
         const outerFolder = userName ? userName : nationalID;
         const filename = createFoldersAndGetName(
           pageName,
           outerFolder,
           currentWebsite,
           r.url(),
-          isJson
+          isJsonData
         );
 
         console.log("Response data length:", data);

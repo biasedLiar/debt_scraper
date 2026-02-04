@@ -3,6 +3,20 @@ const path = require("path");
 import { FILE_DOWNLOAD_MAX_ATTEMPTS, FILE_DOWNLOAD_POLL_INTERVAL_MS, FILE_DOWNLOAD_FINALIZE_DELAY_MS } from "./constants.mjs";
 
 /**
+ * Checks if a string is valid JSON
+ * @param {any} obj - Value to check if it's valid JSON
+ * @returns {boolean} - True if valid JSON, false otherwise
+ */
+export const isJson = (obj) => {
+  try {
+    JSON.parse(obj);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+/**
  * Determines if a page should be saved based on its name
  * @param {string} [pageName] - Name of the page to check
  * @returns {boolean} - True if page should be saved, false otherwise
