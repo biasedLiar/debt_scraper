@@ -3,8 +3,9 @@ const path = require("path");
 import { FILE_DOWNLOAD_MAX_ATTEMPTS, FILE_DOWNLOAD_POLL_INTERVAL_MS, FILE_DOWNLOAD_FINALIZE_DELAY_MS } from "./constants.mjs";
 
 /**
- * @param {string} [pageName]
- * @returns {boolean}
+ * Determines if a page should be saved based on its name
+ * @param {string} [pageName] - Name of the page to check
+ * @returns {boolean} - True if page should be saved, false otherwise
  */
 export const savePage = (pageName) => {
   const unsavedPages = ["bankid", "id-porten"];
@@ -16,10 +17,43 @@ export const savePage = (pageName) => {
 };
 
 /**
- * @param {string} [pageName]
- * @param {string} [name]
- * @param {string} [currentWebsite]
- * @returns {string}
+ * Attempts to accept cookie consent banner if present on page
+ * @param {import('puppeteer').Page} page - Puppeteer page object
+ * @param {string} [selector='button.coi-banner__accept'] - CSS selector for cookie accept button
+ * @param {number} [timeout=5000] - Maximum time to wait for selector in milliseconds
+ * @returns {Promise<boolean>} - True if cookies were accepted, false if banner not found
+ */
+export async function acceptCookies(page, selector = 'button.coi-banner__accept', timeout = 5000) {
+  try {
+    await page.waitForSelector(selector, { visible: true, timeout });
+    await page.click(selector);
+    console.log('Accepted cookies');
+    return true;
+  } catch (error) {
+    console.log('Cookie banner not found or already accepted');
+    return false;
+  }
+}
+
+/**
+ * Safely clears a timeout timer if it exists
+ * @param {NodeJS.Timeout|null} timer - The timeout timer to clear
+ * @returns {void}
+ */
+export function clearTimeoutSafely(timer) {
+  if (timer) {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Creates folder structure and returns full file path for saving data
+ * @param {string} [pageName] - Name of the page/section
+ * @param {string} [name] - User identifier or name
+ * @param {string} [currentWebsite] - Name of the current website
+ * @param {string} [url] - URL or file descriptor
+ * @param {boolean} [isJson=true] - Whether the file should have .json extension
+ * @returns {string} - Full path to the file
  */
 export const createFoldersAndGetName = (
   pageName,

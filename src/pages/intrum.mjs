@@ -8,10 +8,11 @@ import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 const fs = require('fs/promises');
 
 /**
- * Maps raw Intrum debt data to DebtSchema format
- * @param {Array<Object>} rawDebts
- * @param {string} debtCollectorName
- * @returns {Array<Object>} Array of objects matching DebtSchema
+ * Maps raw Intrum debt data to standardized DebtSchema format
+ * Extracts and parses amounts, case IDs, and creditor information
+ * @param {Array<Object>} rawDebts - Array of raw debt objects from Intrum
+ * @param {string} [debtCollectorName='Intrum'] - Name of the debt collector
+ * @returns {Array<Object>} Array of objects matching DebtSchema format
  */
 function mapToDebtSchema(rawDebts, debtCollectorName = "Intrum") {
   return rawDebts.map((item) => {
@@ -62,9 +63,11 @@ function mapToDebtSchema(rawDebts, debtCollectorName = "Intrum") {
 }
 
 /**
- * Validates and saves Intrum debts in DebtSchema format
- * @param {string} filePath
- * @param {Array<Object>} rawDebts
+ * Validates and saves Intrum debts in standardized DebtSchema format
+ * Filters out invalid entries and saves to a separate _DebtSchema.json file
+ * @param {string} filePath - Base path for saving the file (will be modified to add _DebtSchema suffix)
+ * @param {Array<Object>} rawDebts - Array of raw debt objects to validate and save
+ * @returns {Promise<void>}
  */
 async function saveIntrumDebtsAsDebtSchema(filePath, rawDebts) {
   const mapped = mapToDebtSchema(rawDebts);
@@ -84,15 +87,16 @@ async function saveIntrumDebtsAsDebtSchema(filePath, rawDebts) {
   const out = { debts: validDebts, timestamp: new Date().toISOString() };
   const outPath = filePath.replace(/(\.json)?$/, "_DebtSchema.json");
   await fs.writeFile(outPath, JSON.stringify(out, null, 2), "utf-8");
-  console.log(`✓ Saved Intrum debts in DebtSchema format to ${outPath}`);
+  console.log(`Saved Intrum debts in DebtSchema format to ${outPath}`);
 }
 
 /**
- * Handles the Intrum login automation flow
- * @param {string} nationalID - The national identity number to use for login
- * @param {Function} setupPageHandlers - Function to setup page response handlers
- * @param {{onComplete?: Function, onTimeout?: Function}} callbacks - Callbacks object with onComplete and onTimeout functions
- * @returns {Promise<{browser: any, page: any}>}
+ * Handles the Intrum login automation flow, extracts debt case overview and detailed information
+ * @param {string} nationalID - The national identity number to use for BankID login
+ * @param {(page: import('puppeteer').Page, nationalID: string) => void} setupPageHandlers - Function to setup page response handlers for saving network responses
+ * @param {{onComplete?: (status: 'DEBT_FOUND'|'NO_DEBT_FOUND') => void, onTimeout?: (reason: 'HANDLER_TIMEOUT') => void}} callbacks - Callbacks for completion and timeout events
+ * @returns {Promise<{browser: import('puppeteer').Browser, page: import('puppeteer').Page}>} - Returns browser and page instances
+ * @throws {Error} - Throws if login button cannot be found or clicked
  */
 export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks = {}) {
   const { onComplete, onTimeout } = callbacks;

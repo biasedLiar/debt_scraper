@@ -6,11 +6,11 @@ import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 const fs = require('fs/promises');
 
 /**
- * Handles the PRA Group login automation flow
- * @param {string} nationalID - The national identity number to use for login
- * @param {Function} setupPageHandlers - Function to setup page response handlers
- * @param {{onComplete?: Function, onTimeout?: Function}} callbacks - Callbacks object with onComplete and onTimeout functions
- * @returns {Promise<{browser: any, page: any}>}
+ * Handles the PRA Group login automation flow and extracts account reference and debt amount
+ * @param {string} nationalID - The national identity number to use for BankID login
+ * @param {(page: import('puppeteer').Page, nationalID: string) => void} setupPageHandlers - Function to setup page response handlers for saving network responses
+ * @param {{onComplete?: (status: 'DEBT_FOUND'|'NO_DEBT_FOUND'|'TOO_MANY_FAILED_ATTEMPTS') => void, onTimeout?: (reason: 'HANDLER_TIMEOUT') => void}} callbacks - Callbacks for completion and timeout events
+ * @returns {Promise<{browser: import('puppeteer').Browser, page: import('puppeteer').Page}>} - Returns browser and page instances
  */
 export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbacks = {}) {
   const { onComplete, onTimeout } = callbacks;

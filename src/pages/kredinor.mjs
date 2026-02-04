@@ -1,7 +1,7 @@
 import { PUP } from "../scraper.mjs";
 import { kredinor } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName, waitForNewDownloadedFile, parseNorwegianAmount } from "../utilities.mjs";
+import { createFoldersAndGetName, waitForNewDownloadedFile, parseNorwegianAmount, acceptCookies } from "../utilities.mjs";
 import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../schemas.mjs";
 import { extractFields } from "../extract_kredinor.mjs";
 import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
@@ -10,12 +10,13 @@ const fsSync = require('fs');
 const path = require('path');
 
 /**
- * Handles the Kredinor login automation flow
- * @param {string} nationalID - The national identity number to use for login
- * @param {() => string} getUserName - Function to get the user name
- * @param {Function} setupPageHandlers - Function to setup page response handlers
- * @param {{onComplete?: Function, onTimeout?: Function}} callbacks - Callbacks object with onComplete and onTimeout functions
- * @returns {Promise<{browser: any, page: any}>}
+ * Handles the Kredinor login automation flow, extracts debt information, and downloads PDF reports
+ * @param {string} nationalID - The national identity number to use for BankID login
+ * @param {() => string} getUserName - Function that returns the user's name for folder naming
+ * @param {(page: import('puppeteer').Page, nationalID: string) => void} setupPageHandlers - Function to setup page response handlers for saving network responses
+ * @param {{onComplete?: (status: 'DEBT_FOUND'|'NO_DEBT_FOUND') => void, onTimeout?: (reason: 'HANDLER_TIMEOUT') => void}} callbacks - Callbacks for completion and timeout events
+ * @returns {Promise<{browser: import('puppeteer').Browser, page: import('puppeteer').Page}>} - Returns browser and page instances
+ * @throws {Error} - Throws if login button cannot be found or clicked
  */
 export async function handleKredinorLogin(nationalID, getUserName, setupPageHandlers, callbacks = {}) {
   const { onComplete, onTimeout } = callbacks;
@@ -31,15 +32,8 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     setupPageHandlers(page, nationalID);
   }
 
-
-// Accept cookies first
-  try {
-    await page.waitForSelector('button.coi-banner__accept', {visible: true });
-    await page.click('button.coi-banner__accept');
-    console.log('Accepted cookies');
-  } catch (error) {
-    console.log('Cookie banner not found or already accepted:', error.message);
-  }
+  // Accept cookies if banner present
+  await acceptCookies(page);
   
   try {
     await page.waitForSelector('button.login-button', { visible: true});
