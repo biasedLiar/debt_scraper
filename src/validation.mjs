@@ -28,7 +28,7 @@ export const validateNationalID = (nationalID) => {
  * @param {string} message - Error message to display
  * @param {number} [displayDuration=4000] - How long to show the error in milliseconds
  */
-export const showValidationError = (inputElement, container, message, displayDuration = 4000) => {
+export const showValidationErrorInDOM = (inputElement, container, message, displayDuration = 4000) => {
   const existingError = document.querySelector(".validation-error");
   if (existingError) {
     existingError.remove();

@@ -20,7 +20,7 @@ import {
 import { PUP } from "./scraper.mjs";
 import { savePage, createFoldersAndGetName, fileKnownToContainName, transferFilesAfterLogin, readAllDebtForPerson, isJson } from "./utilities.mjs";
 import { ERROR_MESSAGE_DISPLAY_MS, VALIDATION_ERROR_DISPLAY_MS } from "./constants.mjs";
-import { validateNationalID } from "./validation.mjs";
+import { validateNationalID, showValidationErrorInDOM } from "./validation.mjs";
 import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
@@ -35,32 +35,6 @@ const path = require("path");
 
 // Try to import detailedDebtConfig, but use empty object if it fails or is empty
 let detailedDebtConfig = {};
-
-/**
- * Shows validation error message to user
- * @param {string} message - Error message to display
- */
-const showValidationError = (message) => {
-  const existingError = document.querySelector(".validation-error");
-  if (existingError) {
-    existingError.remove();
-  }
-
-  const errorDiv = document.createElement("div");
-  errorDiv.className = "validation-error";
-  errorDiv.textContent = message;
-  errorDiv.style.color = "red";
-  errorDiv.style.marginLeft = "0.5rem";
-  errorDiv.style.fontSize = "0.9rem";
-
-  nationalIdInput.style.borderColor = "red";
-  nationalIdContainer.insertAdjacentElement("afterend", errorDiv);
-
-  setTimeout(() => {
-    errorDiv.remove();
-    nationalIdInput.style.borderColor = "";
-  }, VALIDATION_ERROR_DISPLAY_MS);
-};
 
 /**
  * Shows scrape debt error message to user
@@ -100,8 +74,51 @@ const showInfoBox = (title, message) => {
   }, ERROR_MESSAGE_DISPLAY_MS);
 };
 
-/**
- * Handles the result from a scraping operation
+/** * Helper function to create debt collector button handlers with consistent pattern
+ * @param {string} siteName - Name of the debt collector site
+ * @param {Function} handlerFunction - The handler function to call for scraping
+ * @param {Object} [options] - Optional configuration
+ * @param {boolean} [options.requiresUserName=false] - Whether handler needs userName parameter
+ * @returns {Function} Click handler function
+ */
+const createDebtCollectorButtonHandler = (siteName, handlerFunction, options = {}) => {
+  return async (ev) => {
+    currentWebsite = siteName;
+    const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
+    const validation = validateNationalID(nationalID);
+    if (!validation.valid) {
+      showValidationErrorInDOM(nationalIdInput, nationalIdContainer, validation.error, VALIDATION_ERROR_DISPLAY_MS);
+      return;
+    }
+
+    // Create promises for completion and timeout
+    let completeCallback, timeoutCallback;
+    const completePromise = new Promise((resolve) => { completeCallback = resolve; });
+    const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
+
+    // Start the handler with appropriate parameters
+    if (options.requiresUserName) {
+      handlerFunction(nationalID, () => userName, setupPageHandlers, {
+        onComplete: completeCallback,
+        onTimeout: timeoutCallback
+      });
+    } else {
+      handlerFunction(nationalID, setupPageHandlers, {
+        onComplete: completeCallback,
+        onTimeout: timeoutCallback
+      });
+    }
+
+    // Wait for result
+    const result = await Promise.race([completePromise, timeoutPromise]);
+
+    // Handle result
+    handleScrapingResult(result, siteName, ev.target);
+    await PUP.closeBrowser();
+  };
+};
+
+/** * Handles the result from a scraping operation
  * @param {string} result - The result status
  * @param {string} siteName - The name of the site being scraped
  * @param {HTMLElement} [buttonElement] - Optional button element to update with visited/failed class
@@ -370,171 +387,27 @@ const nationalIdInput = input(
   "number"
 );
 
-const siButton = button("Statens Innkrevingssentral", async (ev) => {
-  currentWebsite = "SI";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-  const validation = validateNationalID(nationalID);
-  if (!validation.valid) {
-    showValidationError(validation.error);
-    return;
-  }
+const siButton = button("Statens Innkrevingssentral", 
+  createDebtCollectorButtonHandler('SI', handleSILogin)
+);
+const digipostButton = button("Digipost", 
+  createDebtCollectorButtonHandler('Digipost', handleDigipostLogin)
+);
 
-  // Create promises for completion and timeout
-  let completeCallback, timeoutCallback;
-  const completePromise = new Promise((resolve) => { completeCallback = resolve; });
-  const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
+const intrumButton = button("Intrum", 
+  createDebtCollectorButtonHandler('Intrum', handleIntrumLogin)
+);
 
-  // Start the handler
-  handleSILogin(nationalID, setupPageHandlers, {
-    onComplete: completeCallback,
-    onTimeout: timeoutCallback
-  });
+const kredinorButton = button("Kredinor", 
+  createDebtCollectorButtonHandler('Kredinor', handleKredinorLogin, { requiresUserName: true })
+);
 
-  // Wait for result
-  const result = await Promise.race([completePromise, timeoutPromise]);
-
-  // Handle result
-  handleScrapingResult(result, 'SI', ev.target);
-  await PUP.closeBrowser();
-});
-const digipostButton = button("Digipost", async (ev) => {
-  currentWebsite = "Digipost";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-  const validation = validateNationalID(nationalID);
-  if (!validation.valid) {
-    showValidationError(validation.error);
-    return;
-  }
-
-  // Create promises for completion and timeout
-  let completeCallback, timeoutCallback;
-  const completePromise = new Promise((resolve) => { completeCallback = resolve; });
-  const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
-
-  // Start the handler
-  handleDigipostLogin(nationalID, setupPageHandlers, {
-    onComplete: completeCallback,
-    onTimeout: timeoutCallback
-  });
-
-  // Wait for result
-  const result = await Promise.race([completePromise, timeoutPromise]);
-
-  // Handle result
-  handleScrapingResult(result, 'Digipost', ev.target);
-  await PUP.closeBrowser();
-});
-
-const intrumButton = button("Intrum", async (ev) => {
-  currentWebsite = "Intrum";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-  const validation = validateNationalID(nationalID);
-  if (!validation.valid) {
-    showValidationError(validation.error);
-    return;
-  }
-
-  // Create promises for completion and timeout
-  let completeCallback, timeoutCallback;
-  const completePromise = new Promise((resolve) => { completeCallback = resolve; });
-  const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
-
-  // Start the handler
-  handleIntrumLogin(nationalID, setupPageHandlers, {
-    onComplete: completeCallback,
-    onTimeout: timeoutCallback
-  });
-
-  // Wait for result
-  const result = await Promise.race([completePromise, timeoutPromise]);
-
-  // Handle result
-  handleScrapingResult(result, 'Intrum', ev.target);
-  await PUP.closeBrowser();
-});
-
-const kredinorButton = button("Kredinor", async (ev) => {
-  currentWebsite = "Kredinor";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-  const validation = validateNationalID(nationalID);
-  if (!validation.valid) {
-    showValidationError(validation.error);
-    return;
-  }
-
-  // Create promises for completion and timeout
-  let completeCallback, timeoutCallback;
-  const completePromise = new Promise((resolve) => { completeCallback = resolve; });
-  const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
-
-  // Start the handler
-  handleKredinorLogin(nationalID, () => userName, setupPageHandlers, {
-    onComplete: completeCallback,
-    onTimeout: timeoutCallback
-  });
-
-  // Wait for result
-  const result = await Promise.race([completePromise, timeoutPromise]);
-
-  // Handle result
-  handleScrapingResult(result, 'Kredinor', ev.target);
-  await PUP.closeBrowser();
-});
-
-const praGroupButton = button("PRA Group", async (ev) => {
-  currentWebsite = "PRA Group";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-  const validation = validateNationalID(nationalID);
-  if (!validation.valid) {
-    showValidationError(validation.error);
-    return;
-  }
-
-  // Create promises for completion and timeout
-  let completeCallback, timeoutCallback;
-  const completePromise = new Promise((resolve) => { completeCallback = resolve; });
-  const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
-
-  // Start the handler
-  handlePraGroupLogin(nationalID, setupPageHandlers, {
-    onComplete: completeCallback,
-    onTimeout: timeoutCallback
-  });
-
-  // Wait for result
-  const result = await Promise.race([completePromise, timeoutPromise]);
-
-  // Handle result
-  handleScrapingResult(result, 'PRA Group', ev.target);
-  await PUP.closeBrowser();
-});
-const zolvaButton = button("Zolva AS", async (ev) => {
-  currentWebsite = "Zolva AS";
-  const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-  const validation = validateNationalID(nationalID);
-  if (!validation.valid) {
-    showValidationError(validation.error);
-    return;
-  }
-
-  // Create promises for completion and timeout
-  let completeCallback, timeoutCallback;
-  const completePromise = new Promise((resolve) => { completeCallback = resolve; });
-  const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
-
-  // Start the handler
-  handleZolvaLogin(nationalID, setupPageHandlers, {
-    onComplete: completeCallback,
-    onTimeout: timeoutCallback
-  });
-
-  // Wait for result
-  const result = await Promise.race([completePromise, timeoutPromise]);
-
-  // Handle result
-  handleScrapingResult(result, 'Zolva AS', ev.target);
-  await PUP.closeBrowser();
-});
+const praGroupButton = button("PRA Group", 
+  createDebtCollectorButtonHandler('PRA Group', handlePraGroupLogin)
+);
+const zolvaButton = button("Zolva AS", 
+  createDebtCollectorButtonHandler('Zolva AS', handleZolvaLogin)
+);
 
 const visitAllButton = button(
   "Start",
@@ -543,7 +416,7 @@ const visitAllButton = button(
 
     const validation = validateNationalID(nationalID);
     if (!validation.valid) {
-      showValidationError(validation.error);
+      showValidationErrorInDOM(nationalIdInput, nationalIdContainer, validation.error, VALIDATION_ERROR_DISPLAY_MS);
       return;
     }
 
