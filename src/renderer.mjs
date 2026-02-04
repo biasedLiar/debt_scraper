@@ -19,6 +19,8 @@ import {
 } from "./dom.mjs";
 import { PUP } from "./scraper.mjs";
 import { savePage, createFoldersAndGetName, fileKnownToContainName, transferFilesAfterLogin, readAllDebtForPerson, isJson } from "./utilities.mjs";
+import { ERROR_MESSAGE_DISPLAY_MS, VALIDATION_ERROR_DISPLAY_MS } from "./constants.mjs";
+import { validateNationalID } from "./validation.mjs";
 import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
@@ -33,25 +35,6 @@ const path = require("path");
 
 // Try to import detailedDebtConfig, but use empty object if it fails or is empty
 let detailedDebtConfig = {};
-
-/**
- * Validates Norwegian national ID (fødselsnummer)
- * @param {string} nationalID - The national ID to validate
- * @returns {{valid: boolean, error?: string}}
- */
-const validateNationalID = (nationalID) => {
-  const trimmed = nationalID.trim();
-
-  if (!trimmed) {
-    return { valid: false, error: "Fødselsnummer er påkrevd" };
-  }
-
-  if (trimmed.length !== 11) {
-    return { valid: false, error: "Fødselsnummer må være nøyaktig 11 siffer" };
-  }
-
-  return { valid: true };
-};
 
 /**
  * Shows validation error message to user
@@ -76,11 +59,12 @@ const showValidationError = (message) => {
   setTimeout(() => {
     errorDiv.remove();
     nationalIdInput.style.borderColor = "";
-  }, 4000);
+  }, VALIDATION_ERROR_DISPLAY_MS);
 };
 
 /**
  * Shows scrape debt error message to user
+ * @param {string} title - Error title
  * @param {string} message - Error message to display
  */
 const showScrapeDebtError = (title, message) => {
@@ -94,13 +78,14 @@ const showScrapeDebtError = (title, message) => {
 
   setTimeout(() => {
     errorBoxElement.remove();
-  }, 60000);
+  }, ERROR_MESSAGE_DISPLAY_MS);
 };
 
 
 /**
- * Shows scrape debt error message to user
- * @param {string} message - Error message to display
+ * Shows info message to user
+ * @param {string} title - Info title
+ * @param {string} message - Info message to display
  */
 const showInfoBox = (title, message) => {
   const existingInfoBox = document.querySelector(".info-box");
@@ -112,7 +97,7 @@ const showInfoBox = (title, message) => {
   totalVisualization.insertAdjacentElement("beforebegin", infoBoxElement);
   setTimeout(() => {
     infoBoxElement.remove();
-  }, 60000);
+  }, ERROR_MESSAGE_DISPLAY_MS);
 };
 
 /**

@@ -14,3 +14,9 @@ export const HANDLER_TIMEOUT_MS = 300000; // 300 seconds
 export const FILE_DOWNLOAD_MAX_ATTEMPTS = 30; // Maximum number of polling attempts
 export const FILE_DOWNLOAD_POLL_INTERVAL_MS = 500; // Milliseconds between each poll
 export const FILE_DOWNLOAD_FINALIZE_DELAY_MS = 1000; // Wait after detecting file to ensure download is complete
+
+/**
+ * UI message display timeouts
+ */
+export const ERROR_MESSAGE_DISPLAY_MS = 60000; // 60 seconds - How long error messages stay visible
+export const VALIDATION_ERROR_DISPLAY_MS = 4000; // 4 seconds - How long validation errors stay visible
