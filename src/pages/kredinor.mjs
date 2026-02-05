@@ -14,7 +14,7 @@ const path = require('path');
  * @param {string} nationalID - The national identity number to use for BankID login
  * @param {() => string} getUserName - Function that returns the user's name for folder naming
  * @param {(page: import('puppeteer').Page, nationalID: string) => void} setupPageHandlers - Function to setup page response handlers for saving network responses
- * @param {{onComplete?: (status: 'DEBT_FOUND'|'NO_DEBT_FOUND') => void, onTimeout?: (reason: 'HANDLER_TIMEOUT') => void}} callbacks - Callbacks for completion and timeout events
+ * @param {{onComplete?: Function, onTimeout?: Function}} callbacks - Callbacks for completion and timeout
  * @returns {Promise<{browser: import('puppeteer').Browser, page: import('puppeteer').Page}>} - Returns browser and page instances
  * @throws {Error} - Throws if login button cannot be found or clicked
  */
