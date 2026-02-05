@@ -163,8 +163,8 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
     originalDueDate: undefined,
     debtCollectorName: "PRA Group",
     originalCreditorName: accountDetails['Tidligere eier'] || accountDetails['Nåværende eier'] || "Unknown",
-    debtType: accountDetails['Skyldnertype'] || undefined,
-    comment: `Innkrevingsbyrå: ${accountDetails['Innkrevingsbyrå'] || 'N/A'}`
+    debtType: undefined,
+    comment: undefined,
   };
 
   const formattedData = {
@@ -178,7 +178,7 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
   const filePath2 = createExtractedFoldersAndGetName("PRA Group", nationalID);
   try {
     // Note: not updated to use schema validation yet due to some bugs
-    await fs.writeFile(filePath2, JSON.stringify(formattedData, null, 2));
+    await fsPromises.writeFile(filePath2, JSON.stringify(formattedData, null, 2));
   } catch (error) {
     console.error(`Failed to write detailed PRA Group info to file "${filePath2}" for nationalID ${nationalID}:`, error);
   }

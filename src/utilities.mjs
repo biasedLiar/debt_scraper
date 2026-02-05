@@ -1,6 +1,8 @@
 const fs = require("fs");
+const fsPromises = require("fs/promises");
 const path = require("path");
 import { FILE_DOWNLOAD_MAX_ATTEMPTS, FILE_DOWNLOAD_POLL_INTERVAL_MS, FILE_DOWNLOAD_FINALIZE_DELAY_MS } from "./constants.mjs";
+import { DebtCollectionSchema } from "./schemas.mjs";
 
 
 /**
@@ -674,7 +676,7 @@ export function readAllDebtForPerson(personId) {
               debtCollectorName: "PRA Group",
               originalCreditorName: data.accountDetails?.['Tidligere eier'] || data.accountDetails?.['Nåværende eier'] || "Unknown",
               debtType: data.accountDetails?.['Skyldnertype'] || undefined,
-              comment: `Innkrevingsbyrå: ${data.accountDetails?.['Innkrevingsbyrå'] || 'N/A'}`
+              comment: undefined,
             };
           
             const formattedData = {
@@ -684,13 +686,19 @@ export function readAllDebtForPerson(personId) {
               totalAmount: amount || 0
             };
             
-            
-            const filePath2 = createExtractedFoldersAndGetName("PRA Group", personId);
+            // Validate against DebtCollectionSchema
             try {
-              // Note: not updated to use schema validation yet due to some bugs
-              await fs.writeFile(filePath2, JSON.stringify(formattedData, null, 2));
+              const validatedData = DebtCollectionSchema.parse(formattedData);
+              
+              const filePath2 = createExtractedFoldersAndGetName("PRA Group", personId);
+              await fsPromises.writeFile(filePath2, JSON.stringify(validatedData, null, 2));
+              console.log(`Successfully saved validated PRA Group data to ${filePath2}`);
             } catch (error) {
-              console.error(`Failed to write detailed PRA Group info to file "${filePath2}" for nationalID ${personId}:`, error);
+              if (error.name === 'ZodError') {
+                console.error(`Validation error for PRA Group data (${personId}):`, error);
+              } else {
+                console.error(`Failed to write detailed PRA Group info to file for nationalID ${personId}:`, error);
+              }
             }
         }
       }
