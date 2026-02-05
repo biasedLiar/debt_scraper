@@ -3,6 +3,7 @@ import { praGroup } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName, createExtractedFoldersAndGetName } from "../utilities.mjs";
 import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
+import { DebtCollectionSchema } from "../schemas.mjs";
 const fs = require('fs/promises');
 
 /**
@@ -174,13 +175,18 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
     totalAmount: amountNumber || 0
   };
   
-  
+  // Validate against DebtCollectionSchema
   const filePath2 = createExtractedFoldersAndGetName("PRA Group", nationalID);
   try {
-    // Note: not updated to use schema validation yet due to some bugs
-    await fsPromises.writeFile(filePath2, JSON.stringify(formattedData, null, 2));
+    const validatedData = DebtCollectionSchema.parse(formattedData);
+    await fs.writeFile(filePath2, JSON.stringify(validatedData, null, 2));
+    console.log(`Successfully saved validated PRA Group data to ${filePath2}`);
   } catch (error) {
-    console.error(`Failed to write detailed PRA Group info to file "${filePath2}" for nationalID ${nationalID}:`, error);
+    if (error.name === 'ZodError') {
+      console.error(`Validation error for PRA Group data (${nationalID}):`, error);
+    } else {
+      console.error(`Failed to write detailed PRA Group info to file "${filePath2}" for nationalID ${nationalID}:`, error);
+    }
   }
     
 

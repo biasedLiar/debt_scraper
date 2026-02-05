@@ -666,40 +666,6 @@ export function readAllDebtForPerson(personId) {
             originalCreditorName: data.accountDetails?.['Tidligere eier'] || creditor,
             source: filePath
           });
-
-          const debtItem = {
-              caseID: data.accountReference || "N/A",
-              totalAmount: amount || 0,
-              originalAmount: undefined,
-              interestAndFines: undefined,
-              originalDueDate: undefined,
-              debtCollectorName: "PRA Group",
-              originalCreditorName: data.accountDetails?.['Tidligere eier'] || data.accountDetails?.['Nåværende eier'] || "Unknown",
-              debtType: data.accountDetails?.['Skyldnertype'] || undefined,
-              comment: undefined,
-            };
-          
-            const formattedData = {
-              creditSite: "PRA Group",
-              debts: [debtItem],
-              isCurrent: true,
-              totalAmount: amount || 0
-            };
-            
-            // Validate against DebtCollectionSchema
-            try {
-              const validatedData = DebtCollectionSchema.parse(formattedData);
-              
-              const filePath2 = createExtractedFoldersAndGetName("PRA Group", personId);
-              await fsPromises.writeFile(filePath2, JSON.stringify(validatedData, null, 2));
-              console.log(`Successfully saved validated PRA Group data to ${filePath2}`);
-            } catch (error) {
-              if (error.name === 'ZodError') {
-                console.error(`Validation error for PRA Group data (${personId}):`, error);
-              } else {
-                console.error(`Failed to write detailed PRA Group info to file for nationalID ${personId}:`, error);
-              }
-            }
         }
       }
 
