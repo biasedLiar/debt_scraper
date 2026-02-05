@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 import { FILE_DOWNLOAD_MAX_ATTEMPTS, FILE_DOWNLOAD_POLL_INTERVAL_MS, FILE_DOWNLOAD_FINALIZE_DELAY_MS } from "./constants.mjs";
 
+
 /**
  * @param {string} [pageName]
  * @returns {boolean}
@@ -132,6 +133,63 @@ export const createFoldersAndGetName = (
     "/";
 
   dirname += isJson ? url_name + ".json" : "not_json/" + url_name + ".txt";
+  return dirname;
+};
+
+
+
+/**
+ * @param {string} [currentWebsite]
+ * @param {string} [name]
+ * @returns {string}
+ */
+export const createExtractedFoldersAndGetName = (
+  currentWebsite,
+  name,
+) => {
+  var dateObj = new Date();
+  const month = (dateObj.getUTCMonth() + 1).toString().padStart(2, "0");
+  const day = dateObj.getUTCDate().toString().padStart(2, "0");
+  const year = dateObj.getUTCFullYear();
+
+  if (!currentWebsite) {
+    currentWebsite = "no_page_name";
+  }
+
+  if (!name) {
+    name = "Unknown";
+  }
+
+
+  const newDate = year + "_" + month + "_" + day;
+
+  if (!fs.existsSync("./extracted_data")) {
+    fs.mkdirSync("./extracted_data");
+  }
+
+  if (!fs.existsSync("./extracted_data/" + name)) {
+    fs.mkdirSync("./extracted_data/" + name);
+  }
+
+  if (!fs.existsSync("./extracted_data/" + name + "/" + newDate)) {
+    fs.mkdirSync("./extracted_data/" + name + "/" + newDate);
+  }
+
+  if (
+    !fs.existsSync("./extracted_data/" + name + "/" + newDate + "/" + currentWebsite)
+  ) {
+    fs.mkdirSync("./extracted_data/" + name + "/" + newDate + "/" + currentWebsite);
+  }
+
+  
+  const dirname =
+    "./extracted_data/" +
+    name +
+    "/" +
+    newDate +
+    "/" +
+    currentWebsite +
+    "/extracted_data.json";
   return dirname;
 };
 
@@ -464,7 +522,7 @@ export function readAllDebtForPerson(personId) {
   const jsonFiles = findJsonFiles(latestDatePath);
   console.log(`Found ${jsonFiles.length} JSON files for person ${personId} in ${latestDateFolder}`);
 
-  jsonFiles.forEach(filePath => {
+  jsonFiles.forEach(async filePath => {
     try {
       const content = fs.readFileSync(filePath, 'utf8');
       const data = JSON.parse(content);
@@ -606,6 +664,34 @@ export function readAllDebtForPerson(personId) {
             originalCreditorName: data.accountDetails?.['Tidligere eier'] || creditor,
             source: filePath
           });
+
+          const debtItem = {
+              caseID: data.accountReference || "N/A",
+              totalAmount: amount || 0,
+              originalAmount: undefined,
+              interestAndFines: undefined,
+              originalDueDate: undefined,
+              debtCollectorName: "PRA Group",
+              originalCreditorName: data.accountDetails?.['Tidligere eier'] || data.accountDetails?.['Nåværende eier'] || "Unknown",
+              debtType: data.accountDetails?.['Skyldnertype'] || undefined,
+              comment: `Innkrevingsbyrå: ${data.accountDetails?.['Innkrevingsbyrå'] || 'N/A'}`
+            };
+          
+            const formattedData = {
+              creditSite: "PRA Group",
+              debts: [debtItem],
+              isCurrent: true,
+              totalAmount: amount || 0
+            };
+            
+            
+            const filePath2 = createExtractedFoldersAndGetName("PRA Group", personId);
+            try {
+              // Note: not updated to use schema validation yet due to some bugs
+              await fs.writeFile(filePath2, JSON.stringify(formattedData, null, 2));
+            } catch (error) {
+              console.error(`Failed to write detailed PRA Group info to file "${filePath2}" for nationalID ${personId}:`, error);
+            }
         }
       }
 

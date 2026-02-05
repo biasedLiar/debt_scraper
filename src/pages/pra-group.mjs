@@ -1,7 +1,7 @@
 import { PUP } from "../scraper.mjs";
 import { praGroup } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName } from "../utilities.mjs";
+import { createFoldersAndGetName, createExtractedFoldersAndGetName } from "../utilities.mjs";
 import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 const fs = require('fs/promises');
 
@@ -135,7 +135,7 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
   //const folderName = userName ? userName : nationalID;
   //const filePath = createFoldersAndGetName("PRA_Group", folderName, "PRA Group", "AccountData", true);
   
-  const filePath = createFoldersAndGetName("Pra_Group", nationalID, "PRA Group", "ManuallyFoundDebt", true);
+  const filePath = createFoldersAndGetName("PRA_Group", nationalID, "PRA Group", "ManuallyFoundDebt", true);
   
   const data = {
     accountReference,
@@ -147,21 +147,53 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
   
   console.log(`Saving PRA Group data to ${filePath}`);
   
+  try {
+    // Note: not updated to use schema validation yet due to some bugs
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+  } catch (error) {
+    console.error(`Failed to write detailed PRA Group info to file "${filePath}" for nationalID ${nationalID}:`, error);
+  }
+
+
+  const debtItem = {
+    caseID: accountReference || "N/A",
+    totalAmount: amountNumber || 0,
+    originalAmount: undefined,
+    interestAndFines: undefined,
+    originalDueDate: undefined,
+    debtCollectorName: "PRA Group",
+    originalCreditorName: accountDetails['Tidligere eier'] || accountDetails['Nåværende eier'] || "Unknown",
+    debtType: accountDetails['Skyldnertype'] || undefined,
+    comment: `Innkrevingsbyrå: ${accountDetails['Innkrevingsbyrå'] || 'N/A'}`
+  };
+
+  const formattedData = {
+    creditSite: "PRA Group",
+    debts: [debtItem],
+    isCurrent: true,
+    totalAmount: amountNumber || 0
+  };
   
-    try {
-      // Note: not updated to use schema validation yet due to some bugs
-      await fs.writeFile(filePath, JSON.stringify(data, null, 2));
-    } catch (error) {
-      console.error(`Failed to write detailed PRA Group info to file "${filePath}" for nationalID ${nationalID}:`, error);
-    }
+  
+  const filePath2 = createExtractedFoldersAndGetName("PRA Group", nationalID);
+  try {
+    // Note: not updated to use schema validation yet due to some bugs
+    await fs.writeFile(filePath2, JSON.stringify(formattedData, null, 2));
+  } catch (error) {
+    console.error(`Failed to write detailed PRA Group info to file "${filePath2}" for nationalID ${nationalID}:`, error);
+  }
+    
 
 
 
   console.log('PRA Group data saved successfully');
 
+  // Gjøre manually found debt om til zod-formatert gjeld.
+
   if (timeoutTimer) clearTimeout(timeoutTimer);
   if (onComplete) {
-    setTimeout(() => onComplete('DEBT_FOUND'), 1000);
+//    setTimeout(() => onComplete('DEBT_FOUND'), 1000);
+    setTimeout(() => onComplete('DEBT_FOUND'), 1000000);
   }
   return { browser, page };
 }
