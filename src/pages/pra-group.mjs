@@ -7,11 +7,11 @@ import { DebtCollectionSchema } from "../schemas.mjs";
 const fs = require('fs/promises');
 
 /**
- * Handles the PRA Group login automation flow
- * @param {string} nationalID - The national identity number to use for login
- * @param {Function} setupPageHandlers - Function to setup page response handlers
- * @param {{onComplete?: Function, onTimeout?: Function}} callbacks - Callbacks object with onComplete and onTimeout functions
- * @returns {Promise<{browser: any, page: any}>}
+ * Handles the PRA Group login automation flow and extracts account reference and debt amount
+ * @param {string} nationalID - The national identity number to use for BankID login
+ * @param {(page: import('puppeteer').Page, nationalID: string) => void} setupPageHandlers - Function to setup page response handlers for saving network responses
+ * @param {{onComplete?: Function, onTimeout?: Function}} callbacks - Callbacks for completion and timeout
+ * @returns {Promise<{browser: import('puppeteer').Browser, page: import('puppeteer').Page}>} - Returns browser and page instances
  */
 export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbacks = {}) {
   const { onComplete, onTimeout } = callbacks;
@@ -47,7 +47,7 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
 
   
   // Extract account reference number 
-  await page.waitForSelector('.welcome-headline, h1 span span', { visible: true , timeout: 60000});;
+  await page.waitForSelector('.welcome-headline, h1 span span', { visible: true });
 
 
   console.log("Found li elements, looking for account reference...");

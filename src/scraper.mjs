@@ -1,4 +1,5 @@
 import { LIBS } from "./libs.mjs";
+import { DEFAULT_TIMEOUT_MS } from "./constants.mjs";
 
 /**
  *
@@ -56,6 +57,7 @@ const openPage = async (url) => {
   }
 
   const [page] = await browser.pages();
+  page.setDefaultTimeout(DEFAULT_TIMEOUT_MS);
 
   await page.goto(url);
 

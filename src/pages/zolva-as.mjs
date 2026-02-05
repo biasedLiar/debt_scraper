@@ -5,11 +5,11 @@ import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 import { createFoldersAndGetName } from "../utilities.mjs";
 const fs = require('fs/promises');
 /**
- * Handles the Zolva AS login automation flow
- * @param {string} nationalID - The national identity number to use for login
- * @param {Function} setupPageHandlers - Function to setup page response handlers
- * @param {{onComplete?: Function, onTimeout?: Function}} callbacks - Callbacks object with onComplete and onTimeout functions
- * @returns {Promise<{browser: any, page: any}>}
+ * Handles the Zolva AS login automation flow and extracts debt table data
+ * @param {string} nationalID - The national identity number to use for BankID login
+ * @param {(page: import('puppeteer').Page, nationalID: string) => void} setupPageHandlers - Function to setup page response handlers for saving network responses
+ * @param {{onComplete?: Function, onTimeout?: Function}} callbacks - Callbacks for completion and timeout
+ * @returns {Promise<{browser: import('puppeteer').Browser, page: import('puppeteer').Page}>} - Returns browser and page instances
  */
 export async function handleZolvaLogin(nationalID, setupPageHandlers, callbacks = {}) {
   const { onComplete, onTimeout } = callbacks;

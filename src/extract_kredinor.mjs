@@ -3,14 +3,182 @@ const path = require('path');
 const pdfjs = require('pdfjs-dist/legacy/build/pdf.mjs');
 import { DebtSchema } from './schemas.mjs';
 
+// Configuration
+const DEBUG_LOGGING = process.env.DEBUG_PDF_EXTRACTION === 'true';
+const FALLBACK_WORKER_PATH = '../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs';
+
+// Regex patterns as constants
+const REGEX_PATTERNS = {
+  totalbeløp: /Totalbeløp\s*:?\s*([\d\s]+,\d{2})/i,
+  saksnummer: /(\d{5,}\/\d{2})/g,
+  norwegianDate: /\d{2}\.\d{2}\.\d{4}/g,
+  restHovedstol: /Rest\s+hovedstol\s*:?\s*([\d\s]+,\d{2})/i,
+  renter: /Renter\s*:?\s*([\d\s]+,\d{2})/i,
+  gebyrer: /Gebyrer\s*:?\s*([\d\s]+,\d{2})/i,
+  inkasso: /Inkassosalær\s*\/\s*Omkostninger\s*:?\s*([\d\s]+,\d{2})/i,
+  renterAvOmkostninger: /Renter\s+av\s+omkostninger\s*:?\s*([\d\s]+,\d{2})/i,
+  oppdragsgiver: /Oppdragsgiver[:\s]+([A-Za-zÆØÅæøå0-9\s\-\.]+?)(?=\s*(?:Opprinnelig\s+oppdragsgiver|Kundenummer|Saksnummer|Avsluttet|Innbetalt|Utestående|Referanse\s+til|Fakturadato|\d{8,}|$))/i,
+  opprinneligOppdragsgiver: /Opprinnelig\s+oppdragsgiver[:\s]+(.+?)(?=\s*(?:Kundenummer|Referanse\s+til|Fakturadato|Forfallsdato|\d{8,}|$))/i,
+};
+
+// Date array indices for fallback case
+const DATE_INDICES = {
+  utstedetDato: 3, // Fourth date in array (0-indexed)
+  forfallsDato: 4,  // Fifth date in array (0-indexed)
+};
+
 // Set worker path for Node.js/Electron environment - use require.resolve for cross-system compatibility
 try {
   pdfjs.GlobalWorkerOptions.workerSrc = require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs');
 } catch (e) {
   // Fallback if resolve doesn't work
-  pdfjs.GlobalWorkerOptions.workerSrc = path.join(__dirname, '../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
+  pdfjs.GlobalWorkerOptions.workerSrc = path.join(__dirname, FALLBACK_WORKER_PATH);
 }
 
+/**
+ * Finds the page containing Totalbeløp and extracts its value
+ * @param {Object} doc - PDF document object
+ * @returns {Promise<{pageNum: number, pageText: string, totalValue: number}>}
+ */
+async function findTotalbeløpPage(doc) {
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map(item => item.str).join(' ').replace(/\u00A0/g, ' ');
+    
+    const totalValue = findFirstValue(pageText, REGEX_PATTERNS.totalbeløp);
+    if (totalValue !== null) {
+      if (DEBUG_LOGGING) {
+        console.log(`Found Totalbeløp on page ${i}:`, totalValue);
+      }
+      return { pageNum: i, pageText, totalValue };
+    }
+  }
+  
+  throw new Error(`Could not find Totalbeløp field in PDF (searched ${doc.numPages} pages)`);
+}
+
+/**
+ * Extracts text from pages after the totalbeløp page
+ * @param {Object} doc - PDF document object
+ * @param {number} startPage - Page number to start from
+ * @returns {Promise<string>}
+ */
+async function extractCasesText(doc, startPage) {
+  let casesText = '';
+  for (let i = startPage + 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map(item => item.str).join(' ');
+    casesText += pageText + '\n';
+  }
+  
+  // Normalize whitespace
+  return casesText.replace(/\u00A0/g, ' ');
+}
+
+/**
+ * Extracts dates from the "Grunnlaget for saken" section
+ * @param {string} caseText - Text for a specific case
+ * @returns {{fakturadato: string|null, forfallsdato: string|null}}
+ */
+function extractDatesFromCase(caseText) {
+  let fakturadato = null;
+  let forfallsdato = null;
+  
+  const grunnlagIdx = caseText.indexOf("Grunnlaget for saken");
+  if (grunnlagIdx !== -1) {
+    const afterGrunnlag = caseText.substring(grunnlagIdx + "Grunnlaget for saken".length);
+    const dateMatches = afterGrunnlag.match(REGEX_PATTERNS.norwegianDate);
+    if (dateMatches && dateMatches.length >= 2) {
+      fakturadato = dateMatches[0]; // First date after "Grunnlaget for saken"
+      forfallsdato = dateMatches[1]; // Second date
+    }
+  }
+  
+  return { fakturadato, forfallsdato };
+}
+
+/**
+ * Extracts financial fields from case text
+ * @param {string} caseText - Text for a specific case
+ * @returns {Object} Financial fields object
+ */
+function extractFinancialFields(caseText) {
+  return {
+    restHovedstol: findFirstValue(caseText, REGEX_PATTERNS.restHovedstol),
+    renter: findFirstValue(caseText, REGEX_PATTERNS.renter),
+    gebyrer: findFirstValue(caseText, REGEX_PATTERNS.gebyrer),
+    inkasso: findFirstValue(caseText, REGEX_PATTERNS.inkasso),
+    renterAvOmkostninger: findFirstValue(caseText, REGEX_PATTERNS.renterAvOmkostninger),
+    totalbeløp: findFirstValue(caseText, REGEX_PATTERNS.totalbeløp),
+  };
+}
+
+/**
+ * Extracts creditor information from case text
+ * @param {string} caseText - Text for a specific case
+ * @returns {{oppdragsgiver: string|null, opprinneligOppdragsgiver: string|null}}
+ */
+function extractCreditorInfo(caseText) {
+  const oppdragsgiverMatch = caseText.match(REGEX_PATTERNS.oppdragsgiver);
+  const oppdragsgiver = oppdragsgiverMatch ? oppdragsgiverMatch[1].trim() : null;
+  
+  const opprinneligOppdragsgiverMatch = caseText.match(REGEX_PATTERNS.opprinneligOppdragsgiver);
+  let opprinneligOppdragsgiver = opprinneligOppdragsgiverMatch ? opprinneligOppdragsgiverMatch[1].trim() : null;
+  
+  // Remove "Kundenummer" and anything after it if it's still in the text
+  if (opprinneligOppdragsgiver) {
+    opprinneligOppdragsgiver = opprinneligOppdragsgiver.replace(/\s*Kundenummer.*/i, '').trim();
+  }
+  
+  return { oppdragsgiver, opprinneligOppdragsgiver };
+}
+
+/**
+ * Transforms raw case data to DebtSchema format
+ * @param {Array<Object>} allCases - Array of extracted cases
+ * @returns {Array<Object>} Array in DebtSchema format
+ */
+function transformToDebtSchema(allCases) {
+  return allCases
+    .filter(c => c.type !== 'grandTotal')
+    .map(c => {
+      // Sum up interest and fines
+      const interestAndFines = [
+        c.renter,
+        c.gebyrer,
+        c.inkasso,
+        c.renterAvOmkostninger
+      ].filter(v => v !== null && v !== undefined)
+       .reduce((sum, v) => sum + v, 0);
+
+      // Parse forfallsdato to Date if available
+      let originalDueDate = null;
+      if (c.forfallsdato) {
+        const [day, month, year] = c.forfallsdato.split('.');
+        originalDueDate = new Date(`${year}-${month}-${day}`);
+      }
+
+      return {
+        caseID: c.saksnummer || '',
+        totalAmount: c.totalbeløp || 0,
+        originalAmount: c.restHovedstol || 0,
+        interestAndFines: interestAndFines || undefined,
+        originalDueDate: originalDueDate,
+        debtCollectorName: 'Kredinor',
+        originalCreditorName: c.opprinneligOppdragsgiver || c.oppdragsgiver || '',
+        debtType: undefined,
+        comment: undefined,
+      };
+    });
+}
+
+/**
+ * Main extraction function
+ * @param {string} pdfPath - Path to PDF file
+ * @param {string} outputPath - Path for output JSON file
+ */
 export async function extractFields(pdfPath, outputPath) {
   try {
     const dataBuffer = fs.readFileSync(pdfPath);
@@ -18,52 +186,26 @@ export async function extractFields(pdfPath, outputPath) {
     
     const doc = await pdfjs.getDocument({ data: uint8Array }).promise;
     
-    // First, search all pages to find where Totalbeløp appears
-    let totalbeløpPageNum = null;
-    let totalbeløpPageText = '';
-    let grandTotalMatch = null;
+    // Find the page with Totalbeløp
+    const { pageNum: totalbeløpPageNum, pageText: totalbeløpPageText, totalValue: grandTotalMatch } = await findTotalbeløpPage(doc);
     
-    for (let i = 1; i <= doc.numPages; i++) {
-      const page = await doc.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map(item => item.str).join(' ').replace(/\u00A0/g, ' ');
-      
-      // Check if this page contains Totalbeløp
-      const totalMatch = findFirstValue(pageText, /Totalbeløp\s*:?\s*([\d\s]+,\d{2})/i);
-      if (totalMatch !== null) {
-        totalbeløpPageNum = i;
-        totalbeløpPageText = pageText;
-        grandTotalMatch = totalMatch;
-        console.log(`Found Totalbeløp on page ${i}:`, grandTotalMatch);
-        break;
-      }
+    if (DEBUG_LOGGING) {
+      console.log(`Totalbeløp found on page ${totalbeløpPageNum}:`, grandTotalMatch);
     }
     
-    if (!totalbeløpPageNum) {
-      throw new Error('Could not find Totalbeløp in PDF');
+    // Extract text from subsequent pages
+    const casesText = await extractCasesText(doc, totalbeløpPageNum);
+    
+    if (DEBUG_LOGGING) {
+      console.log(`CASES TEXT (from page ${totalbeløpPageNum + 1}+):`, casesText);
     }
     
-    console.log(`Totalbeløp found on page ${totalbeløpPageNum}:`, grandTotalMatch);
+    // Find all saksnummer occurrences
+    const matches = [...casesText.matchAll(REGEX_PATTERNS.saksnummer)];
     
-    // Now extract text from pages after the Totalbeløp page for individual cases
-    let casesText = '';
-    for (let i = totalbeløpPageNum + 1; i <= doc.numPages; i++) {
-      const page = await doc.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map(item => item.str).join(' ');
-      casesText += pageText + '\n';
+    if (DEBUG_LOGGING) {
+      console.log('Found', matches.length, 'saksnummer');
     }
-    
-    // Normalize whitespace
-    casesText = casesText.replace(/\u00A0/g, ' ');
-    
-    console.log(`CASES TEXT (from page ${totalbeløpPageNum + 1}+):`, casesText);
-    
-    // Find all saksnummer occurrences with their positions
-    const saksnummerRegex = /(\d{5,}\/\d{2})/g;
-    const matches = [...casesText.matchAll(saksnummerRegex)];
-    
-    console.log('Found', matches.length, 'saksnummer');
     
     // Start with the grand total as the first "case"
     const allCases = [{
@@ -71,74 +213,29 @@ export async function extractFields(pdfPath, outputPath) {
       totalbeløp: grandTotalMatch
     }];
     
+    // Process each case
     for (let i = 0; i < matches.length; i++) {
       const saksnummer = matches[i][1];
       const startPos = matches[i].index;
       const endPos = i < matches.length - 1 ? matches[i + 1].index : casesText.length;
       
-      // Get text section for this specific case
       const caseText = casesText.substring(startPos, endPos);
       
-      console.log(`\n--- Case ${i + 1}: ${saksnummer} ---`);
-      console.log('Case text length:', caseText.length);
-      console.log('Case text preview:', caseText.substring(0, 500));
-      
-      // Extract Fakturadato and Forfallsdato from the table section
-        // Find the first two dates after the title "Grunnlaget for saken"
-        let fakturadato = null;
-        let forfallsdato = null;
-        const grunnlagIdx = caseText.indexOf("Grunnlaget for saken");
-        if (grunnlagIdx !== -1) {
-          // Get substring after the title
-          const afterGrunnlag = caseText.substring(grunnlagIdx + "Grunnlaget for saken".length);
-          // Find all dates in Norwegian format
-          const dateMatches = afterGrunnlag.match(/\d{2}\.\d{2}\.\d{4}/g);
-          if (dateMatches && dateMatches.length >= 2) {
-            fakturadato = dateMatches[0];
-            forfallsdato = dateMatches[1];
-          }
-        }
-
-      // Financial fields from this case section only
-      const fields = {
-        restHovedstol: findFirstValue(
-          caseText,
-          /Rest\s+hovedstol\s*:?\s*([\d\s]+,\d{2})/i
-        ),
-        renter: findFirstValue(caseText, /Renter\s*:?\s*([\d\s]+,\d{2})/i),
-        gebyrer: findFirstValue(caseText, /Gebyrer\s*:?\s*([\d\s]+,\d{2})/i),
-        inkasso: findFirstValue(
-          caseText,
-          /Inkassosalær\s*\/\s*Omkostninger\s*:?\s*([\d\s]+,\d{2})/i
-        ),
-        renterAvOmkostninger: findFirstValue(
-          caseText,
-          /Renter\s+av\s+omkostninger\s*:?\s*([\d\s]+,\d{2})/i
-        ),
-        totalbeløp: findFirstValue(
-          caseText,
-          /Totalbeløp\s*:?\s*([\d\s]+,\d{2})/i
-        ),
-      };
-      
-      // Extract Oppdragsgiver from this case section
-      const oppdragsgiverMatch = caseText.match(/Oppdragsgiver[:\s]+([A-Za-zÆØÅæøå0-9\s\-\.]+?)(?=\s*(?:Opprinnelig\s+oppdragsgiver|Kundenummer|Saksnummer|Avsluttet|Innbetalt|Utestående|Referanse\s+til|Fakturadato|\d{8,}|$))/i);
-      const oppdragsgiver = oppdragsgiverMatch ? oppdragsgiverMatch[1].trim() : null;
-      console.log('Oppdragsgiver match:', oppdragsgiverMatch);
-      console.log('Oppdragsgiver:', oppdragsgiver);
-      
-      // Extract Opprinnelig oppdragsgiver from this case section
-      // More flexible regex - match everything until we hit "Kundenummer", "Referanse" header or table markers
-      const opprinneligOppdragsgiverMatch = caseText.match(/Opprinnelig\s+oppdragsgiver[:\s]+(.+?)(?=\s*(?:Kundenummer|Referanse\s+til|Fakturadato|Forfallsdato|\d{8,}|$))/i);
-      let opprinneligOppdragsgiver = opprinneligOppdragsgiverMatch ? opprinneligOppdragsgiverMatch[1].trim() : null;
-      
-      // Remove "Kundenummer" and anything after it if it's still in the text
-      if (opprinneligOppdragsgiver) {
-        opprinneligOppdragsgiver = opprinneligOppdragsgiver.replace(/\s*Kundenummer.*/i, '').trim();
+      if (DEBUG_LOGGING) {
+        console.log(`\n--- Case ${i + 1}: ${saksnummer} ---`);
+        console.log('Case text length:', caseText.length);
+        console.log('Case text preview:', caseText.substring(0, 500));
       }
-      console.log('Oppdragsgiver:', oppdragsgiver);
-      console.log('Opprinnelig oppdragsgiver match:', opprinneligOppdragsgiverMatch);
-      console.log('Fields:', fields);
+      
+      const { fakturadato, forfallsdato } = extractDatesFromCase(caseText);
+      const fields = extractFinancialFields(caseText);
+      const { oppdragsgiver, opprinneligOppdragsgiver } = extractCreditorInfo(caseText);
+      
+      if (DEBUG_LOGGING) {
+        console.log('Oppdragsgiver:', oppdragsgiver);
+        console.log('Opprinnelig oppdragsgiver:', opprinneligOppdragsgiver);
+        console.log('Fields:', fields);
+      }
 
       allCases.push({
         saksnummer,
@@ -150,27 +247,16 @@ export async function extractFields(pdfPath, outputPath) {
       });
     }
     
-    // If no saksnummer found on subsequent pages, check if Totalbeløp is the only thing
+    // Fallback: If no saksnummer found on subsequent pages, extract from totalbeløp page
     if (allCases.length === 1 && totalbeløpPageNum === doc.numPages) {
-      const dateRegex = /\b\d{2}\.\d{2}\.\d{4}\b/g;
-      const dates = [...totalbeløpPageText.matchAll(dateRegex)].map(m => m[0]);
+      const dates = [...totalbeløpPageText.matchAll(REGEX_PATTERNS.norwegianDate)].map(m => m[0]);
       
-      const utstedetDato = dates[3] || null;
-      const forfallsDato = dates[4] || null;
+      // Extract dates at specific indices (4th and 5th dates in the document)
+      const utstedetDato = dates[DATE_INDICES.utstedetDato] || null;
+      const forfallsDato = dates[DATE_INDICES.forfallsDato] || null;
 
-      const fields = {
-        restHovedstol: findFirstValue(totalbeløpPageText, /Rest\s+hovedstol\s*:?\s*([\d\s]+,\d{2})/i),
-        renter: findFirstValue(totalbeløpPageText, /Renter\s*:?\s*([\d\s]+,\d{2})/i),
-        gebyrer: findFirstValue(totalbeløpPageText, /Gebyrer\s*:?\s*([\d\s]+,\d{2})/i),
-        inkasso: findFirstValue(totalbeløpPageText, /Inkassosalær\s*\/\s*Omkostninger\s*:?\s*([\d\s]+,\d{2})/i),
-        renterAvOmkostninger: findFirstValue(totalbeløpPageText, /Renter\s+av\s+omkostninger\s*:?\s*([\d\s]+,\d{2})/i),
-      };
-      
-      const oppdragsgiverMatch = totalbeløpPageText.match(/Oppdragsgiver:\s*([^\n]+)/i);
-      const oppdragsgiver = oppdragsgiverMatch ? oppdragsgiverMatch[1].trim() : null;
-      
-      const opprinneligOppdragsgiverMatch = totalbeløpPageText.match(/Opprinnelig\s+oppdragsgiver:\s*([^\n]+)/i);
-      const opprinneligOppdragsgiver = opprinneligOppdragsgiverMatch ? opprinneligOppdragsgiverMatch[1].trim() : null;
+      const fields = extractFinancialFields(totalbeløpPageText);
+      const { oppdragsgiver, opprinneligOppdragsgiver } = extractCreditorInfo(totalbeløpPageText);
 
       allCases.push({
         saksnummer: null,
@@ -183,43 +269,13 @@ export async function extractFields(pdfPath, outputPath) {
     }
 
     // Transform to DebtSchema format
-    const debtSchemaData = allCases
-      .filter(c => c.type !== 'grandTotal') // Skip grandTotal entry
-      .map(c => {
-        // Sum up interest and fines
-        const interestAndFines = [
-          c.renter,
-          c.gebyrer,
-          c.inkasso,
-          c.renterAvOmkostninger
-        ].filter(v => v !== null && v !== undefined)
-         .reduce((sum, v) => sum + v, 0);
-
-        // Parse forfallsdato to Date if available
-        let originalDueDate = null;
-        if (c.forfallsdato) {
-          const [day, month, year] = c.forfallsdato.split('.');
-          originalDueDate = new Date(`${year}-${month}-${day}`);
-        }
-
-        return {
-          caseID: c.saksnummer || '',
-          totalAmount: c.totalbeløp || 0,
-          originalAmount: c.restHovedstol || 0,
-          interestAndFines: interestAndFines || undefined,
-          originalDueDate: originalDueDate,
-          debtCollectorName: 'Kredinor',
-          originalCreditorName: c.opprinneligOppdragsgiver || c.oppdragsgiver || '',
-          debtType: undefined,
-          comment: undefined,
-        };
-      });
+    const debtSchemaData = transformToDebtSchema(allCases);
 
     // Validate each entry against DebtSchema
     const validatedData = debtSchemaData.map((debt, index) => {
       const result = DebtSchema.safeParse(debt);
       if (!result.success) {
-        console.warn(`Validation warning for case ${index + 1}:`, result.error.errors);
+        console.warn(`Validation warning for case ${index + 1} (caseID: ${debt.caseID || 'N/A'}):`, result.error.errors);
         return debt; // Return unvalidated if validation fails
       }
       return result.data;
@@ -228,12 +284,18 @@ export async function extractFields(pdfPath, outputPath) {
     fs.writeFileSync(outputPath, JSON.stringify(validatedData, null, 2), 'utf-8');
     console.log(`Results saved to ${outputPath} - ${validatedData.length} case(s) extracted in DebtSchema format`);
   } catch (error) {
-    console.error('Error extracting PDF:', error.message);
+    console.error(`Error extracting PDF from "${pdfPath}":`, error.message);
     throw error;
   }
 }
 
-// Helper: return the first numeric capture as Number (handles "4 481,63")
+/**
+ * Extracts and parses the first numeric value matching a regex pattern
+ * Handles Norwegian number format (e.g., "4 481,63" -> 4481.63)
+ * @param {string} text - Text to search
+ * @param {RegExp} regex - Regular expression with a capture group for the number
+ * @returns {number|null} Parsed number or null if not found
+ */
 function findFirstValue(text, regex) {
   const match = text.match(regex);
   return match

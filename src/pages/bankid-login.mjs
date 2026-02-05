@@ -18,7 +18,6 @@ export async function loginWithBankID(page, nationalID) {
   // Wait for and fill in the national identity number input
   try {
     if (nationalID) {
-      //Page.waitforSelector ser ut til å funke når man har visible: true. Funker ikke uten.
       await page.waitForSelector("input#nnin", { visible: true });
 
       await page.type("input#nnin", nationalID);
@@ -51,7 +50,7 @@ export async function loginWithBankID(page, nationalID) {
       console.log('Bekreft innlogging button not found, skipping');
     } 
   } catch (e) {
-    console.error('Could not find/click Bekreft innlogging button:', e);
+    console.log('Could not find/click Bekreft innlogging button: (not critical)', e);
   }
 
 
