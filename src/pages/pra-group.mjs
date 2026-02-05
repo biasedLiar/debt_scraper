@@ -47,7 +47,7 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
 
   
   // Extract account reference number 
-  await page.waitForSelector('.welcome-headline, h1 span span', { visible: true , timeout: 60000});;
+  await page.waitForSelector('.welcome-headline, h1 span span', { visible: true });
 
 
   console.log("Found li elements, looking for account reference...");

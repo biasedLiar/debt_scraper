@@ -55,7 +55,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     }, HANDLER_TIMEOUT_MS);
   }
 
-  await page.waitForSelector('.info-row-item-group', { visible: true, timeout: 120000 }).catch(() => {
+  await page.waitForSelector('.info-row-item-group', { visible: true }).catch(() => {
     console.log('No debt information found or page took too long to load');
   });
   
