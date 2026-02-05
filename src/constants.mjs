@@ -16,6 +16,11 @@ export const FILE_DOWNLOAD_POLL_INTERVAL_MS = 500; // Milliseconds between each 
 export const FILE_DOWNLOAD_FINALIZE_DELAY_MS = 1000; // Wait after detecting file to ensure download is complete
 
 /**
+ * Default Puppeteer timeout for waitForSelector and similar methods
+ */
+export const DEFAULT_TIMEOUT_MS = 180000; // 3 minutes
+
+/**
  * UI message display timeouts
  */
 export const ERROR_MESSAGE_DISPLAY_MS = 60000; // 60 seconds - How long error messages stay visible
