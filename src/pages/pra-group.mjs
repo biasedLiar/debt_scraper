@@ -198,8 +198,7 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
 
   if (timeoutTimer) clearTimeout(timeoutTimer);
   if (onComplete) {
-//    setTimeout(() => onComplete('DEBT_FOUND'), 1000);
-    setTimeout(() => onComplete('DEBT_FOUND'), 1000000);
+    setTimeout(() => onComplete('DEBT_FOUND'), 1000);
   }
   return { browser, page };
 }
