@@ -50,7 +50,7 @@ export async function loginWithBankID(page, nationalID) {
       console.log('Bekreft innlogging button not found, skipping');
     } 
   } catch (e) {
-    console.error('Could not find/click Bekreft innlogging button:', e);
+    console.log('Could not find/click Bekreft innlogging button: (not critical)', e);
   }
 
 

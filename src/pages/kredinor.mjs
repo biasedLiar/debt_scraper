@@ -43,7 +43,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     throw new Error('Failed to find or click login button');
   }
   
-  
+
   
   await loginWithBankID(page, nationalID);
 
@@ -85,19 +85,8 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     return { browser, page };
   }
   
-  await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);
-  console.log(`Debt amount: ${debtAmount} kr`);
-  console.log(`Active cases: ${activeCases}`);
+  await saveValidatedJSON(filePath, data, KredinorManualDebtSchema); 
 
-  const debtList =  await page.$$eval('.total-amount-value', els => 
-    els.map(el => el.textContent.trim())
-  );
-  const creditorList =  await page.$$eval('.creditor', els => 
-    els.map(el => el.textContent.trim())
-  );
-  const saksnummerList =  await page.$$eval('.main-info-value', els => 
-    els.map(el => el.textContent.trim())
-  );
 
   // Download PDF report (active or closed cases)
     try {
@@ -154,12 +143,6 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
       console.log('Could not download closed cases PDF:', error);
     }
 
-  console.log("Debt List:", debtList);
-  console.log("Creditor List:", creditorList);
-  console.log("Saksnummer List:", saksnummerList);
-
-  const filePath2 = createFoldersAndGetName(kredinor.name, folderName, "Kredinor", "FullDebtDetails", true);
-  await saveValidatedJSON(filePath2, {debtList, creditorList, saksnummerList}, KredinorFullDebtDetailsSchema);
 
   if (timeoutTimer) clearTimeout(timeoutTimer);
   if (onComplete) {

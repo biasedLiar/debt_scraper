@@ -245,8 +245,11 @@ export const setupPageHandlers = (page, nationalID, onComplete) => {
   page.on("response", async (r) => {
     console.log(r.url());
     console.log(r.ok());
+    
+    // Get response text once and store it
+    let data;
     try {
-      await r.text();
+      data = await r.text();
     } catch (e) {
       console.log("Could not get text:", e);
       return;
@@ -275,8 +278,6 @@ export const setupPageHandlers = (page, nationalID, onComplete) => {
           console.log("Skipping non-OK or OPTIONS request");
           return;
         }
-
-        const data = await r.text();
         const isJsonResult = isJson(data);
         const outerFolder = userName ? userName : nationalID;
         const filename = createFoldersAndGetName(
