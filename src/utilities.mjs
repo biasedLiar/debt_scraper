@@ -524,7 +524,7 @@ export function readAllDebtForPerson(personId) {
   const jsonFiles = findJsonFiles(latestDatePath);
   console.log(`Found ${jsonFiles.length} JSON files for person ${personId} in ${latestDateFolder}`);
 
-  jsonFiles.forEach(async filePath => {
+  jsonFiles.forEach(filePath => {
     try {
       const content = fs.readFileSync(filePath, 'utf8');
       const data = JSON.parse(content);
