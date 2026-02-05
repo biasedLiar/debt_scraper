@@ -277,14 +277,14 @@ export const setupPageHandlers = (page, nationalID, onComplete) => {
         }
 
         const data = await r.text();
-        const isJsonData = isJson(data);
+        const isJsonResult = isJson(data);
         const outerFolder = userName ? userName : nationalID;
         const filename = createFoldersAndGetName(
           pageName,
           outerFolder,
           currentWebsite,
           r.url(),
-          isJsonData
+          isJsonResult
         );
 
         console.log("Response data length:", data);
@@ -310,7 +310,7 @@ export const setupPageHandlers = (page, nationalID, onComplete) => {
           );
         }
 
-        if (isJson && JSON.parse(data).krav !== undefined) {
+        if (isJsonResult && JSON.parse(data).krav !== undefined) {
           const { debts_paid, debts_unpaid } = read_json_for_si(
             currentWebsite,
             JSON.parse(data).krav
