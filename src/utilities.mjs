@@ -1,6 +1,9 @@
 const fs = require("fs");
+const fsPromises = require("fs/promises");
 const path = require("path");
 import { FILE_DOWNLOAD_MAX_ATTEMPTS, FILE_DOWNLOAD_POLL_INTERVAL_MS, FILE_DOWNLOAD_FINALIZE_DELAY_MS } from "./constants.mjs";
+import { DebtCollectionSchema } from "./schemas.mjs";
+
 
 /**
  * @param {string} [pageName]
@@ -132,6 +135,63 @@ export const createFoldersAndGetName = (
     "/";
 
   dirname += isJson ? url_name + ".json" : "not_json/" + url_name + ".txt";
+  return dirname;
+};
+
+
+
+/**
+ * @param {string} [currentWebsite]
+ * @param {string} [name]
+ * @returns {string}
+ */
+export const createExtractedFoldersAndGetName = (
+  currentWebsite,
+  name,
+) => {
+  var dateObj = new Date();
+  const month = (dateObj.getUTCMonth() + 1).toString().padStart(2, "0");
+  const day = dateObj.getUTCDate().toString().padStart(2, "0");
+  const year = dateObj.getUTCFullYear();
+
+  if (!currentWebsite) {
+    currentWebsite = "no_page_name";
+  }
+
+  if (!name) {
+    name = "Unknown";
+  }
+
+
+  const newDate = year + "_" + month + "_" + day;
+
+  if (!fs.existsSync("./extracted_data")) {
+    fs.mkdirSync("./extracted_data");
+  }
+
+  if (!fs.existsSync("./extracted_data/" + name)) {
+    fs.mkdirSync("./extracted_data/" + name);
+  }
+
+  if (!fs.existsSync("./extracted_data/" + name + "/" + newDate)) {
+    fs.mkdirSync("./extracted_data/" + name + "/" + newDate);
+  }
+
+  if (
+    !fs.existsSync("./extracted_data/" + name + "/" + newDate + "/" + currentWebsite)
+  ) {
+    fs.mkdirSync("./extracted_data/" + name + "/" + newDate + "/" + currentWebsite);
+  }
+
+  
+  const dirname =
+    "./extracted_data/" +
+    name +
+    "/" +
+    newDate +
+    "/" +
+    currentWebsite +
+    "/extracted_data.json";
   return dirname;
 };
 
