@@ -294,7 +294,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   
   try {
     await fs.writeFile(detailedInfoFilePath, JSON.stringify(detailedData, null, 2));
-    console.log(`✓ Saved detailed info for ${structuredDetailedData.length} cases to ${detailedInfoFilePath}`);
+    console.log(`Saved detailed info for ${structuredDetailedData.length} cases to ${detailedInfoFilePath}`);
   } catch (error) {
     console.error(`Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`, error);
   }

@@ -2,6 +2,7 @@ const fs = require("fs");
 const fsPromises = require("fs/promises");
 const path = require("path");
 import { FILE_DOWNLOAD_MAX_ATTEMPTS, FILE_DOWNLOAD_POLL_INTERVAL_MS, FILE_DOWNLOAD_FINALIZE_DELAY_MS } from "./constants.mjs";
+import { handleError, ErrorType, ErrorSeverity } from "./errorHandler.mjs";
 
 /**
  * Checks if a string is valid JSON
@@ -77,111 +78,55 @@ export const createFoldersAndGetName = (
   url,
   isJson = true
 ) => {
-  var dateObj = new Date();
-  const month = (dateObj.getUTCMonth() + 1).toString().padStart(2, "0");
-  const day = dateObj.getUTCDate().toString().padStart(2, "0");
-  const year = dateObj.getUTCFullYear();
+  try {
+    var dateObj = new Date();
+    const month = (dateObj.getUTCMonth() + 1).toString().padStart(2, "0");
+    const day = dateObj.getUTCDate().toString().padStart(2, "0");
+    const year = dateObj.getUTCFullYear();
 
-  if (!pageName) {
-    pageName = "no_page_name";
+    if (!pageName) {
+      pageName = "no_page_name";
+    }
+
+    if (!name) {
+      name = "Unknown";
+    }
+
+    if (!currentWebsite) {
+      currentWebsite = "Unknown";
+    }
+
+    const newDate = year + "_" + month + "_" + day;
+
+    // Create directory structure using recursive mkdir
+    const baseDir = `./exports/${name}/${newDate}/${currentWebsite}/${pageName}`;
+    
+    // Create base directory
+    fs.mkdirSync(baseDir, { recursive: true });
+    
+    // Create not_json subdirectory if needed
+    if (!isJson) {
+      fs.mkdirSync(`${baseDir}/not_json`, { recursive: true });
+    }
+
+    const url_name = url
+      .replace("https://", "")
+      .replace(".json", "")
+      .replace(/[^a-zA-Z0-9.]/g, "_")
+      .toLowerCase();
+    
+    let dirname = `${baseDir}/`;
+    dirname += isJson ? url_name + ".json" : "not_json/" + url_name + ".txt";
+    
+    return dirname;
+  } catch (error) {
+    handleError(error, ErrorType.FILE_SYSTEM, ErrorSeverity.ERROR, { 
+      pageName, 
+      name, 
+      currentWebsite 
+    });
+    throw error;
   }
-
-  if (!name) {
-    name = "Unknown";
-  }
-
-  if (!currentWebsite) {
-    currentWebsite = "Unknown";
-  }
-
-  const newDate = year + "_" + month + "_" + day;
-
-  if (!fs.existsSync("./exports")) {
-    fs.mkdirSync("./exports");
-  }
-
-  if (!fs.existsSync("./exports/" + name)) {
-    fs.mkdirSync("./exports/" + name);
-  }
-
-  if (!fs.existsSync("./exports/" + name + "/" + newDate)) {
-    fs.mkdirSync("./exports/" + name + "/" + newDate);
-  }
-
-  if (
-    !fs.existsSync("./exports/" + name + "/" + newDate + "/" + currentWebsite)
-  ) {
-    fs.mkdirSync("./exports/" + name + "/" + newDate + "/" + currentWebsite);
-  }
-
-  if (
-    !fs.existsSync(
-      "./exports/" +
-        name +
-        "/" +
-        newDate +
-        "/" +
-        currentWebsite +
-        "/" +
-        pageName
-    )
-  ) {
-    fs.mkdirSync(
-      "./exports/" +
-        name +
-        "/" +
-        newDate +
-        "/" +
-        currentWebsite +
-        "/" +
-        pageName
-    );
-  }
-
-  if (
-    !fs.existsSync(
-      "./exports/" +
-        name +
-        "/" +
-        newDate +
-        "/" +
-        currentWebsite +
-        "/" +
-        pageName +
-        "/" +
-        "not_json"
-    )
-  ) {
-    fs.mkdirSync(
-      "./exports/" +
-        name +
-        "/" +
-        newDate +
-        "/" +
-        currentWebsite +
-        "/" +
-        pageName +
-        "/not_json"
-    );
-  }
-  const url_name = url
-    .replace("https://", "")
-    .replace(".json", "")
-    .replace(/[^a-zA-Z0-9.]/g, "_")
-    .toLowerCase();
-  let dirname =
-    "./exports/" +
-    name +
-    "/" +
-    newDate +
-    "/" +
-    currentWebsite +
-    "/" +
-    pageName +
-    "/";
-
-  dirname += isJson ? url_name + ".json" : "not_json/" + url_name + ".txt";
-  return dirname;
 };
 
 
@@ -479,7 +424,10 @@ export const transferFilesAfterLogin = (
 export function moveFiles(sourceDir, destDir) {
   try {
     fs.readdir(sourceDir, (err, files) => {
-      if (err) throw err;
+      if (err) {
+        handleError(err, ErrorType.FILE_SYSTEM, ErrorSeverity.ERROR, { sourceDir });
+        return;
+      }
 
       files.forEach((file) => {
         const sourcePath = path.join(sourceDir, file);
@@ -487,7 +435,11 @@ export function moveFiles(sourceDir, destDir) {
 
         fs.rename(sourcePath, destPath, (err) => {
           if (err) {
-            console.error(`Error moving file ${file}:`, err);
+            handleError(err, ErrorType.FILE_SYSTEM, ErrorSeverity.WARNING, { 
+              file, 
+              sourcePath, 
+              destPath 
+            });
           } else {
             console.log(`Moved: ${file}`);
           }
@@ -495,7 +447,11 @@ export function moveFiles(sourceDir, destDir) {
       });
     });
   } catch (error) {
-    console.error("Error transferring files after login:", error);
+    handleError(error, ErrorType.FILE_SYSTEM, ErrorSeverity.ERROR, { 
+      sourceDir, 
+      destDir,
+      action: 'moveFiles'
+    });
   }
 }
 

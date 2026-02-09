@@ -21,6 +21,7 @@ import { PUP } from "./scraper.mjs";
 import { savePage, createFoldersAndGetName, fileKnownToContainName, transferFilesAfterLogin, readAllDebtForPerson, isJson } from "./utilities.mjs";
 import { ERROR_MESSAGE_DISPLAY_MS, VALIDATION_ERROR_DISPLAY_MS } from "./constants.mjs";
 import { validateNationalID, showValidationErrorInDOM } from "./validation.mjs";
+import { handleError, ErrorType, ErrorSeverity } from "./errorHandler.mjs";
 import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
@@ -83,38 +84,53 @@ const showInfoBox = (title, message) => {
  */
 const createDebtCollectorButtonHandler = (siteName, handlerFunction, options = {}) => {
   return async (ev) => {
-    currentWebsite = siteName;
-    const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-    const validation = validateNationalID(nationalID);
-    if (!validation.valid) {
-      showValidationErrorInDOM(nationalIdInput, nationalIdContainer, validation.error, VALIDATION_ERROR_DISPLAY_MS);
-      return;
+    try {
+      currentWebsite = siteName;
+      const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
+      const validation = validateNationalID(nationalID);
+      if (!validation.valid) {
+        showValidationErrorInDOM(nationalIdInput, nationalIdContainer, validation.error, VALIDATION_ERROR_DISPLAY_MS);
+        return;
+      }
+
+      // Create promises for completion and timeout
+      let completeCallback, timeoutCallback;
+      const completePromise = new Promise((resolve) => { completeCallback = resolve; });
+      const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
+
+      // Start the handler with appropriate parameters
+      if (options.requiresUserName) {
+        handlerFunction(nationalID, () => userName, setupPageHandlers, {
+          onComplete: completeCallback,
+          onTimeout: timeoutCallback
+        });
+      } else {
+        handlerFunction(nationalID, setupPageHandlers, {
+          onComplete: completeCallback,
+          onTimeout: timeoutCallback
+        });
+      }
+
+      // Wait for result
+      const result = await Promise.race([completePromise, timeoutPromise]);
+
+      // Handle result
+      handleScrapingResult(result, siteName, ev.target);
+    } catch (error) {
+      handleError(error, ErrorType.UNKNOWN, ErrorSeverity.ERROR, { siteName, nationalID: '***' });
+      showScrapeDebtError("Feil", `Feil ved innhenting av data fra ${siteName}`);
+      if (ev.target) {
+        ev.target.classList.remove('btn-visited');
+        ev.target.classList.add('btn-visit-failed');
+      }
+    } finally {
+      // Ensure browser is always closed
+      try {
+        await PUP.closeBrowser();
+      } catch (closeError) {
+        console.error('Error closing browser:', closeError);
+      }
     }
-
-    // Create promises for completion and timeout
-    let completeCallback, timeoutCallback;
-    const completePromise = new Promise((resolve) => { completeCallback = resolve; });
-    const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
-
-    // Start the handler with appropriate parameters
-    if (options.requiresUserName) {
-      handlerFunction(nationalID, () => userName, setupPageHandlers, {
-        onComplete: completeCallback,
-        onTimeout: timeoutCallback
-      });
-    } else {
-      handlerFunction(nationalID, setupPageHandlers, {
-        onComplete: completeCallback,
-        onTimeout: timeoutCallback
-      });
-    }
-
-    // Wait for result
-    const result = await Promise.race([completePromise, timeoutPromise]);
-
-    // Handle result
-    handleScrapingResult(result, siteName, ev.target);
-    await PUP.closeBrowser();
   };
 };
 
@@ -147,6 +163,10 @@ const handleScrapingResult = (result, siteName, buttonElement = null) => {
     case 'TOO_MANY_FAILED_ATTEMPTS':
       console.warn(`${siteName} unsuccessful, too many failed attempts.`);
       showScrapeDebtError("For mange mislykkede påloggingsforsøk", `For mange mislykkede påloggingsforsøk fra ${siteName}.`);
+      break;
+    case 'UNEXPECTED_STATE':
+      console.warn(`${siteName} scraping completed with unexpected state.`);
+      showScrapeDebtError("Uventet tilstand", `Innhenting av gjeldsinformasjon fra ${siteName} fullførte ikke siden programmet ikke fant et forventet element ("Totalt skylder du ...")`);
       break;
     default:
       console.error(`${siteName} scraping unsuccessful, something went wrong.`);
