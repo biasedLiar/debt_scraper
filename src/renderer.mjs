@@ -159,6 +159,7 @@ const handleScrapingResult = (result, siteName, buttonElement = null) => {
     if (isSuccessful) {
       buttonElement.classList.remove('btn-visit-failed');
       buttonElement.classList.add('btn-visited');
+      readAllDebtForPerson(nationalIdInput.value.trim());
     } else {
       buttonElement.classList.remove('btn-visited');
       buttonElement.classList.add('btn-visit-failed');

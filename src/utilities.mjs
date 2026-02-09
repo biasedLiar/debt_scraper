@@ -2,6 +2,8 @@ const fs = require("fs");
 const fsPromises = require("fs/promises");
 const path = require("path");
 import { FILE_DOWNLOAD_MAX_ATTEMPTS, FILE_DOWNLOAD_POLL_INTERVAL_MS, FILE_DOWNLOAD_FINALIZE_DELAY_MS } from "./constants.mjs";
+import { DebtCollectionSchema } from "./schemas.mjs";
+
 
 /**
  * Checks if a string is valid JSON
@@ -223,11 +225,6 @@ export const createExtractedFoldersAndGetName = (
     fs.mkdirSync("./extracted_data/" + name + "/" + newDate);
   }
 
-  if (
-    !fs.existsSync("./extracted_data/" + name + "/" + newDate + "/" + currentWebsite)
-  ) {
-    fs.mkdirSync("./extracted_data/" + name + "/" + newDate + "/" + currentWebsite);
-  }
 
   
   const dirname =
@@ -237,7 +234,7 @@ export const createExtractedFoldersAndGetName = (
     newDate +
     "/" +
     currentWebsite +
-    "/extracted_data.json";
+    "_extracted_data.json";
   return dirname;
 };
 
@@ -569,6 +566,8 @@ export function readAllDebtForPerson(personId) {
 
   const jsonFiles = findJsonFiles(latestDatePath);
   console.log(`Found ${jsonFiles.length} JSON files for person ${personId} in ${latestDateFolder}`);
+
+  
 
   jsonFiles.forEach(filePath => {
     try {
