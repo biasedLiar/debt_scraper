@@ -33,8 +33,8 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
     }, HANDLER_TIMEOUT_MS);
   }
 
-  // Find and log the debt amount
-  const debtElement = await page.waitForSelector("span.ce26PEIo", {visible: true, timeout: 60000}).catch(() => null);
+  // Find and log the debt amount, not that important, as the files are provided through JSON responses
+  const debtElement = await page.waitForSelector("span.ce26PEIo", {visible: true}).catch(() => null);
   
   if (debtElement) {
     const debtText = await page.evaluate((el) => el.textContent, debtElement);
