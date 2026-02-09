@@ -70,7 +70,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
 
   // Wait for message list to load
   try {
-    await page.waitForSelector('.message-list-item__info', { visible: true,  timeout: 300000  });
+    await page.waitForSelector('.message-list-item__info', { visible: true});
   } catch (error) {
     console.warn('Failed to load Digipost inbox - message list not found:', error.message);
     if (timeoutTimer) clearTimeout(timeoutTimer);

@@ -225,11 +225,6 @@ export const createExtractedFoldersAndGetName = (
     fs.mkdirSync("./extracted_data/" + name + "/" + newDate);
   }
 
-  if (
-    !fs.existsSync("./extracted_data/" + name + "/" + newDate + "/" + currentWebsite)
-  ) {
-    fs.mkdirSync("./extracted_data/" + name + "/" + newDate + "/" + currentWebsite);
-  }
 
   
   const dirname =
@@ -239,7 +234,7 @@ export const createExtractedFoldersAndGetName = (
     newDate +
     "/" +
     currentWebsite +
-    "/extracted_data.json";
+    "_extracted_data.json";
   return dirname;
 };
 
@@ -571,6 +566,8 @@ export function readAllDebtForPerson(personId) {
 
   const jsonFiles = findJsonFiles(latestDatePath);
   console.log(`Found ${jsonFiles.length} JSON files for person ${personId} in ${latestDateFolder}`);
+
+  
 
   jsonFiles.forEach(filePath => {
     try {
