@@ -2,12 +2,25 @@ const fs = require("fs");
 const fsPromises = require("fs/promises");
 const path = require("path");
 import { FILE_DOWNLOAD_MAX_ATTEMPTS, FILE_DOWNLOAD_POLL_INTERVAL_MS, FILE_DOWNLOAD_FINALIZE_DELAY_MS } from "./constants.mjs";
-import { DebtCollectionSchema } from "./schemas.mjs";
-
 
 /**
- * @param {string} [pageName]
- * @returns {boolean}
+ * Checks if a string is valid JSON
+ * @param {any} obj - Value to check if it's valid JSON
+ * @returns {boolean} - True if valid JSON, false otherwise
+ */
+export const isJson = (obj) => {
+  try {
+    JSON.parse(obj);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+/**
+ * Determines if a page should be saved based on its name
+ * @param {string} [pageName] - Name of the page to check
+ * @returns {boolean} - True if page should be saved, false otherwise
  */
 export const savePage = (pageName) => {
   const unsavedPages = ["bankid", "id-porten"];
@@ -19,10 +32,43 @@ export const savePage = (pageName) => {
 };
 
 /**
- * @param {string} [pageName]
- * @param {string} [name]
- * @param {string} [currentWebsite]
- * @returns {string}
+ * Attempts to accept cookie consent banner if present on page
+ * @param {import('puppeteer').Page} page - Puppeteer page object
+ * @param {string} [selector='button.coi-banner__accept'] - CSS selector for cookie accept button
+ * @param {number} [timeout=5000] - Maximum time to wait for selector in milliseconds
+ * @returns {Promise<boolean>} - True if cookies were accepted, false if banner not found
+ */
+export async function acceptCookies(page, selector = 'button.coi-banner__accept', timeout = 5000) {
+  try {
+    await page.waitForSelector(selector, { visible: true, timeout });
+    await page.click(selector);
+    console.log('Accepted cookies');
+    return true;
+  } catch (error) {
+    console.log('Cookie banner not found or already accepted');
+    return false;
+  }
+}
+
+/**
+ * Safely clears a timeout timer if it exists
+ * @param {NodeJS.Timeout|null} timer - The timeout timer to clear
+ * @returns {void}
+ */
+export function clearTimeoutSafely(timer) {
+  if (timer) {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Creates folder structure and returns full file path for saving data
+ * @param {string} [pageName] - Name of the page/section
+ * @param {string} [name] - User identifier or name
+ * @param {string} [currentWebsite] - Name of the current website
+ * @param {string} [url] - URL or file descriptor
+ * @param {boolean} [isJson=true] - Whether the file should have .json extension
+ * @returns {string} - Full path to the file
  */
 export const createFoldersAndGetName = (
   pageName,
@@ -729,4 +775,29 @@ export async function waitForNewDownloadedFile(downloadPath, maxAttempts = FILE_
   }
   
   return null;
+}
+
+/**
+ * Parses a Norwegian formatted currency string to a number
+ * Handles spaces, commas as decimal separators, and various formats
+ * @param {string|number|null|undefined} val - The value to parse
+ * @returns {number} - Parsed number or 0 if invalid
+ * @example
+ * parseNorwegianAmount("1 234,56") // returns 1234.56
+ * parseNorwegianAmount("1234.56") // returns 1234.56
+ * parseNorwegianAmount("1 234,56 kr") // returns 1234.56
+ */
+export function parseNorwegianAmount(val) {
+  if (val === undefined || val === null || val === "") return 0;
+  if (typeof val === "number") return val;
+  
+  // Remove "kr", "NOK", and other currency symbols, then parse
+  const cleaned = String(val)
+    .replace(/kr|NOK/gi, "")
+    .replace(/\s/g, "")  // Remove spaces
+    .replace(",", ".")   // Replace comma with period for decimal
+    .trim();
+  
+  const n = Number(cleaned);
+  return isNaN(n) ? 0 : n;
 } 

@@ -1,92 +1,77 @@
 /**
- * @param {CSSStyleDeclaration} [styles]
- * @param {string} [class]
+ * Creates a div element with optional attributes
+ * @param {Object} [attributes] - Object with attribute key-value pairs (e.g., {class: 'my-class', id: 'my-id'})
  * @returns {HTMLDivElement}
  */
-export const div = (styles) => {
-  const div = document.createElement("div");
-  if (styles) {
-    const keys = Object.keys(styles);
-    keys.forEach((key) => {
-      //@ts-ignore
-      div.setAttribute(key, styles[key]);
+export const div = (attributes) => {
+  const divElement = document.createElement("div");
+  if (attributes) {
+    Object.keys(attributes).forEach((key) => {
+      divElement.setAttribute(key, attributes[key]);
     });
   }
-  return div;
+  return divElement;
 };
 
 /**
- *
- * @param text {string}
- * @param onClick {(this: GlobalEventHandlers, ev: MouseEvent) => any}
+ * Creates a button element
+ * @param {string} text - The button text content
+ * @param {(this: GlobalEventHandlers, ev: MouseEvent) => any} onClick - Click event handler
+ * @param {string} [className] - Optional additional CSS class names
  * @returns {HTMLButtonElement}
  */
 export const button = (text, onClick, className) => {
   const b = document.createElement("button");
-  b.innerHTML = text;
+  b.textContent = text;
   b.onclick = onClick;
-  b.className = "btn btn-primary";
-  if (className) {
-    b.className += " " + className;
-  }
+  b.className = className ? "btn btn-primary " + className : "btn btn-primary";
   return b;
 };
 
 /**
- *
- * @param text {string}
+ * Creates an h1 heading element
+ * @param {string} text - The text content for the heading
+ * @param {string} [className] - Optional additional CSS class names
  * @returns {HTMLHeadingElement}
  */
 export const h1 = (text, className) => {
   const h = document.createElement("h1");
-  h.innerHTML = text;
-  h.className = "h1 m-2";
-  if (className) {
-    h.className += " " + className;
-  }
+  h.textContent = text;
+  h.className = className ? "h1 m-2 " + className : "h1 m-2";
   return h;
 };
 
 /**
- *
- * @param text {string}
- * @param className {string}
+ * Creates an h2 heading element
+ * @param {string} text - The text content for the heading
+ * @param {string} [className] - Optional additional CSS class names
  * @returns {HTMLHeadingElement}
  */
 export const h2 = (text, className) => {
   const element = document.createElement("h2");
-  console.log("Creating h2 element with text:", className);
   element.textContent = text;
-  if (className) {
-    element.className = "h2 m-2 " + className;
-    console.log("Assigned className:", element.className);
-  } else {
-    element.className = "h2 m-2";
-  }
+  element.className = className ? "h2 m-2 " + className : "h2 m-2";
   return element;
 };
 
 /**
- *
- * @param text {string}
- * @param class {string}
+ * Creates an h3 heading element
+ * @param {string} text - The text content for the heading
+ * @param {string} [className] - Optional additional CSS class names
  * @returns {HTMLHeadingElement}
  */
 export const h3 = (text, className) => {
   const element = document.createElement("h3");
   element.textContent = text;
-  if (className) {
-    element.className = "h3 m-2 " + className;
-  } else {
-    element.className = "h3 m-2";
-  }
+  element.className = className ? "h3 m-2 " + className : "h3 m-2";
   return element;
 };
 
 /**
- * @param {string} placeholder
- * @param {string} id
- * @param {string} [type]
+ * Creates an input element
+ * @param {string} placeholder - Placeholder text for the input
+ * @param {string} id - The ID attribute for the input element
+ * @param {string} [type="text"] - Input type (text, password, email, etc.)
  * @returns {HTMLInputElement}
  */
 export const input = (placeholder, id, type = "text") => {
@@ -99,26 +84,23 @@ export const input = (placeholder, id, type = "text") => {
 };
 
 /**
- *
- * @param class {string}
- * @returns {HTMLHeadingElement}
+ * Creates a horizontal line element
+ * @param {string} [className] - Optional additional CSS class names
+ * @returns {HTMLHRElement}
  */
 export const hLine = (className) => {
   const element = document.createElement("hr");
-  if (className) {
-    element.className = "hLine " + className;
-  } else {
-    element.className = "hLine";
-  }
+  element.className = className ? "hLine " + className : "hLine";
   return element;
 };
 
 /**
- * @param {DebtCollection} debtData
+ * Creates a visual representation of debt data
+ * @param {DebtCollection} debtData - Debt collection data to visualize
+ * @returns {HTMLDivElement} Container with formatted debt information
  */
 export const visualizeDebt = (debtData) => {
   const paidStatus = debtData.isCurrent ? "Ubetalt" : "Betalt";
-  console.log("Visualizing debt data: ", debtData);
 
   const outerContainer = div({
     class: `debt-container ${paidStatus.toLowerCase()}`,
@@ -162,7 +144,9 @@ export const visualizeDebt = (debtData) => {
 };
 
 /**
- * @param {string} totalAmountString
+ * Creates a visual display of total debt amount
+ * @param {string} totalAmountString - Formatted total debt amount string
+ * @returns {HTMLDivElement} Container with total debt display
  */
 export const visualizeTotalDebts = (totalAmountString) => {
   const outerContainer = div({ class: `total-debt-container` });
@@ -175,8 +159,10 @@ export const visualizeTotalDebts = (totalAmountString) => {
 };
 
 /**
- * @param {string} header
- * @param {string} message
+ * Creates an error message box
+ * @param {string} header - Error header text
+ * @param {string} message - Error message text
+ * @returns {HTMLDivElement} Container with error message
  */
 export const errorBox = (header, message) => {
   const outerContainer = div({ class: `error-box` });
@@ -189,8 +175,10 @@ export const errorBox = (header, message) => {
 };
 
 /**
- * @param {string} header
- * @param {string} message
+ * Creates an info message box
+ * @param {string} header - Info header text
+ * @param {string} message - Info message text
+ * @returns {HTMLDivElement} Container with info message
  */
 export const infoBox = (header, message) => {
   const outerContainer = div({ class: `info-box` });
@@ -201,12 +189,3 @@ export const infoBox = (header, message) => {
   outerContainer.appendChild(headerSubtext);
   return outerContainer;
 };
-
-
-
-const inputElement = document.createElement("input");
-const table = document.createElement("table");
-const tableHead = document.createElement("thead");
-const tableBody = document.createElement("tbody");
-const tableRow = document.createElement("tr");
-const tableCell = document.createElement("th");
