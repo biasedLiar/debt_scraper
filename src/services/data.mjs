@@ -1,4 +1,4 @@
-import { LIBS } from "./libs.mjs";
+import { LIBS } from "../libs.mjs";
 const { z } = LIBS;
 /**
  * @typedef {Object} Person

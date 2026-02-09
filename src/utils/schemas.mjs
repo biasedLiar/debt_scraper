@@ -1,4 +1,4 @@
-import { LIBS } from "./libs.mjs";
+import { LIBS } from "../libs.mjs";
 const { z } = LIBS;
 
 /**
@@ -123,7 +123,7 @@ export const saveValidatedJSON = async (filePath, data, schema) => {
 
   if (!validatedData.success) {
     const error = validatedData.error;
-    console.warn("❌ Validation error:", error.issues);
+    console.warn("Validation error:", error.issues);
     console.warn("Failed to validate data for:", filePath);
 
     // Save anyway but with _unvalidated suffix for debugging
@@ -133,7 +133,7 @@ export const saveValidatedJSON = async (filePath, data, schema) => {
       JSON.stringify(data, null, 2),
       "utf-8"
     );
-    console.log(`⚠️  Saved unvalidated data to ${unvalidatedPath}`);
+    console.log(`Saved unvalidated data to ${unvalidatedPath}`);
     console.log("About to write following");
     console.error(error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join(", "));
 
@@ -152,7 +152,7 @@ export const saveValidatedJSON = async (filePath, data, schema) => {
   );
   
   
-  console.log(`✓ Validated and saved data to ${filePath}`);
+  console.log(`Validated and saved data to ${filePath}`);
   return { success: true };
 };
 
@@ -167,7 +167,7 @@ export const safeParseData = (schema, data) => {
     return schema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error("❌ Data validation error:", error.errors);
+      console.error("Data validation error:", error.errors);
     }
     return null;
   }

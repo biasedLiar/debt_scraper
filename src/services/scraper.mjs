@@ -1,6 +1,6 @@
-import { LIBS } from "./libs.mjs";
-import { DEFAULT_TIMEOUT_MS } from "./constants.mjs";
-import { handleError, ErrorType, ErrorSeverity } from "./errorHandler.mjs";
+import { LIBS } from "../libs.mjs";
+import { DEFAULT_TIMEOUT_MS } from "../utils/constants.mjs";
+import { handleError, ErrorType, ErrorSeverity } from "../utils/errorHandler.mjs";
 
 /**
  *

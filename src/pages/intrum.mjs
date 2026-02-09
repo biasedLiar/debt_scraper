@@ -1,9 +1,9 @@
-import { PUP } from "../scraper.mjs";
-import { intrum } from "../data.mjs";
+import { PUP } from "../services/scraper.mjs";
+import { intrum } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName, parseNorwegianAmount } from "../utilities.mjs";
-import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema } from "../schemas.mjs";
-import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
+import { createFoldersAndGetName, parseNorwegianAmount } from "../utils/utilities.mjs";
+import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema } from "../utils/schemas.mjs";
+import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 
 const fs = require('fs/promises');
 

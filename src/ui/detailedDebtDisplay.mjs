@@ -1,4 +1,4 @@
-import { div, h2 } from "./ui/dom.mjs";
+import { div, h2 } from "./dom.mjs";
 import {
   calculateForsinkelsesrenterSum,
   calculateHovedkravSum,
@@ -7,7 +7,7 @@ import {
   calculateRettsligGebyrSum,
   calculateTotalSaldoSum,
   findHighForsinkelsesrenterCases,
-} from "./json_reader.mjs";
+} from "../utils/json_reader.mjs";
 
 const fs = require("fs");
 const path = require("path");

@@ -1,9 +1,9 @@
-import { PUP } from "../scraper.mjs";
-import { praGroup } from "../data.mjs";
+import { PUP } from "../services/scraper.mjs";
+import { praGroup } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName, createExtractedFoldersAndGetName } from "../utilities.mjs";
-import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
-import { DebtCollectionSchema } from "../schemas.mjs";
+import { createFoldersAndGetName, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
+import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { DebtCollectionSchema } from "../utils/schemas.mjs";
 const fs = require('fs/promises');
 
 /**

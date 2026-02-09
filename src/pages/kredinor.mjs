@@ -1,10 +1,10 @@
-import { PUP } from "../scraper.mjs";
-import { kredinor } from "../data.mjs";
+import { PUP } from "../services/scraper.mjs";
+import { kredinor } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName, waitForNewDownloadedFile, parseNorwegianAmount, acceptCookies } from "../utilities.mjs";
-import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../schemas.mjs";
-import { extractFields } from "../extract_kredinor.mjs";
-import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
+import { createFoldersAndGetName, waitForNewDownloadedFile, parseNorwegianAmount, acceptCookies } from "../utils/utilities.mjs";
+import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../utils/schemas.mjs";
+import { extractFields } from "../services/extract_kredinor.mjs";
+import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 const fs = require('fs/promises');
 const fsSync = require('fs');
 const path = require('path');

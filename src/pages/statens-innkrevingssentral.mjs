@@ -1,7 +1,7 @@
-import { si } from "../data.mjs";
-import { PUP } from "../scraper.mjs";
+import { si } from "../services/data.mjs";
+import { PUP } from "../services/scraper.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
+import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 
 /**
  * Handles the Statens Innkrevingssentral login automation flow
