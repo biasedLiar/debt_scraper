@@ -1,10 +1,10 @@
-import { PUP } from "../scraper.mjs";
-import { kredinor } from "../data.mjs";
+import { PUP } from "../services/scraper.mjs";
+import { kredinor } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName, waitForNewDownloadedFile, parseNorwegianAmount, acceptCookies } from "../utilities.mjs";
-import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../schemas.mjs";
-import { extractFields } from "../extract_kredinor.mjs";
-import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
+import { createFoldersAndGetName, waitForNewDownloadedFile, parseNorwegianAmount, acceptCookies } from "../utils/utilities.mjs";
+import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../utils/schemas.mjs";
+import { extractFields } from "../services/extract_kredinor.mjs";
+import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 const fs = require('fs/promises');
 const fsSync = require('fs');
 const path = require('path');
@@ -21,74 +21,72 @@ const path = require('path');
 export async function handleKredinorLogin(nationalID, getUserName, setupPageHandlers, callbacks = {}) {
   const { onComplete, onTimeout } = callbacks;
   let timeoutTimer = null;
-  const { browser, page } = await PUP.openPage(kredinor.url);
-  
-  console.log(`Opened ${kredinor.name} at ${kredinor.url}`);
-
-  const userName = getUserName();
-  
-  // Setup page handlers for saving responses
-  if (setupPageHandlers) {
-    setupPageHandlers(page, nationalID);
-  }
-
-  // Accept cookies if banner present
-  await acceptCookies(page);
   
   try {
-    await page.waitForSelector('button.login-button', { visible: true});
-    await page.click('button.login-button');
-  } catch (error) {
-    console.error('Error clicking login button:', error.message);
-    throw new Error('Failed to find or click login button');
-  }
-  
+    const { browser, page } = await PUP.openPage(kredinor.url);
+    
+    console.log(`Opened ${kredinor.name} at ${kredinor.url}`);
 
-  
-  await loginWithBankID(page, nationalID);
-
-  // Start 60-second timeout timer after BankID login
-  if (onTimeout) {
-    timeoutTimer = setTimeout(() => {
-      console.log('Kredinor handler timed out after ' + (HANDLER_TIMEOUT_MS / 1000) + ' seconds');
-      onTimeout('HANDLER_TIMEOUT');
-    }, HANDLER_TIMEOUT_MS);
-  }
-
-  await page.waitForSelector('.info-row-item-group', { visible: true }).catch(() => {
-    console.log('No debt information found or page took too long to load');
-  });
-  
-  // Extract debt overview information
-  const [debtAmountRaw, activeCasesRaw] = await page.$$eval('.info-row-item-title', els => 
-    els.map(el => el.textContent.trim())
-  );
-  
-  const debtAmount = parseNorwegianAmount(debtAmountRaw);
-  const activeCases = parseInt(activeCasesRaw) || 0;
-
-
-  const folderName = userName ? userName : nationalID;
-  const filePath = createFoldersAndGetName(kredinor.name, folderName, "Kredinor", "ManuallyFoundDebt", true);
-  console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
-  
-  const data = { debtAmount, activeCases, timestamp: new Date().toISOString() };
-  
-  // Check if no debt found
-  if (debtAmount === 0 && activeCases === 0) {
-    data.note = "No debt information found on page.";
-    await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);
-    if (timeoutTimer) clearTimeout(timeoutTimer);
-    if (onComplete) {
-      setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
+    const userName = getUserName();
+    
+    // Setup page handlers for saving responses
+    if (setupPageHandlers) {
+      setupPageHandlers(page, nationalID);
     }
-    return { browser, page };
-  }
-  
-  await saveValidatedJSON(filePath, data, KredinorManualDebtSchema); 
 
+    // Accept cookies if banner present
+    await acceptCookies(page);
+    
+    try {
+      await page.waitForSelector('button.login-button', { visible: true});
+      await page.click('button.login-button');
+    } catch (error) {
+      console.error('Error clicking login button:', error.message);
+      throw new Error('Failed to find or click login button');
+    }
+    
+    await loginWithBankID(page, nationalID);
 
-  // Download PDF report (active or closed cases)
+    // Start 60-second timeout timer after BankID login
+    if (onTimeout) {
+      timeoutTimer = setTimeout(() => {
+        console.log('Kredinor handler timed out after ' + (HANDLER_TIMEOUT_MS / 1000) + ' seconds');
+        onTimeout('HANDLER_TIMEOUT');
+      }, HANDLER_TIMEOUT_MS);
+    }
+
+    await page.waitForSelector('.info-row-item-group', { visible: true }).catch(() => {
+      console.log('No debt information found or page took too long to load');
+    });
+    
+    // Extract debt overview information
+    const [debtAmountRaw, activeCasesRaw] = await page.$$eval('.info-row-item-title', els => 
+      els.map(el => el.textContent.trim())
+    );
+    
+    const debtAmount = parseNorwegianAmount(debtAmountRaw);
+    const activeCases = parseInt(activeCasesRaw) || 0;
+
+    const folderName = userName ? userName : nationalID;
+    const filePath = createFoldersAndGetName(kredinor.name, folderName, "Kredinor", "ManuallyFoundDebt", true);
+    console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
+    
+    const data = { debtAmount, activeCases, timestamp: new Date().toISOString() };
+    
+    // Check if no debt found
+    if (debtAmount === 0 && activeCases === 0) {
+      data.note = "No debt information found on page.";
+      await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);
+      if (timeoutTimer) clearTimeout(timeoutTimer);
+      if (onComplete) {
+        setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
+      }
+      return { browser, page };
+    }
+    
+    await saveValidatedJSON(filePath, data, KredinorManualDebtSchema); 
+
+    // Download PDF report (active or closed cases)
     try {
       const downloadButton = await page.waitForSelector(
         'span[data-text-key="claims.active.overview_report.download.button"], span[data-text-key="claims.closed.overview_report.download.button"]', 
@@ -136,17 +134,22 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
       } else {
         console.warn('PDF download timed out - file not detected in download folder');
       }
-
-      
-      
     } catch (error) {
       console.log('Could not download closed cases PDF:', error);
     }
 
-
-  if (timeoutTimer) clearTimeout(timeoutTimer);
-  if (onComplete) {
-    setTimeout(() => onComplete('DEBT_FOUND'), 1000);
+    if (timeoutTimer) clearTimeout(timeoutTimer);
+    if (onComplete) {
+      setTimeout(() => onComplete('DEBT_FOUND'), 1000);
+    }
+    return { browser, page };
+    
+  } catch (error) {
+    console.error('Error in Kredinor handler:', error);
+    if (timeoutTimer) clearTimeout(timeoutTimer);
+    if (onTimeout) {
+      onTimeout('ERROR');
+    }
+    throw error;
   }
-  return { browser, page };
 }

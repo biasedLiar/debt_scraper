@@ -1,5 +1,5 @@
 import { LIBS } from "./libs.mjs";
-import { DEFAULT_TIMEOUT_MS } from "./constants.mjs";
+import { DEFAULT_TIMEOUT_MS } from "./utils/constants.mjs";
 
 /**
  *

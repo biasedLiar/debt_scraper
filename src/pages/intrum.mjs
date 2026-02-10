@@ -1,5 +1,5 @@
-import { PUP } from "../scraper.mjs";
-import { intrum } from "../data.mjs";
+import { PUP } from "../services/scraper.mjs";
+import { intrum } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName, parseNorwegianAmount, createExtractedFoldersAndGetName } from "../utilities.mjs";
 import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema, DebtCollectionSchema } from "../schemas.mjs";
@@ -313,7 +313,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   
   try {
     await fs.writeFile(detailedInfoFilePath, JSON.stringify(detailedData, null, 2));
-    console.log(`✓ Saved detailed info for ${structuredDetailedData.length} cases to ${detailedInfoFilePath}`);
+    console.log(`Saved detailed info for ${structuredDetailedData.length} cases to ${detailedInfoFilePath}`);
   } catch (error) {
     console.error(`Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`, error);
   }

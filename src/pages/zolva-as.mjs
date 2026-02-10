@@ -1,8 +1,8 @@
-import { PUP } from "../scraper.mjs";
-import { zolva } from "../data.mjs";
+import { PUP } from "../services/scraper.mjs";
+import { zolva } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
-import { createFoldersAndGetName } from "../utilities.mjs";
+import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { createFoldersAndGetName } from "../utils/utilities.mjs";
 const fs = require('fs/promises');
 /**
  * Handles the Zolva AS login automation flow and extracts debt table data

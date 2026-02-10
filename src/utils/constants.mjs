@@ -17,6 +17,7 @@ export const FILE_DOWNLOAD_FINALIZE_DELAY_MS = 1000; // Wait after detecting fil
 
 /**
  * Default Puppeteer timeout for waitForSelector and similar methods
+ * Set to 3 minutes to accommodate slow-loading pages and user interactions during BankID login
  */
 export const DEFAULT_TIMEOUT_MS = 180000; // 3 minutes
 

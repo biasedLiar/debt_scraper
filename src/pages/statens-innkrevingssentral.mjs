@@ -1,7 +1,7 @@
-import { si } from "../data.mjs";
-import { PUP } from "../scraper.mjs";
+import { si } from "../services/data.mjs";
+import { PUP } from "../services/scraper.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
+import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 
 /**
  * Handles the Statens Innkrevingssentral login automation flow
@@ -33,22 +33,24 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
     }, HANDLER_TIMEOUT_MS);
   }
 
-  // Find and log the debt amount, not that important, as the files are provided through JSON responses
-  const debtElement = await page.waitForSelector("span.ce26PEIo", {visible: true}).catch(() => null);
+  // FInds the element containing the debt information after login to know if the user has debt or not. The actual data is retrieved from json files saved by the page handlers, but this is needed to know when to stop waiting and check those files.
+  const debtElement = await page.waitForSelector("p:has-text('totalt skylder du')", { visible: true }).catch(() => null);
   
   if (debtElement) {
     const debtText = await page.evaluate((el) => el.textContent, debtElement);
     console.log(`Found debt through UI, not JSON as expected: ${debtText}`);
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
-      setTimeout(() => onComplete("HANDLER_TIMEOUT"), 10000);
+      const result = debtText.includes("0 kroner") ? "NO_DEBT_FOUND" : "DEBT_FOUND";
+      setTimeout(() => onComplete(result), 10000);
     }
-    // Note: SI also gets completion signal from setupPageHandlers when JSON response arrives
+    
   } else {
-    console.log("No debt found through UI.");
+    // Should in theory never come here
+    console.log("No debt found through UI - this should not happen.");
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
-        setTimeout(() => onComplete("HANDLER_TIMEOUT"), 10000);
+        setTimeout(() => onComplete("UNEXPECTED_STATE"), 10000);
     }
   }
 

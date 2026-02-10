@@ -1,6 +1,70 @@
 // Modules to control application life and create native browser window
 import { app, BrowserWindow, screen, session } from "electron";
 
+/**
+ * Sets up security measures for the application window
+ * Note: nodeIntegration and contextIsolation remain permissive due to 
+ * Puppeteer running in renderer process (architectural limitation)
+ * @param {BrowserWindow} window - The browser window to secure
+ */
+const setupSecurityPolicies = (window) => {
+  // Prevent navigation away from the app
+  window.webContents.on('will-navigate', (event, navigationUrl) => {
+    const parsedUrl = new URL(navigationUrl);
+    // Only allow file:// protocol for the main app window
+    if (parsedUrl.protocol !== 'file:') {
+      console.warn(`Blocked navigation to: ${navigationUrl}`);
+      event.preventDefault();
+    }
+  });
+
+  // Prevent new window creation from main app (Puppeteer windows are separate)
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    console.warn(`Blocked window.open to: ${url}`);
+    return { action: 'deny' };
+  });
+
+  // Block permission requests that aren't needed
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    const deniedPermissions = [
+      'media',
+      'geolocation',
+      'notifications',
+      'midiSysex',
+      'pointerLock',
+      'fullscreen',
+      'openExternal'
+    ];
+    
+    if (deniedPermissions.includes(permission)) {
+      console.warn(`Denied permission request: ${permission}`);
+      return callback(false);
+    }
+    
+    // Allow other permissions (like clipboard for app functionality)
+    callback(true);
+  });
+
+  // Add Content Security Policy via headers
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self'; " +
+          "script-src 'self'; " +
+          "style-src 'self' 'unsafe-inline'; " +
+          "img-src 'self' data:; " +
+          "connect-src 'self'; " +
+          "font-src 'self'; " +
+          "object-src 'none'; " +
+          "base-uri 'self';"
+        ]
+      }
+    });
+  });
+};
+
 const createWindow = async () => {
   // Create the browser window.
   const primaryDisplay = screen.getPrimaryDisplay();
@@ -16,13 +80,17 @@ const createWindow = async () => {
     show: false,
     closable: false,
     webPreferences: {
-      webSecurity: false,
-      nodeIntegration: true,
-      sandbox: false,
-      contextIsolation: false,
+      webSecurity: true,  // ✅ ENABLED - Main window doesn't load external sites
+      nodeIntegration: true,   // ⚠️ Required for Puppeteer in renderer
+      sandbox: false,          // ⚠️ Required for Puppeteer in renderer
+      contextIsolation: false, // ⚠️ Required for Puppeteer in renderer
       devTools: true,
     },
   });
+  
+  // Apply security policies
+  setupSecurityPolicies(mainWindow);
+  
   mainWindow.loadFile("src/index.html");
 
   mainWindow.once("ready-to-show", () => {
@@ -49,5 +117,4 @@ app.on("window-all-closed", function () {
   if (process.platform !== "darwin") app.quit();
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+
