@@ -1,8 +1,8 @@
 const fs = require("fs");
 const fsPromises = require("fs/promises");
 const path = require("path");
-import { FILE_DOWNLOAD_MAX_ATTEMPTS, FILE_DOWNLOAD_POLL_INTERVAL_MS, FILE_DOWNLOAD_FINALIZE_DELAY_MS } from "./constants.mjs";
-import { DebtCollectionSchema } from "./schemas.mjs";
+import { FILE_DOWNLOAD_MAX_ATTEMPTS, FILE_DOWNLOAD_POLL_INTERVAL_MS, FILE_DOWNLOAD_FINALIZE_DELAY_MS } from "./utils/constants.mjs";
+import { DebtCollectionSchema } from "./utils/schemas.mjs";
 
 
 /**

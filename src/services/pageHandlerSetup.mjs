@@ -5,8 +5,9 @@
 
 const fs = require("fs");
 
-import { savePage, createFoldersAndGetName, fileKnownToContainName, transferFilesAfterLogin, isJson } from "../utils/utilities.mjs";
+import { savePage, createFoldersAndGetName, fileKnownToContainName, transferFilesAfterLogin, isJson, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
 import { read_json_for_si } from "../utils/json_reader.mjs";
+import { DebtCollectionSchema } from "../utils/schemas.mjs";
 import { sessionState } from "../ui/uiState.mjs";
 import { showInfoBox } from "../ui/uiNotifications.mjs";
 
@@ -103,22 +104,28 @@ export function setupPageHandlers(page, nationalID, displayDebtData, onComplete)
             JSON.parse(data).krav
           );
           
-          const outputPath = createFoldersAndGetName(
+          // Validate against DebtCollectionSchema
+          const validationResult = DebtCollectionSchema.safeParse(debts_unpaid);
+          if (!validationResult.success) {
+            console.error('DebtCollectionSchema validation failed for SI debts:', validationResult.error);
+          }
+          const validatedDebts = validationResult.success ? validationResult.data : debts_unpaid;
+          
+          const outputPath = createExtractedFoldersAndGetName(
             "SI", 
-            nationalID, 
-            "SI", 
-            "DebtsInDebtSchemaFormat", 
-            true
+            nationalID
           );
-          fs.writeFileSync(outputPath, JSON.stringify(debts_unpaid, null, 2), 'utf-8');
+          fs.writeFileSync(outputPath, JSON.stringify(validatedDebts, null, 2), 'utf-8');
+
+          
 
           if (displayDebtData) {
-            displayDebtData(debts_unpaid);
+            displayDebtData(validatedDebts);
           }
 
           // Signal that scraping is complete for this website
           if (onComplete) {
-            if (debts_unpaid.totalAmount > 0) {
+            if (validatedDebts.totalAmount > 0) {
               console.log("Scraping complete, signaling callback...");
               setTimeout(() => onComplete('DEBT_FOUND'), 500);
             } else { 
