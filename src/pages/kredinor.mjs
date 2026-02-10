@@ -128,7 +128,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
           const outputPath = path.join(pdfFolder, 'extracted_data.json');
           
           console.log(`Extracting data from PDF...`);
-          await extractFields(pdfPath, outputPath);
+          await extractFields(pdfPath, outputPath, nationalID);
           console.log('PDF extraction completed');
         } catch (extractError) {
           console.error('Failed to extract PDF data:', extractError.message);

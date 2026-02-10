@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const pdfjs = require('pdfjs-dist/legacy/build/pdf.mjs');
-import { DebtSchema } from './schemas.mjs';
+import { DebtSchema, DebtCollectionSchema } from './schemas.mjs';
+import { createExtractedFoldersAndGetName } from './utilities.mjs';
 
 // Configuration
 const DEBUG_LOGGING = process.env.DEBUG_PDF_EXTRACTION === 'true';
@@ -179,7 +180,7 @@ function transformToDebtSchema(allCases) {
  * @param {string} pdfPath - Path to PDF file
  * @param {string} outputPath - Path for output JSON file
  */
-export async function extractFields(pdfPath, outputPath) {
+export async function extractFields(pdfPath, outputPath, nationalId) {
   try {
     const dataBuffer = fs.readFileSync(pdfPath);
     const uint8Array = new Uint8Array(dataBuffer);
@@ -283,6 +284,24 @@ export async function extractFields(pdfPath, outputPath) {
 
     fs.writeFileSync(outputPath, JSON.stringify(validatedData, null, 2), 'utf-8');
     console.log(`Results saved to ${outputPath} - ${validatedData.length} case(s) extracted in DebtSchema format`);
+
+    // --- Save in DebtCollectionSchema format ---
+    const totalAmount = validatedData.reduce((sum, d) => sum + (d.totalAmount || 0), 0);
+    const debtCollectionObj = {
+      creditSite: 'Kredinor',
+      debts: validatedData,
+      isCurrent: true,
+      totalAmount
+    };
+    // Use saksnummer from first debt, or 'Unknown' if not available
+    const outputPath2 = createExtractedFoldersAndGetName('Kredinor', nationalId);
+    try {
+      const validatedCollection = DebtCollectionSchema.parse(debtCollectionObj);
+      fs.writeFileSync(outputPath2, JSON.stringify(validatedCollection, null, 2), 'utf-8');
+      console.log(`Results saved to ${outputPath2} in DebtCollectionSchema format`);
+    } catch (e) {
+      console.error('DebtCollectionSchema validation failed:', e);
+    }
   } catch (error) {
     console.error(`Error extracting PDF from "${pdfPath}":`, error.message);
     throw error;

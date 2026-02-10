@@ -1,7 +1,7 @@
 import { PUP } from "../scraper.mjs";
 import { intrum } from "../data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName, parseNorwegianAmount } from "../utilities.mjs";
+import { createFoldersAndGetName, parseNorwegianAmount, createExtractedFoldersAndGetName } from "../utilities.mjs";
 import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema, DebtCollectionSchema } from "../schemas.mjs";
 import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 
@@ -69,7 +69,7 @@ function mapToDebtSchema(rawDebts, debtCollectorName = "Intrum") {
  * @param {Array<Object>} rawDebts - Array of raw debt objects to validate and save
  * @returns {Promise<void>}
  */
-async function saveIntrumDebtsAsDebtSchema(filePath, rawDebts) {
+async function saveIntrumDebtsAsDebtSchema(filePath, rawDebts, nationalID) {
   const mapped = mapToDebtSchema(rawDebts);
   // Validate each debt, filter out invalid
   const validDebts = mapped.filter((d) => {
@@ -97,7 +97,7 @@ async function saveIntrumDebtsAsDebtSchema(filePath, rawDebts) {
     isCurrent: true,
     totalAmount
   };
-  const outPath2 = filePath.replace(/(\.json)?$/, "_DebtCollectionSchema.json");
+  const outPath2 = createExtractedFoldersAndGetName("Intrum", nationalID);
   try {
     const validated = DebtCollectionSchema.parse(debtCollectionObj);
     await fs.writeFile(outPath2, JSON.stringify(validated, null, 2), "utf-8");
@@ -220,7 +220,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   try {
     await saveValidatedJSON(filePath, data, IntrumManualDebtSchema);
     // Also save in DebtSchema format
-    await saveIntrumDebtsAsDebtSchema(filePath, debtCases);
+    await saveIntrumDebtsAsDebtSchema(filePath, debtCases, nationalID);
   } catch (error) {
     console.error('Error writing debt data from Intrum to file:', error);
   }
