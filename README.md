@@ -12,14 +12,12 @@ Denne applikasjonen bruker Puppeteer til å automatisere nettleserinteraksjoner 
 
 Applikasjonen støtter følgende norske kreditor-/inkassotjenester:
 
-- **Statens Innkrevingssentral (SI)** - Statlig innkrevingsbyrå ✅
-- **Intrum** - Inkassoselskap ✅
-- **Kredinor** - Inkassoselskap ✅
-- **PRA Group** - Inkassoselskap ✅
-- **Zolva AS** - Inkassoselskap ✅
-- **Digipost** - Digital postkassetjeneste ⚠️ (Leser meldinger, marker dem som lest)
-
-⚠️ = Delvis implementert eller har kjente begrensninger
+- **Statens Innkrevingssentral (SI)** - Statlig innkrevingsbyrå 
+- **Intrum** - Inkassoselskap 
+- **Kredinor** - Inkassoselskap 
+- **PRA Group** - Inkassoselskap 
+- **Zolva AS** - Inkassoselskap 
+- **Digipost** - Digital postkassetjeneste 
 
 ## Funksjoner
 
