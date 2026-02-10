@@ -1,17 +1,19 @@
 /**
- * Debt Reader - Reads and aggregates debt data from exports folder
+ * Debt Reader - Reads and aggregates debt data from extracted_data folder
  * Handles multiple creditor data formats (SI, Intrum, Kredinor, PRA Group)
+ * File structure: ./extracted_data/{personId}/{date}/{website}_extracted_data.json
  */
 
 const fs = require("fs");
 const path = require("path");
 
 /**
- * Recursively finds all JSON files in a directory
+ * Finds all extracted data JSON files in a directory
+ * Looks for files matching pattern: {website}_extracted_data.json
  * @param {string} dir - Directory to search
  * @returns {string[]} - Array of file paths
  */
-function findJsonFiles(dir) {
+function findExtractedDataFiles(dir) {
   const files = [];
   try {
     const items = fs.readdirSync(dir);
@@ -20,8 +22,8 @@ function findJsonFiles(dir) {
       const stat = fs.statSync(fullPath);
       
       if (stat.isDirectory()) {
-        files.push(...findJsonFiles(fullPath));
-      } else if (item.endsWith('.json')) {
+        files.push(...findExtractedDataFiles(fullPath));
+      } else if (item.endsWith('_extracted_data.json')) {
         files.push(fullPath);
       }
     });
@@ -235,8 +237,8 @@ export function readAllDebtForPerson(personId) {
   const latestDatePath = path.join(extractedDataPath, latestDateFolder);
   console.log(`Using latest date folder: ${latestDateFolder}`);
 
-  const jsonFiles = findJsonFiles(latestDatePath);
-  console.log(`Found ${jsonFiles.length} JSON files for person ${personId} in ${latestDateFolder}`);
+  const jsonFiles = findExtractedDataFiles(latestDatePath);
+  console.log(`Found ${jsonFiles.length} extracted data files for person ${personId} in ${latestDateFolder}`);
 
   jsonFiles.forEach(filePath => {
     try {
