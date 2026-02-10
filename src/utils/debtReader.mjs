@@ -1,6 +1,7 @@
 /**
  * Debt Reader - Reads and aggregates debt data from extracted_data folder
- * Handles multiple creditor data formats (SI, Intrum, Kredinor, PRA Group)
+ * Primary format: DebtCollectionSchema (creditSite, debts[], isCurrent, totalAmount)
+ * Legacy fallback: SI, Intrum, Kredinor, PRA Group native formats
  * File structure: ./extracted_data/{personId}/{date}/{website}_extracted_data.json
  */
 
@@ -34,7 +35,57 @@ function findExtractedDataFiles(dir) {
 }
 
 /**
- * Processes SI "krav" structure
+ * LEGACY: Processes DebtCollectionSchema format (standard format)
+ * Schema: { creditSite, debts: [{caseID, totalAmount, debtCollectorName, originalCreditorName, ...}], isCurrent, totalAmount }
+ * @param {Object} data - JSON data in DebtCollectionSchema format
+ * @param {Object} result - Result object to populate
+ * @param {string} filePath - Source file path for debugging
+ * @returns {boolean} - True if data was processed as DebtCollectionSchema
+ */
+function processDebtCollectionSchema(data, result, filePath) {
+  // Check if this matches DebtCollectionSchema format
+  if (!data.creditSite || !Array.isArray(data.debts)) {
+    return false;
+  }
+
+  const seenCases = new Set();
+  data.debts.forEach(debt => {
+    if (!debt.caseID || debt.totalAmount === undefined) return;
+    
+    const caseKey = `${debt.caseID}-${debt.totalAmount}`;
+    if (seenCases.has(caseKey)) return;
+    seenCases.add(caseKey);
+
+    const amount = parseFloat(debt.totalAmount);
+    if (isNaN(amount) || amount <= 0) return;
+
+    result.totalDebt += amount;
+    const creditor = debt.debtCollectorName || data.creditSite;
+    result.debtsByCreditor[creditor] = (result.debtsByCreditor[creditor] || 0) + amount;
+    
+    result.detailedDebts.push({
+      creditor,
+      amount,
+      caseID: debt.caseID,
+      totalAmount: amount,
+      originalAmount: debt.originalAmount ?? null,
+      interestAndFines: debt.interestAndFines ?? null,
+      originalDueDate: debt.originalDueDate ?? null,
+      debtCollectorName: creditor,
+      originalCreditorName: debt.originalCreditorName ?? creditor,
+      debtType: debt.debtType ?? null,
+      comment: debt.comment ?? null,
+      source: filePath,
+      isCurrent: data.isCurrent ?? true
+    });
+  });
+
+  console.log(`Processed DebtCollectionSchema from ${data.creditSite}: ${data.debts.length} debts`);
+  return true;
+}
+
+/**
+ * LEGACY: Processes SI "krav" structure
  * @param {Object} data - JSON data containing krav array
  * @param {Object} result - Result object to populate
  * @param {string} filePath - Source file path for debugging
@@ -77,7 +128,7 @@ function processSIData(data, result, filePath) {
 }
 
 /**
- * Processes Intrum debtCases structure
+ * LEGACY: Processes Intrum debtCases structure
  * @param {Object} data - JSON data containing debtCases array
  * @param {Object} result - Result object to populate
  * @param {string} filePath - Source file path for debugging
@@ -116,7 +167,7 @@ function processIntrumData(data, result, filePath) {
 }
 
 /**
- * Processes Kredinor data structure
+ * LEGACY: Processes Kredinor data structure
  * @param {Object} data - JSON data (array or object with value array)
  * @param {Object} result - Result object to populate
  * @param {string} filePath - Source file path for debugging
@@ -175,7 +226,7 @@ function processKredinorData(data, result, filePath) {
 }
 
 /**
- * Processes PRA Group data structure
+ * LEGACY: Processes PRA Group data structure (old format)
  * @param {Object} data - JSON data with accountReference and amountNumber
  * @param {Object} result - Result object to populate
  * @param {string} filePath - Source file path for debugging
@@ -245,11 +296,17 @@ export function readAllDebtForPerson(personId) {
       const content = fs.readFileSync(filePath, 'utf8');
       const data = JSON.parse(content);
 
-      // Process each creditor type
-      processSIData(data, result, filePath);
-      processIntrumData(data, result, filePath);
-      processKredinorData(data, result, filePath);
-      processPRAGroupData(data, result, filePath);
+      // Try standard DebtCollectionSchema format first
+      const processedAsStandard = processDebtCollectionSchema(data, result, filePath);
+      
+      // Fall back to legacy creditor-specific formats
+      if (!processedAsStandard) {
+        console.log(`Using legacy format for ${filePath}`);
+        processSIData(data, result, filePath);
+        processIntrumData(data, result, filePath);
+        processKredinorData(data, result, filePath);
+        processPRAGroupData(data, result, filePath);
+      }
 
     } catch (err) {
       console.error(`Error processing file ${filePath}:`, err);
