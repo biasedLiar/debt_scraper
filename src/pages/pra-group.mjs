@@ -1,7 +1,7 @@
 import { PUP } from "../services/scraper.mjs";
 import { praGroup } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
+import { createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
 import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 import { DebtCollectionSchema } from "../utils/schemas.mjs";
 const fs = require('fs/promises');
@@ -60,7 +60,7 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
   const debt_items = [];
   let totalAmount = 0;
 
-  // Run this code if user has excatly one debt
+  // Validation summary errors is only found when there is exactly 1 case
   if (possibleElements.length !== 0) {
 
     for (let index = 0; index < possibleElements.length; index++) {

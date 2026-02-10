@@ -20,8 +20,6 @@ async function filterIndividualMessages(page) {
   return allLinks.filter((_, index) => filterResults[index]);
 }
 
-
-
 /**
  * Handles the Digipost login automation flow
  * @param {string} nationalID - The national identity number to use for login
@@ -94,8 +92,6 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
     return { browser, page };
   }
 
-
-  
   // Prepare target folder for organized files
   const safeDigiPostName = safe(digiPost.name);
   const safeNationalID = safe(nationalID);

@@ -34,15 +34,9 @@ import {
 import { setupDataLoadListeners, loadOfflineData } from "./services/dataLoader.mjs";
 
 // Config (empty for now, can be loaded from file)
-let detailedDebtConfig = {};
+const detailedDebtConfig = {};
 
 const heading = h1("Gjeldshjelperen");
-const heading2 = h2(
-  "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper",
-  "main-subheading new-paragraph"
-);
-
-const hLine1 = hLine();
 const hLine2 = hLine();
 
 const nationalIdHeader = h2(
@@ -70,124 +64,32 @@ const totalVisualization = visualizeTotalDebts("0 kr");
 // Set the visualization element for notifications
 setTotalVisualization(totalVisualization);
 
-
 const setupPageHandlersWithDisplay = (page, nationalID, onComplete) => {
   setupPageHandlers(page, nationalID, (debtData) => {
     displayDebtData(debtData, summaryDiv);
   }, onComplete);
 };
 
+// Function to create button handlers for each debt collector
+const createHandler = (siteName, handler, options) => 
+  createDebtCollectorButtonHandler(siteName, handler, setupPageHandlersWithDisplay, nationalIdInput, nationalIdContainer, options);
 
-const siButton = button(
-  "Statens Innkrevingssentral",
-  createDebtCollectorButtonHandler(
-    "SI",
-    handleSILogin,
-    setupPageHandlersWithDisplay,
-    nationalIdInput,
-    nationalIdContainer
-  )
-);
-
-const digipostButton = button(
-  "Digipost",
-  createDebtCollectorButtonHandler(
-    "Digipost",
-    handleDigipostLogin,
-    setupPageHandlersWithDisplay,
-    nationalIdInput,
-    nationalIdContainer
-  )
-);
-
-const intrumButton = button(
-  "Intrum",
-  createDebtCollectorButtonHandler(
-    "Intrum",
-    handleIntrumLogin,
-    setupPageHandlersWithDisplay,
-    nationalIdInput,
-    nationalIdContainer
-  )
-);
-
-const kredinorButton = button(
-  "Kredinor",
-  createDebtCollectorButtonHandler(
-    "Kredinor",
-    handleKredinorLogin,
-    setupPageHandlersWithDisplay,
-    nationalIdInput,
-    nationalIdContainer,
-    { requiresUserName: true }
-  )
-);
-
-const praGroupButton = button(
-  "PRA Group",
-  createDebtCollectorButtonHandler(
-    "PRA Group",
-    handlePraGroupLogin,
-    setupPageHandlersWithDisplay,
-    nationalIdInput,
-    nationalIdContainer
-  )
-);
-
-const zolvaButton = button(
-  "Zolva AS",
-  createDebtCollectorButtonHandler(
-    "Zolva AS",
-    handleZolvaLogin,
-    setupPageHandlersWithDisplay,
-    nationalIdInput,
-    nationalIdContainer
-  )
-);
+const siButton = button("Statens Innkrevingssentral", createHandler("SI", handleSILogin));
+const digipostButton = button("Digipost", createHandler("Digipost", handleDigipostLogin));
+const intrumButton = button("Intrum", createHandler("Intrum", handleIntrumLogin));
+const kredinorButton = button("Kredinor", createHandler("Kredinor", handleKredinorLogin, { requiresUserName: true }));
+const praGroupButton = button("PRA Group", createHandler("PRA Group", handlePraGroupLogin));
+const zolvaButton = button("Zolva AS", createHandler("Zolva AS", handleZolvaLogin));
 
 // Website configuration for Visit All button
+const getNationalID = () => nationalIdInput.value.trim();
 const websites = [
-  {
-    name: "SI",
-    button: siButton,
-    handler: (callbacks) =>
-      handleSILogin(nationalIdInput.value.trim(), setupPageHandlersWithDisplay, callbacks),
-  },
-  {
-    name: "Kredinor",
-    button: kredinorButton,
-    handler: (callbacks) =>
-      handleKredinorLogin(
-        nationalIdInput.value.trim(),
-        () => sessionState.userName,
-        setupPageHandlersWithDisplay,
-        callbacks
-      ),
-  },
-  {
-    name: "Intrum",
-    button: intrumButton,
-    handler: (callbacks) =>
-      handleIntrumLogin(nationalIdInput.value.trim(), setupPageHandlersWithDisplay, callbacks),
-  },
-  {
-    name: "PRA Group",
-    button: praGroupButton,
-    handler: (callbacks) =>
-      handlePraGroupLogin(nationalIdInput.value.trim(), setupPageHandlersWithDisplay, callbacks),
-  },
-  {
-    name: "Zolva AS",
-    button: zolvaButton,
-    handler: (callbacks) =>
-      handleZolvaLogin(nationalIdInput.value.trim(), setupPageHandlersWithDisplay, callbacks),
-  },
-  {
-    name: "Digipost",
-    button: digipostButton,
-    handler: (callbacks) =>
-      handleDigipostLogin(nationalIdInput.value.trim(), setupPageHandlersWithDisplay, callbacks),
-  },
+  { name: "SI", button: siButton, handler: (cb) => handleSILogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+  { name: "Kredinor", button: kredinorButton, handler: (cb) => handleKredinorLogin(getNationalID(), () => sessionState.userName, setupPageHandlersWithDisplay, cb) },
+  { name: "Intrum", button: intrumButton, handler: (cb) => handleIntrumLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+  { name: "PRA Group", button: praGroupButton, handler: (cb) => handlePraGroupLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+  { name: "Zolva AS", button: zolvaButton, handler: (cb) => handleZolvaLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+  { name: "Digipost", button: digipostButton, handler: (cb) => handleDigipostLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
 ];
 
 const visitAllButton = button(
@@ -208,31 +110,17 @@ nationalIdInput.addEventListener("keypress", (event) => {
   }
 });
 
-
-nationalIdContainer.append(nationalIdInput);
-nationalIdContainer.append(visitAllButton);
+nationalIdContainer.append(nationalIdInput, visitAllButton);
 
 const buttonsContainer = div();
-buttonsContainer.append(siButton);
-buttonsContainer.append(kredinorButton);
-buttonsContainer.append(intrumButton);
-buttonsContainer.append(praGroupButton);
-buttonsContainer.append(zolvaButton);
-buttonsContainer.append(digipostButton);
+buttonsContainer.append(siButton, kredinorButton, intrumButton, praGroupButton, zolvaButton, digipostButton);
 
-document.body.append(heading);
-document.body.append(nationalIdHeader);
-document.body.append(nationalIdContainer);
-document.body.append(heading3);
-document.body.append(buttonsContainer);
-document.body.append(hLine2);
-document.body.append(totalVisualization);
+document.body.append(heading, nationalIdHeader, nationalIdContainer, heading3, buttonsContainer, hLine2, totalVisualization);
 
 // Display detailed debt info if available
 displayDetailedDebtInfo(detailedDebtConfig);
 
 document.body.append(summaryDiv);
-
 
 // Focus on input
 nationalIdInput.focus();

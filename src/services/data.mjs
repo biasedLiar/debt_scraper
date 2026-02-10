@@ -29,15 +29,6 @@ const createTargetPage = (url, name) => {
   };
 };
 
-/**
- *
- * @param url {string}
- * @returns {{url: import("zod").ZodURL, data: import("zod").ZodJSONSchema}}}
- */
-const createJsonData = (url) => {
-  return { url: z.url().startsWith(url), data: z.json() };
-};
-
 const si = createTargetPage(
   "https://skatt.skatteetaten.no/web/skyldnerportal/krav",
   "Statens Innkrevingssentral"
@@ -118,10 +109,10 @@ digiPost.apiData = [
   },
 ];
 
-// this website url is found in kredinors page
+//This website url is found in kredinors page
 const kredinor = createTargetPage("https://minside.kredinor.no", "Kredinor");
 
-//this website url is found in intrums page
+//This website url is found in intrums page
 const intrum = createTargetPage("https://minesider.intrum.no/", "Intrum");
 
 
