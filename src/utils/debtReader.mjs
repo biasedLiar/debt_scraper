@@ -202,7 +202,7 @@ function processPRAGroupData(data, result, filePath) {
 }
 
 /**
- * Reads all debt data for a specific person from exports folder
+ * Reads all debt data for a specific person from extracted_data folder
  * @param {string} personId - The person's national ID
  * @returns {{totalDebt: number, debtsByCreditor: Object, detailedDebts: Array}}
  */
@@ -213,16 +213,16 @@ export function readAllDebtForPerson(personId) {
     detailedDebts: []
   };
 
-  const exportsPath = path.join('./exports', personId);
+  const extractedDataPath = path.join('./extracted_data', personId);
   
-  if (!fs.existsSync(exportsPath)) {
-    console.log(`No exports found for person ${personId}`);
+  if (!fs.existsSync(extractedDataPath)) {
+    console.log(`No extracted data found for person ${personId}`);
     return result;
   }
 
   // Find the latest date folder
-  const dateFolders = fs.readdirSync(exportsPath).filter(item => {
-    const fullPath = path.join(exportsPath, item);
+  const dateFolders = fs.readdirSync(extractedDataPath).filter(item => {
+    const fullPath = path.join(extractedDataPath, item);
     return fs.statSync(fullPath).isDirectory() && /^\d{4}_\d{2}_\d{2}$/.test(item);
   }).sort().reverse(); // Sort descending to get latest first
 
@@ -232,7 +232,7 @@ export function readAllDebtForPerson(personId) {
   }
 
   const latestDateFolder = dateFolders[0];
-  const latestDatePath = path.join(exportsPath, latestDateFolder);
+  const latestDatePath = path.join(extractedDataPath, latestDateFolder);
   console.log(`Using latest date folder: ${latestDateFolder}`);
 
   const jsonFiles = findJsonFiles(latestDatePath);
