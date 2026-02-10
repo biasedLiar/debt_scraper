@@ -55,6 +55,21 @@ const nationalIdInput = input(
   "number"
 );
 
+// Digipost toggle checkbox
+const digipostCheckbox = document.createElement("input");
+digipostCheckbox.type = "checkbox";
+digipostCheckbox.id = "digipostToggle";
+digipostCheckbox.checked = false; // Disabled by default for privacy
+digipostCheckbox.className = "digipost-toggle-checkbox";
+
+const digipostLabel = document.createElement("label");
+digipostLabel.htmlFor = "digipostToggle";
+digipostLabel.textContent = "Inkluder Digipost (kan inneholde sensitiv data)";
+digipostLabel.className = "digipost-toggle-label";
+
+const digipostToggleContainer = div({ class: "digipost-toggle-container" });
+digipostToggleContainer.append(digipostCheckbox, digipostLabel);
+
 const nationalIdContainer = div({ class: "national-id-container" });
 
 // Create summary and visualization containers
@@ -81,25 +96,48 @@ const kredinorButton = button("Kredinor", createHandler("Kredinor", handleKredin
 const praGroupButton = button("PRA Group", createHandler("PRA Group", handlePraGroupLogin));
 const zolvaButton = button("Zolva AS", createHandler("Zolva AS", handleZolvaLogin));
 
+// Update Digipost button state based on checkbox
+const updateDigipostButtonState = () => {
+  if (digipostCheckbox.checked) {
+    digipostButton.disabled = false;
+    digipostButton.style.opacity = "1";
+  } else {
+    digipostButton.disabled = true;
+    digipostButton.style.opacity = "0.5";
+  }
+};
+
+digipostCheckbox.addEventListener("change", updateDigipostButtonState);
+updateDigipostButtonState(); // Set initial state
+
 // Website configuration for Visit All button
 const getNationalID = () => nationalIdInput.value.trim();
-const websites = [
-  { name: "SI", button: siButton, handler: (cb) => handleSILogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
-  { name: "Kredinor", button: kredinorButton, handler: (cb) => handleKredinorLogin(getNationalID(), () => sessionState.userName, setupPageHandlersWithDisplay, cb) },
-  { name: "Intrum", button: intrumButton, handler: (cb) => handleIntrumLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
-  { name: "PRA Group", button: praGroupButton, handler: (cb) => handlePraGroupLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
-  { name: "Zolva AS", button: zolvaButton, handler: (cb) => handleZolvaLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
-  { name: "Digipost", button: digipostButton, handler: (cb) => handleDigipostLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
-];
+const getActiveWebsites = () => {
+  const allWebsites = [
+    { name: "SI", button: siButton, handler: (cb) => handleSILogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+    { name: "Kredinor", button: kredinorButton, handler: (cb) => handleKredinorLogin(getNationalID(), () => sessionState.userName, setupPageHandlersWithDisplay, cb) },
+    { name: "Intrum", button: intrumButton, handler: (cb) => handleIntrumLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+    { name: "PRA Group", button: praGroupButton, handler: (cb) => handlePraGroupLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+    { name: "Zolva AS", button: zolvaButton, handler: (cb) => handleZolvaLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+    { name: "Digipost", button: digipostButton, handler: (cb) => handleDigipostLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+  ];
+  
+  // Filter out Digipost if checkbox is not checked
+  return digipostCheckbox.checked ? allWebsites : allWebsites.filter(site => site.name !== "Digipost");
+};
 
 const visitAllButton = button(
   "Start",
-  createVisitAllButtonHandler(
-    websites,
-    nationalIdInput,
-    nationalIdContainer,
-    setupPageHandlersWithDisplay
-  ),
+  (ev) => {
+    const activeWebsites = getActiveWebsites();
+    const handler = createVisitAllButtonHandler(
+      activeWebsites,
+      nationalIdInput,
+      nationalIdContainer,
+      setupPageHandlersWithDisplay
+    );
+    handler(ev);
+  },
   "main-start-button"
 );
 
@@ -112,10 +150,13 @@ nationalIdInput.addEventListener("keypress", (event) => {
 
 nationalIdContainer.append(nationalIdInput, visitAllButton);
 
+const settingsContainer = div({ class: "settings-container" });
+settingsContainer.append(digipostToggleContainer);
+
 const buttonsContainer = div();
 buttonsContainer.append(siButton, kredinorButton, intrumButton, praGroupButton, zolvaButton, digipostButton);
 
-document.body.append(heading, nationalIdHeader, nationalIdContainer, heading3, buttonsContainer, hLine2, totalVisualization);
+document.body.append(heading, nationalIdHeader, nationalIdContainer, settingsContainer, heading3, buttonsContainer, hLine2, totalVisualization);
 
 // Display detailed debt info if available
 displayDetailedDebtInfo(detailedDebtConfig);
