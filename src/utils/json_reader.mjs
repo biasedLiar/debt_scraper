@@ -32,13 +32,13 @@ export const read_json_for_si = (creditSite, krav) => {
       const krav_object = {
           caseID: element.identifikator,
           totalAmount: element.belop,
-          originalAmount: null,
-          interestAndFines: null,
+          originalAmount: undefined,
+          interestAndFines: undefined,
           originalDueDate: element.forfall[0]?.forfallsdato ? new Date(element.forfall[0].forfallsdato) : undefined,
           debtCollectorName: creditSite,
           originalCreditorName: creditSite,
           debtType: getKravtypeDescription(element.kravtype, element.kravtypetekst),
-          comment: null,
+          comment: undefined,
       };
 
       // Validate the debt object

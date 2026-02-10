@@ -36,7 +36,6 @@ import { setupDataLoadListeners, loadOfflineData } from "./services/dataLoader.m
 // Config (empty for now, can be loaded from file)
 let detailedDebtConfig = {};
 
-
 const heading = h1("Gjeldshjelperen");
 const heading2 = h2(
   "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper",
@@ -243,5 +242,3 @@ setupDataLoadListeners(nationalIdInput, summaryDiv);
 
 // Load offline data if configured
 loadOfflineData(summaryDiv, displayDebtData);
-
-
