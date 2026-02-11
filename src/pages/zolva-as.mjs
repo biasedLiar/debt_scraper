@@ -51,7 +51,7 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, callbacks 
 
   // Check for error message indicating no debtor found
   try {
-    await page.waitForSelector('.validation-summary-errors', { visible: true });
+    await page.waitForSelector('.validation-summary-errors, table.table.table-bordered', { visible: true });
     const errorMessage = await page.evaluate(() => {
       const errorElement = document.querySelector('.validation-summary-errors li');
       return errorElement ? errorElement.textContent.trim() : null;
