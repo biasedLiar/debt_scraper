@@ -1,17 +1,20 @@
 /**
- * Debt Reader - Reads and aggregates debt data from exports folder
- * Handles multiple creditor data formats (SI, Intrum, Kredinor, PRA Group)
+ * Debt Reader - Reads and aggregates debt data from extracted_data folder
+ * Primary format: DebtCollectionSchema (creditSite, debts[], isCurrent, totalAmount)
+ * Legacy fallback: SI, Intrum, Kredinor, PRA Group native formats
+ * File structure: ./extracted_data/{personId}/{date}/{website}_extracted_data.json
  */
 
 const fs = require("fs");
 const path = require("path");
 
 /**
- * Recursively finds all JSON files in a directory
+ * Finds all extracted data JSON files in a directory
+ * Looks for files matching pattern: {website}_extracted_data.json
  * @param {string} dir - Directory to search
  * @returns {string[]} - Array of file paths
  */
-function findJsonFiles(dir) {
+function findExtractedDataFiles(dir) {
   const files = [];
   try {
     const items = fs.readdirSync(dir);
@@ -20,8 +23,8 @@ function findJsonFiles(dir) {
       const stat = fs.statSync(fullPath);
       
       if (stat.isDirectory()) {
-        files.push(...findJsonFiles(fullPath));
-      } else if (item.endsWith('.json')) {
+        files.push(...findExtractedDataFiles(fullPath));
+      } else if (item.endsWith('_extracted_data.json')) {
         files.push(fullPath);
       }
     });
@@ -32,7 +35,57 @@ function findJsonFiles(dir) {
 }
 
 /**
- * Processes SI "krav" structure
+ * LEGACY: Processes DebtCollectionSchema format (standard format)
+ * Schema: { creditSite, debts: [{caseID, totalAmount, debtCollectorName, originalCreditorName, ...}], isCurrent, totalAmount }
+ * @param {Object} data - JSON data in DebtCollectionSchema format
+ * @param {Object} result - Result object to populate
+ * @param {string} filePath - Source file path for debugging
+ * @returns {boolean} - True if data was processed as DebtCollectionSchema
+ */
+function processDebtCollectionSchema(data, result, filePath) {
+  // Check if this matches DebtCollectionSchema format
+  if (!data.creditSite || !Array.isArray(data.debts)) {
+    return false;
+  }
+
+  const seenCases = new Set();
+  data.debts.forEach(debt => {
+    if (!debt.caseID || debt.totalAmount === undefined) return;
+    
+    const caseKey = `${debt.caseID}-${debt.totalAmount}`;
+    if (seenCases.has(caseKey)) return;
+    seenCases.add(caseKey);
+
+    const amount = parseFloat(debt.totalAmount);
+    if (isNaN(amount) || amount <= 0) return;
+
+    result.totalDebt += amount;
+    const creditor = debt.debtCollectorName || data.creditSite;
+    result.debtsByCreditor[creditor] = (result.debtsByCreditor[creditor] || 0) + amount;
+    
+    result.detailedDebts.push({
+      creditor,
+      amount,
+      caseID: debt.caseID,
+      totalAmount: amount,
+      originalAmount: debt.originalAmount ?? null,
+      interestAndFines: debt.interestAndFines ?? null,
+      originalDueDate: debt.originalDueDate ?? null,
+      debtCollectorName: creditor,
+      originalCreditorName: debt.originalCreditorName ?? creditor,
+      debtType: debt.debtType ?? null,
+      comment: debt.comment ?? null,
+      source: filePath,
+      isCurrent: data.isCurrent ?? true
+    });
+  });
+
+  console.log(`Processed DebtCollectionSchema from ${data.creditSite}: ${data.debts.length} debts`);
+  return true;
+}
+
+/**
+ * LEGACY: Processes SI "krav" structure
  * @param {Object} data - JSON data containing krav array
  * @param {Object} result - Result object to populate
  * @param {string} filePath - Source file path for debugging
@@ -75,7 +128,7 @@ function processSIData(data, result, filePath) {
 }
 
 /**
- * Processes Intrum debtCases structure
+ * LEGACY: Processes Intrum debtCases structure
  * @param {Object} data - JSON data containing debtCases array
  * @param {Object} result - Result object to populate
  * @param {string} filePath - Source file path for debugging
@@ -114,7 +167,7 @@ function processIntrumData(data, result, filePath) {
 }
 
 /**
- * Processes Kredinor data structure
+ * LEGACY: Processes Kredinor data structure
  * @param {Object} data - JSON data (array or object with value array)
  * @param {Object} result - Result object to populate
  * @param {string} filePath - Source file path for debugging
@@ -173,7 +226,7 @@ function processKredinorData(data, result, filePath) {
 }
 
 /**
- * Processes PRA Group data structure
+ * LEGACY: Processes PRA Group data structure (old format)
  * @param {Object} data - JSON data with accountReference and amountNumber
  * @param {Object} result - Result object to populate
  * @param {string} filePath - Source file path for debugging
@@ -202,7 +255,7 @@ function processPRAGroupData(data, result, filePath) {
 }
 
 /**
- * Reads all debt data for a specific person from exports folder
+ * Reads all debt data for a specific person from extracted_data folder
  * @param {string} personId - The person's national ID
  * @returns {{totalDebt: number, debtsByCreditor: Object, detailedDebts: Array}}
  */
@@ -213,16 +266,16 @@ export function readAllDebtForPerson(personId) {
     detailedDebts: []
   };
 
-  const exportsPath = path.join('./exports', personId);
+  const extractedDataPath = path.join('./extracted_data', personId);
   
-  if (!fs.existsSync(exportsPath)) {
-    console.log(`No exports found for person ${personId}`);
+  if (!fs.existsSync(extractedDataPath)) {
+    console.log(`No extracted data found for person ${personId}`);
     return result;
   }
 
   // Find the latest date folder
-  const dateFolders = fs.readdirSync(exportsPath).filter(item => {
-    const fullPath = path.join(exportsPath, item);
+  const dateFolders = fs.readdirSync(extractedDataPath).filter(item => {
+    const fullPath = path.join(extractedDataPath, item);
     return fs.statSync(fullPath).isDirectory() && /^\d{4}_\d{2}_\d{2}$/.test(item);
   }).sort().reverse(); // Sort descending to get latest first
 
@@ -232,22 +285,28 @@ export function readAllDebtForPerson(personId) {
   }
 
   const latestDateFolder = dateFolders[0];
-  const latestDatePath = path.join(exportsPath, latestDateFolder);
+  const latestDatePath = path.join(extractedDataPath, latestDateFolder);
   console.log(`Using latest date folder: ${latestDateFolder}`);
 
-  const jsonFiles = findJsonFiles(latestDatePath);
-  console.log(`Found ${jsonFiles.length} JSON files for person ${personId} in ${latestDateFolder}`);
+  const jsonFiles = findExtractedDataFiles(latestDatePath);
+  console.log(`Found ${jsonFiles.length} extracted data files for person ${personId} in ${latestDateFolder}`);
 
   jsonFiles.forEach(filePath => {
     try {
       const content = fs.readFileSync(filePath, 'utf8');
       const data = JSON.parse(content);
 
-      // Process each creditor type
-      processSIData(data, result, filePath);
-      processIntrumData(data, result, filePath);
-      processKredinorData(data, result, filePath);
-      processPRAGroupData(data, result, filePath);
+      // Try standard DebtCollectionSchema format first
+      const processedAsStandard = processDebtCollectionSchema(data, result, filePath);
+      
+      // Fall back to legacy creditor-specific formats
+      if (!processedAsStandard) {
+        console.log(`Using legacy format for ${filePath}`);
+        processSIData(data, result, filePath);
+        processIntrumData(data, result, filePath);
+        processKredinorData(data, result, filePath);
+        processPRAGroupData(data, result, filePath);
+      }
 
     } catch (err) {
       console.error(`Error processing file ${filePath}:`, err);

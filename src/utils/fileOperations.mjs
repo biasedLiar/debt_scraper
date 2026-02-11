@@ -111,10 +111,10 @@ export function createExtractedFoldersAndGetName(currentWebsite, name) {
   if (!currentWebsite) currentWebsite = "no_page_name";
   if (!name) name = "Unknown";
 
-  const baseDir = `./extracted_data/${name}/${newDate}/${currentWebsite}`;
+  const baseDir = `./extracted_data/${name}/${newDate}`;
   fs.mkdirSync(baseDir, { recursive: true });
 
-  return `${baseDir}/extracted_data.json`;
+  return `${baseDir}/${currentWebsite}_extracted_data.json`;
 }
 
 /**
