@@ -16,20 +16,6 @@ export const DebtSchema = z.object({
   comment: z.string().optional(),
 });
 
-
-/*
-{
-totalAmount: float,
-originalAmount: float,
-interestAndFines: float,
-caseID: String,
-debtCollectorName: String,
-originalCreditorName: String,
-debtType: String,
-comment: String
-}
-*/
-
 /**
  * Schema for debt collection data
  */

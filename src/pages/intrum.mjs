@@ -1,7 +1,7 @@
 import { PUP } from "../services/scraper.mjs";
 import { intrum } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName, parseNorwegianAmount, createExtractedFoldersAndGetName } from "../utilities.mjs";
+import { createFoldersAndGetName, parseNorwegianAmount, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
 import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema, DebtCollectionSchema } from "../utils/schemas.mjs";
 import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 

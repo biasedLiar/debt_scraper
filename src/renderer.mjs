@@ -11,6 +11,7 @@ import {
   input,
   visualizeTotalDebts,
 } from "./ui/dom.mjs";
+import { exportDebtsAsCSV } from "./utils/exportDebtCSV.mjs";
 import { displayDetailedDebtInfo } from "./ui/detailedDebtDisplay.mjs";
 
 // Page handlers
@@ -149,6 +150,27 @@ nationalIdInput.addEventListener("keypress", (event) => {
 });
 
 nationalIdContainer.append(nationalIdInput, visitAllButton);
+
+// CSV export button
+const exportCsvButton = button("Eksporter som CSV", async () => {
+  const personId = nationalIdInput.value.trim();
+  if (!personId) {
+    alert("Skriv inn fødselsnummer før eksport.");
+    return;
+  }
+  const outputPath = `./extracted_data/${personId}/debts_export.csv`;
+  exportCsvButton.disabled = true;
+  exportCsvButton.textContent = "Eksporterer...";
+  try {
+    await exportDebtsAsCSV(personId, outputPath);
+    alert(`CSV eksportert til ${outputPath}`);
+  } catch (err) {
+    alert("Feil ved eksport: " + err.message);
+  }
+  exportCsvButton.disabled = false;
+  exportCsvButton.textContent = "Eksporter som CSV";
+});
+nationalIdContainer.append(exportCsvButton);
 
 const settingsContainer = div({ class: "settings-container" });
 settingsContainer.append(digipostToggleContainer);
