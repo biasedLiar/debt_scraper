@@ -62,6 +62,24 @@ function processDebtCollectionSchema(data, result, filePath) {
     result.totalDebt += amount;
     const creditor = debt.debtCollectorName || data.creditSite;
     result.debtsByCreditor[creditor] = (result.debtsByCreditor[creditor] || 0) + amount;
+
+
+    const my_debt = {
+      creditor,
+      amount,
+      caseID: debt.caseID,
+      totalAmount: amount,
+      originalAmount: debt.originalAmount ?? null,
+      interestAndFines: debt.interestAndFines ?? null,
+      originalDueDate: debt.originalDueDate ?? null,
+      debtCollectorName: creditor,
+      originalCreditorName: debt.originalCreditorName ?? creditor,
+      debtType: debt.debtType ?? null,
+      comment: debt.comment ?? null,
+      source: filePath,
+      isCurrent: data.isCurrent ?? true
+    };
+    console.log("my_debt:", my_debt);
     
     result.detailedDebts.push({
       creditor,
@@ -314,6 +332,7 @@ export function readAllDebtForPerson(personId) {
   });
 
   console.log(`Total debt for ${personId}: ${result.totalDebt.toLocaleString('no-NO')} kr`);
+  console.log('Debts:', result);
   console.log('Debts by creditor:', result.debtsByCreditor);
   
   return result;

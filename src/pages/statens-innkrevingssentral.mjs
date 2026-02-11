@@ -33,7 +33,9 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
     }, HANDLER_TIMEOUT_MS);
   }
 
-  // FInds the element containing the debt information after login to know if the user has debt or not. The actual data is retrieved from json files saved by the page handlers, but this is needed to know when to stop waiting and check those files.
+  // FInds the element containing the debt information after login to know if the user has debt or not. 
+  // The actual data is retrieved from json files saved by the page handlers, 
+  // waitForSelector ensures the program waits until the json has been saved.
   const debtElement = await page.waitForSelector("p:has-text('totalt skylder du')", { visible: true }).catch(() => null);
   
   if (debtElement) {
@@ -47,7 +49,7 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
     
   } else {
     // Should in theory never come here
-    console.log("No debt found through UI - this should not happen.");
+    console.warn("No debt found through UI - this should not happen.");
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
         setTimeout(() => onComplete("UNEXPECTED_STATE"), 10000);
