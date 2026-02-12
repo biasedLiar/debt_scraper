@@ -266,7 +266,7 @@ export function readAllDebtForPerson(personId) {
     detailedDebts: []
   };
 
-  const extractedDataPath = path.join('./exports/extracted_data', personId);
+  const extractedDataPath = path.join('./extracted_data', personId);
   
   if (!fs.existsSync(extractedDataPath)) {
     console.log(`No extracted data found for person ${personId}`);
