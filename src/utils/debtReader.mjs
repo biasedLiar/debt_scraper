@@ -307,7 +307,7 @@ export function readAllDebtForPerson(personId) {
   console.log(`Using latest date folder: ${latestDateFolder}`);
 
   const jsonFiles = findExtractedDataFiles(latestDatePath);
-  console.log(`Found ${jsonFiles.length} extracted data files for person ${personId} in ${latestDateFolder}`);
+  console.warn(`Found ${jsonFiles.length} extracted data files for person ${personId} in ${latestDateFolder}`);
 
   jsonFiles.forEach(filePath => {
     try {
