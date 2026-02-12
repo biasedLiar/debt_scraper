@@ -252,7 +252,7 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
   };
 
   // Validate against DebtCollectionSchema
-  const filePath2 = createExtractedFoldersAndGetName("PRA Group", nationalID);
+  const filePath2 = createExtractedFoldersAndGetName("PRA_Group", nationalID);
   try {
     const validatedData = DebtCollectionSchema.parse(formattedData);
     await fs.writeFile(filePath2, JSON.stringify(validatedData, null, 2));

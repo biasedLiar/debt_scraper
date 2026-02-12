@@ -159,7 +159,7 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, callbacks 
   const validatedCollection = collectionValidationResult.success ? collectionValidationResult.data : debtCollectionObj;
 
   // Save validated collection to extracted_data folder
-  const extractedDataPath = createExtractedFoldersAndGetName('Zolva AS', nationalID);
+  const extractedDataPath = createExtractedFoldersAndGetName('Zolva_AS', nationalID);
   await fs.writeFile(extractedDataPath, JSON.stringify(validatedCollection, null, 2));
   console.log(`Saved validated debt collection to ${extractedDataPath}`);
 

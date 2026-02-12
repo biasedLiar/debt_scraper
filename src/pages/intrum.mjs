@@ -203,7 +203,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
         caseData.creditorName = creditorEl.textContent.trim();
       }
       
-      if (Object.keys(caseData).length > 0) {
+      if (caseData.totalAmount) {
         cases.push(caseData);
       }
     });
