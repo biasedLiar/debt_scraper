@@ -41,7 +41,7 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
     console.log(`Found debt through UI, not JSON as expected: ${debtText}`);
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
-      const result = debtText.includes("0 kroner") ? "NO_DEBT_FOUND" : "DEBT_FOUND";
+      const result = debtText.includes("du 0 kroner") ? "NO_DEBT_FOUND" : "DEBT_FOUND";
       setTimeout(() => onComplete(result), 10000);
     }
     

@@ -203,12 +203,3 @@ Applikasjonen er bygget med:
 
 ---
 
-## Bidra
-
-For å bidra til prosjektet:
-
-1. Les [exports/ai_helper.md](exports/ai_helper.md) for oversikt over kjente problemer og forbedringer
-2. Følg den modulære strukturen (pages/, services/, ui/, utils/)
-3. Bruk JSDoc-kommentarer for alle funksjoner
-4. Valider eksterne data med Zod-skjemaer
-5. Håndter feil med `utils/errorHandler.mjs`
