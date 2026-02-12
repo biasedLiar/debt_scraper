@@ -1,7 +1,7 @@
 import { PUP } from "../services/scraper.mjs";
 import { kredinor } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName, waitForNewDownloadedFile, parseNorwegianAmount, acceptCookies } from "../utils/utilities.mjs";
+import { createFoldersAndGetName, waitForNewDownloadedFile, parseNorwegianAmount, acceptCookies, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
 import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../utils/schemas.mjs";
 import { extractFields } from "../services/extract_kredinor.mjs";
 import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
@@ -72,7 +72,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
     
     const data = { debtAmount, activeCases, timestamp: new Date().toISOString() };
-    
+    /*
     // Check if no debt found
     if (debtAmount === 0 && activeCases === 0) {
       data.note = "No debt information found on page.";
@@ -84,7 +84,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
       return { browser, page };
     }
     
-    await saveValidatedJSON(filePath, data, KredinorManualDebtSchema); 
+    await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);   */
 
     // Download PDF report (active or closed cases)
     try {
@@ -94,14 +94,10 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
       );
       
       // Set download path - CDP requires absolute path
+      // Get the extracted data folder path (without the filename)
       const client = await page.createCDPSession();
-      const pdfFolderRelative = createFoldersAndGetName(kredinor.name, folderName, "KredinorPDF", "", false).replace(/[^\/\\]+$/, '');
-      const pdfFolder = path.resolve(pdfFolderRelative);
-      
-      // Ensure folder exists using sync fs for directory creation
-      if (!fsSync.existsSync(pdfFolder)) {
-        fsSync.mkdirSync(pdfFolder, { recursive: true });
-      }
+      const extractedDataPath = createExtractedFoldersAndGetName('Kredinor', nationalID);
+      const pdfFolder = path.resolve(path.dirname(extractedDataPath));
       
       await client.send('Page.setDownloadBehavior', {
         behavior: 'allow',
@@ -123,11 +119,11 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
         // Extract data from the downloaded PDF
         try {
           const pdfPath = path.join(pdfFolder, downloadedFile);
-          const outputPath = path.join(pdfFolder, 'extracted_data.json');
+          const outputPath = extractedDataPath;
           
           console.log(`Extracting data from PDF...`);
           await extractFields(pdfPath, outputPath, nationalID);
-          console.log('PDF extraction completed');
+          console.log(`PDF extraction completed - saved to ${outputPath}`);
         } catch (extractError) {
           console.error('Failed to extract PDF data:', extractError.message);
         }

@@ -244,7 +244,7 @@ export function createVisitAllButtonHandler(
         console.log(`Closing ${site.name} browser...`);
         await PUP.closeBrowser();
         console.log(`Closed ${site.name} browser.`);
-        
+
         // Delay between websites
         await new Promise((resolve) => setTimeout(resolve, 2000));
         console.log(`Proceeding to next website...`);
