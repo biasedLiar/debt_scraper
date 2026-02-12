@@ -53,7 +53,7 @@ function mapToDebtSchema(rawDebts, debtCollectorName = "Intrum") {
       totalAmount,
       originalAmount,
       interestAndFines,
-      originalDueDate: null, // Not available
+      originalDueDate: undefined, // Not available
       debtCollectorName,
       originalCreditorName: String(originalCreditorName),
       debtType,
@@ -97,6 +97,7 @@ async function saveIntrumDebtsAsDebtSchema(filePath, rawDebts, nationalID) {
     isCurrent: true,
     totalAmount
   };
+  console.warn("My debts are " + debtCollectionObj)
   const outPath2 = createExtractedFoldersAndGetName("Intrum", nationalID);
   try {
     const validated = DebtCollectionSchema.parse(debtCollectionObj);

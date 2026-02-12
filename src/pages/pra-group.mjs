@@ -155,9 +155,12 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
   
     
   } else {
+    console.warn("No account reference element found, checking for error messages...");
     const accounts = await page.$$('.account');
+    console.warn(`Found ${accounts.length} account elements.`);
     
     for (let i = 0; i < accounts.length; i++) {
+      console.warn(`Checking account element ${i + 1}/${accounts.length} for details...`);
       const account = accounts[i];
 
       const accountReference = await account.evaluate(el => {
@@ -182,16 +185,22 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
         : null;
       
       console.log("Amount as number:", amountNumber);
-    
+      
       // Extract previous owner, current owner, debt collector, and debtor type
-      await account.waitForSelector('.account-content__block > div', { visible: true });
+      await account.waitForSelector('.bar-accordion-item__content > div', { visible: false }).catch(() => console.warn('Account details blocks not found for account element'));
+      console.warn("Looking for account details blocks for account element...");
+      
       const accountDetails = await account.evaluate(el => {
-        const blocks = el.querySelectorAll('.account-content__block > div');
+        console.warn("Extracting account details for account element...");
+        const blocks = el.querySelectorAll('.bar-accordion-item__content > div');
         const details = {};
+
+        console.warn(`Found ${blocks.length} detail blocks for account element, extracting details...`);
         
         blocks.forEach(block => {
           const label = block.querySelector('label span');
           const value = block.querySelector('h3');
+          console.warn('Extracting detail block with label:', label ? label.textContent.trim() : 'No label found');
           
           if (label && value) {
             const key = label.textContent.trim();
@@ -210,6 +219,10 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
         
         return details;
       });
+
+      console.warn("Account details extracted:", accountDetails);
+
+
 
 
         
