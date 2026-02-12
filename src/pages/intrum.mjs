@@ -1,9 +1,9 @@
-import { PUP } from "../scraper.mjs";
-import { intrum } from "../data.mjs";
+import { PUP } from "../services/scraper.mjs";
+import { intrum } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName, parseNorwegianAmount } from "../utilities.mjs";
-import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema } from "../schemas.mjs";
-import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
+import { createFoldersAndGetName, parseNorwegianAmount, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
+import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema, DebtCollectionSchema } from "../utils/schemas.mjs";
+import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 
 const fs = require('fs/promises');
 
@@ -69,7 +69,7 @@ function mapToDebtSchema(rawDebts, debtCollectorName = "Intrum") {
  * @param {Array<Object>} rawDebts - Array of raw debt objects to validate and save
  * @returns {Promise<void>}
  */
-async function saveIntrumDebtsAsDebtSchema(filePath, rawDebts) {
+async function saveIntrumDebtsAsDebtSchema(filePath, rawDebts, nationalID) {
   const mapped = mapToDebtSchema(rawDebts);
   // Validate each debt, filter out invalid
   const validDebts = mapped.filter((d) => {
@@ -88,6 +88,23 @@ async function saveIntrumDebtsAsDebtSchema(filePath, rawDebts) {
   const outPath = filePath.replace(/(\.json)?$/, "_DebtSchema.json");
   await fs.writeFile(outPath, JSON.stringify(out, null, 2), "utf-8");
   console.log(`Saved Intrum debts in DebtSchema format to ${outPath}`);
+
+  // --- Save in DebtCollectionSchema format ---
+  const totalAmount = validDebts.reduce((sum, d) => sum + (d.totalAmount || 0), 0);
+  const debtCollectionObj = {
+    creditSite: "Intrum",
+    debts: validDebts,
+    isCurrent: true,
+    totalAmount
+  };
+  const outPath2 = createExtractedFoldersAndGetName("Intrum", nationalID);
+  try {
+    const validated = DebtCollectionSchema.parse(debtCollectionObj);
+    await fs.writeFile(outPath2, JSON.stringify(validated, null, 2), "utf-8");
+    console.log(`Saved Intrum debts in DebtCollectionSchema format to ${outPath2}`);
+  } catch (e) {
+    console.error("DebtCollectionSchema validation failed:", e);
+  }
 }
 
 /**
@@ -203,7 +220,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   try {
     await saveValidatedJSON(filePath, data, IntrumManualDebtSchema);
     // Also save in DebtSchema format
-    await saveIntrumDebtsAsDebtSchema(filePath, debtCases);
+    await saveIntrumDebtsAsDebtSchema(filePath, debtCases, nationalID);
   } catch (error) {
     console.error('Error writing debt data from Intrum to file:', error);
   }
@@ -291,10 +308,12 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
     totalCases: structuredDetailedData.length,
     timestamp: new Date().toISOString() 
   };
+
+  
   
   try {
     await fs.writeFile(detailedInfoFilePath, JSON.stringify(detailedData, null, 2));
-    console.log(`✓ Saved detailed info for ${structuredDetailedData.length} cases to ${detailedInfoFilePath}`);
+    console.log(`Saved detailed info for ${structuredDetailedData.length} cases to ${detailedInfoFilePath}`);
   } catch (error) {
     console.error(`Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`, error);
   }

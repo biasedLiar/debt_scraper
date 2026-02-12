@@ -1,9 +1,6 @@
 /**
- * This file is loaded via the <script> tag in the index.html file and will
- * be executed in the renderer process for that window. No Node.js APIs are
- * available in this process because `nodeIntegration` is turned off and
- * `contextIsolation` is turned on. Use the contextBridge API in `preload.js`
- * to expose Node.js functionality from the main process.
+ * Main renderer entry point
+ * Sets up the UI and wires together all services and components
  */
 import {
   div,
@@ -12,365 +9,35 @@ import {
   h2,
   hLine,
   input,
-  visualizeDebt,
   visualizeTotalDebts,
-  errorBox,
-  infoBox
-} from "./dom.mjs";
-import { PUP } from "./scraper.mjs";
-import { savePage, createFoldersAndGetName, fileKnownToContainName, transferFilesAfterLogin, readAllDebtForPerson, isJson } from "./utilities.mjs";
-import { ERROR_MESSAGE_DISPLAY_MS, VALIDATION_ERROR_DISPLAY_MS } from "./constants.mjs";
-import { validateNationalID, showValidationErrorInDOM } from "./validation.mjs";
+} from "./ui/dom.mjs";
+import { exportDebtsAsCSV } from "./utils/exportDebtCSV.mjs";
+import { displayDetailedDebtInfo } from "./ui/detailedDebtDisplay.mjs";
+
+// Page handlers
 import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
 import { handleIntrumLogin } from "./pages/intrum.mjs";
 import { handlePraGroupLogin } from "./pages/pra-group.mjs";
 import { handleZolvaLogin } from "./pages/zolva-as.mjs";
-import { read_json_for_si, read_json } from "./json_reader.mjs";
-import { displayDetailedDebtInfo } from "./detailedDebtDisplay.mjs";
 
-const fs = require("fs");
-const path = require("path");
+// State management
+import { sessionState } from "./ui/uiState.mjs";
+import { setTotalVisualization, displayDebtData } from "./ui/uiNotifications.mjs";
 
-// Try to import detailedDebtConfig, but use empty object if it fails or is empty
-let detailedDebtConfig = {};
+// Services
+import { setupPageHandlers } from "./services/pageHandlerSetup.mjs";
+import {
+  createDebtCollectorButtonHandler,
+  createVisitAllButtonHandler,
+} from "./services/scrapingService.mjs";
+import { setupDataLoadListeners, loadOfflineData } from "./services/dataLoader.mjs";
 
-/**
- * Shows scrape debt error message to user
- * @param {string} title - Error title
- * @param {string} message - Error message to display
- */
-const showScrapeDebtError = (title, message) => {
-  const existingScrapeDebtError = document.querySelector(".error-box");
-  if (existingScrapeDebtError) {
-    existingScrapeDebtError.remove();
-  }
-  const errorBoxElement = errorBox(title, message);
-
-  totalVisualization.insertAdjacentElement("beforebegin", errorBoxElement);
-
-  setTimeout(() => {
-    errorBoxElement.remove();
-  }, ERROR_MESSAGE_DISPLAY_MS);
-};
-
-
-/**
- * Shows info message to user
- * @param {string} title - Info title
- * @param {string} message - Info message to display
- */
-const showInfoBox = (title, message) => {
-  const existingInfoBox = document.querySelector(".info-box");
-  if (existingInfoBox) {
-    existingInfoBox.remove();
-  }
-  const infoBoxElement = infoBox(title, message);
-
-  totalVisualization.insertAdjacentElement("beforebegin", infoBoxElement);
-  setTimeout(() => {
-    infoBoxElement.remove();
-  }, ERROR_MESSAGE_DISPLAY_MS);
-};
-
-/** * Helper function to create debt collector button handlers with consistent pattern
- * @param {string} siteName - Name of the debt collector site
- * @param {Function} handlerFunction - The handler function to call for scraping
- * @param {Object} [options] - Optional configuration
- * @param {boolean} [options.requiresUserName=false] - Whether handler needs userName parameter
- * @returns {Function} Click handler function
- */
-const createDebtCollectorButtonHandler = (siteName, handlerFunction, options = {}) => {
-  return async (ev) => {
-    currentWebsite = siteName;
-    const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-    const validation = validateNationalID(nationalID);
-    if (!validation.valid) {
-      showValidationErrorInDOM(nationalIdInput, nationalIdContainer, validation.error, VALIDATION_ERROR_DISPLAY_MS);
-      return;
-    }
-
-    // Create promises for completion and timeout
-    let completeCallback, timeoutCallback;
-    const completePromise = new Promise((resolve) => { completeCallback = resolve; });
-    const timeoutPromise = new Promise((resolve) => { timeoutCallback = resolve; });
-
-    // Start the handler with appropriate parameters
-    if (options.requiresUserName) {
-      handlerFunction(nationalID, () => userName, setupPageHandlers, {
-        onComplete: completeCallback,
-        onTimeout: timeoutCallback
-      });
-    } else {
-      handlerFunction(nationalID, setupPageHandlers, {
-        onComplete: completeCallback,
-        onTimeout: timeoutCallback
-      });
-    }
-
-    // Wait for result
-    const result = await Promise.race([completePromise, timeoutPromise]);
-
-    // Handle result
-    handleScrapingResult(result, siteName, ev.target);
-    await PUP.closeBrowser();
-  };
-};
-
-/** * Handles the result from a scraping operation
- * @param {string} result - The result status
- * @param {string} siteName - The name of the site being scraped
- * @param {HTMLElement} [buttonElement] - Optional button element to update with visited/failed class
- * @returns {boolean} - Whether the visit was successful (DEBT_FOUND or NO_DEBT_FOUND)
- */
-const handleScrapingResult = (result, siteName, buttonElement = null) => {
-  let isSuccessful = false;
-  
-  switch (result) {
-    case 'HANDLER_TIMEOUT':
-      console.warn(`${siteName} handler timed out after BankID login (60s).`);
-      showScrapeDebtError("Tidsavbrudd", `Tidsavbrudd ved henting av gjeldsinformasjon fra ${siteName}.`);
-      break;
-    case 'DEBT_FOUND':
-      console.info(`${siteName} scraping completed successfully, found debt.`);
-      isSuccessful = true;
-      break;
-    case 'NO_DEBT_FOUND':
-      console.info(`${siteName} scraping completed successfully, found no debt.`);
-      isSuccessful = true;
-      break;
-    case 'MESSAGES_PROCESSED':
-      console.info(`${siteName} scraping completed successfully, processed mails.`);
-      isSuccessful = true;
-      break;
-    case 'TOO_MANY_FAILED_ATTEMPTS':
-      console.warn(`${siteName} unsuccessful, too many failed attempts.`);
-      showScrapeDebtError("For mange mislykkede påloggingsforsøk", `For mange mislykkede påloggingsforsøk fra ${siteName}.`);
-      break;
-    default:
-      console.error(`${siteName} scraping unsuccessful, something went wrong.`);
-      showScrapeDebtError("Feil under innhenting", `Noe gikk galt under innhenting av gjeldsinformasjon fra ${siteName}.`);
-      break;
-  }
-  
-  // Update button class if provided
-  if (buttonElement) {
-    if (isSuccessful) {
-      buttonElement.classList.remove('btn-visit-failed');
-      buttonElement.classList.add('btn-visited');
-      readAllDebtForPerson(nationalIdInput.value.trim());
-    } else {
-      buttonElement.classList.remove('btn-visited');
-      buttonElement.classList.add('btn-visit-failed');
-    }
-  }
-  
-  return isSuccessful;
-};
-
-// Set to true to show paid debts as well
-const showPaidDebts = true;
-
-// Set to true to enable offline mode for testing
-const offlineMode = false;
-const offlineSIFile = "";
-const offlineKredinorFile = "";
-
-let currentWebsite = null;
-let userName = null;
-let totalDebtAmount = 0;
-let scrapingCompleteCallback = null; 
-let timedOutCallback = null; // Callback to signal scraping is done
-
-const foundUnpaidDebts = {
-  foundCreditors: [],
-  totalAmount: 0,
-  debts: {},
-};
-
-const foundPaidDebts = {
-  foundCreditors: [],
-  totalAmount: 0,
-  debts: {},
-};
-
-/**
- * @param {DebtCollection} debtData
- */
-const displayDebtData = (debtData) => {
-  if (debtData.totalAmount <= 0) {
-    return;
-  }
-
-  if (
-    !foundUnpaidDebts.foundCreditors.includes(debtData.creditSite) &&
-    debtData.isCurrent
-  ) {
-    foundUnpaidDebts.foundCreditors.push(debtData.creditSite);
-    foundUnpaidDebts.totalAmount += debtData.totalAmount;
-    foundUnpaidDebts.debts[debtData.creditSite] = debtData;
-
-    const debtUnpaidVisualization = visualizeDebt(debtData);
-    summaryDiv.append(debtUnpaidVisualization);
-
-    document.body.querySelector(".total-debt-amount").innerText =
-      foundUnpaidDebts.totalAmount.toLocaleString("no-NO") + " kr";
-  }
-
-  if (
-    !foundPaidDebts.foundCreditors.includes(debtData.creditSite) &&
-    !debtData.isCurrent
-  ) {
-    foundPaidDebts.foundCreditors.push(debtData.creditSite);
-    foundPaidDebts.totalAmount += debtData.totalAmount;
-    foundPaidDebts.debts[debtData.creditSite] = debtData;
-    if (showPaidDebts) {
-      const debtPaidVisualization = visualizeDebt(debtData);
-      summaryDiv.append(debtPaidVisualization);
-    }
-  }
-};
-
-/**
- * Sets up page response handlers to save JSON data
- * @param {any} page - Puppeteer page object
- * @param {string} nationalID - The national identity number
- */
-export const setupPageHandlers = (page, nationalID, onComplete) => {
-  // @ts-ignore
-  page.on("request", (r) => {
-    console.log(r.url());
-  });
-  // @ts-ignore
-  page.on("response", async (r) => {
-    console.log(r.url());
-    console.log(r.ok());
-    
-    // Get response text once and store it
-    let data;
-    try {
-      data = await r.text();
-    } catch (e) {
-      console.log("Could not get text:", e);
-      return;
-    }
-
-    try {
-      await page.title();
-    } catch (e) {
-      console.log("Could not get page title:", e);
-      return;
-    }
-
-    if (!(await page.title())) {
-      console.error("Current website not set, cannot save page");
-      return;
-    }
-    console.log("Page name for saving:", (await page.title()));
-    var pageName = (await page.title())
-      .replace(/\s+/g, "_")
-      .replace(/[<>:"/\\|?*]/g, "_")
-      .toLowerCase();
-    if (savePage(pageName)) {
-      try {
-        // Skip requests that don't have a body (OPTIONS, failed requests, etc.)
-        if (r.request().method() === "OPTIONS" || !r.ok()) {
-          console.log("Skipping non-OK or OPTIONS request");
-          return;
-        }
-        const isJsonResult = isJson(data);
-        const outerFolder = userName ? userName : nationalID;
-        const filename = createFoldersAndGetName(
-          pageName,
-          outerFolder,
-          currentWebsite,
-          r.url(),
-          isJsonResult
-        );
-
-        console.log("Response data length:", data);
-        fs.writeFile(filename, data, function (err) {
-          if (err) {
-            console.log(err);
-          }
-        });
-
-        if (fileKnownToContainName(filename)) {
-          userName = JSON.parse(data).navn.replace(/[^a-zA-Z0-9æøåÆØÅ]/g, "_");
-          const h1Element = document.body.querySelector("h1");
-          //This is important for visit all websites, do not remove
-          if (h1Element) {
-            h1Element.innerText =
-              "Gjeldshjelper for " + userName.replaceAll("_", " ");
-          }
-          transferFilesAfterLogin(
-            pageName,
-            userName,
-            currentWebsite,
-            nationalID
-          );
-        }
-
-        if (isJsonResult && JSON.parse(data).krav !== undefined) {
-          const { debts_paid, debts_unpaid } = read_json_for_si(
-            currentWebsite,
-            JSON.parse(data).krav
-          );
-          const outputPath = createFoldersAndGetName("SI", nationalID, "SI", "DebtsInDebtSchemaFormat", true);
-          fs.writeFileSync(outputPath, JSON.stringify(debts_unpaid, null, 2), 'utf-8');
-
-          displayDebtData(debts_unpaid);
-
-          // Signal that scraping is complete for this website
-          if (onComplete) {
-            if (debts_unpaid.totalAmount > 0) {
-              console.log("Scraping complete, signaling callback...");
-              setTimeout(() => onComplete('DEBT_FOUND'), 500);
-            } else { 
-              // SI often finds debt via json so fast it seems as if the site has crashed.
-              // So info box is displayed to show that scraping is complete with no debt found.
-              console.log("Scraping complete, signaling callback...");
-              showInfoBox("Ingen gjeld", `Det er ingen gjeld hos ${currentWebsite}.`);
-              setTimeout(() => onComplete('NO_DEBT_FOUND'), 500);
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Error:", e);
-      }
-    }
-  });
-};
-
-/**
- *
- * @param {string} url
- * @returns {Promise<void>}
- */
-const openPage = async (url) => {
-  const nationalIdInput = document.getElementById("nationalIdInput");
-  const nationalID = nationalIdInput
-    ? nationalIdInput.value.trim() || "Unknown"
-    : "Unknown";
-
-  const { browser, page } = await PUP.openPage(url);
-
-  setupPageHandlers(page, nationalID);
-};
-
-
-
-const di = div();
-di.innerText = "Hello World from dom!";
+// Config (empty for now, can be loaded from file)
+const detailedDebtConfig = {};
 
 const heading = h1("Gjeldshjelperen");
-const heading2 = h2(
-  "Et verktøy for å få oversikt over gjelden din fra forskjellige selskaper",
-  "main-subheading new-paragraph"
-);
-
-const hLine1 = hLine();
 const hLine2 = hLine();
 
 const nationalIdHeader = h2(
@@ -389,282 +56,140 @@ const nationalIdInput = input(
   "number"
 );
 
-const siButton = button("Statens Innkrevingssentral", 
-  createDebtCollectorButtonHandler('SI', handleSILogin)
-);
-const digipostButton = button("Digipost", 
-  createDebtCollectorButtonHandler('Digipost', handleDigipostLogin)
-);
+// Digipost toggle checkbox
+const digipostCheckbox = document.createElement("input");
+digipostCheckbox.type = "checkbox";
+digipostCheckbox.id = "digipostToggle";
+digipostCheckbox.checked = false; // Disabled by default for privacy
+digipostCheckbox.className = "digipost-toggle-checkbox";
 
-const intrumButton = button("Intrum", 
-  createDebtCollectorButtonHandler('Intrum', handleIntrumLogin)
-);
+const digipostLabel = document.createElement("label");
+digipostLabel.htmlFor = "digipostToggle";
+digipostLabel.textContent = "Inkluder Digipost (kan inneholde sensitiv data)";
+digipostLabel.className = "digipost-toggle-label";
 
-const kredinorButton = button("Kredinor", 
-  createDebtCollectorButtonHandler('Kredinor', handleKredinorLogin, { requiresUserName: true })
-);
+const digipostToggleContainer = div({ class: "digipost-toggle-container" });
+digipostToggleContainer.append(digipostCheckbox, digipostLabel);
 
-const praGroupButton = button("PRA Group", 
-  createDebtCollectorButtonHandler('PRA Group', handlePraGroupLogin)
-);
-const zolvaButton = button("Zolva AS", 
-  createDebtCollectorButtonHandler('Zolva AS', handleZolvaLogin)
-);
+const nationalIdContainer = div({ class: "national-id-container" });
+
+// Create summary and visualization containers
+const summaryDiv = div({ class: "summary-container" });
+const totalVisualization = visualizeTotalDebts("0 kr");
+
+// Set the visualization element for notifications
+setTotalVisualization(totalVisualization);
+
+const setupPageHandlersWithDisplay = (page, nationalID, onComplete) => {
+  setupPageHandlers(page, nationalID, (debtData) => {
+    displayDebtData(debtData, summaryDiv);
+  }, onComplete);
+};
+
+// Function to create button handlers for each debt collector
+const createHandler = (siteName, handler, options) => 
+  createDebtCollectorButtonHandler(siteName, handler, setupPageHandlersWithDisplay, nationalIdInput, nationalIdContainer, options);
+
+const siButton = button("Statens Innkrevingssentral", createHandler("SI", handleSILogin));
+const digipostButton = button("Digipost", createHandler("Digipost", handleDigipostLogin));
+const intrumButton = button("Intrum", createHandler("Intrum", handleIntrumLogin));
+const kredinorButton = button("Kredinor", createHandler("Kredinor", handleKredinorLogin, { requiresUserName: true }));
+const praGroupButton = button("PRA Group", createHandler("PRA Group", handlePraGroupLogin));
+const zolvaButton = button("Zolva AS", createHandler("Zolva AS", handleZolvaLogin));
+
+// Update Digipost button state based on checkbox
+const updateDigipostButtonState = () => {
+  if (digipostCheckbox.checked) {
+    digipostButton.disabled = false;
+    digipostButton.style.opacity = "1";
+  } else {
+    digipostButton.disabled = true;
+    digipostButton.style.opacity = "0.5";
+  }
+};
+
+digipostCheckbox.addEventListener("change", updateDigipostButtonState);
+updateDigipostButtonState(); // Set initial state
+
+// Website configuration for Visit All button
+const getNationalID = () => nationalIdInput.value.trim();
+const getActiveWebsites = () => {
+  const allWebsites = [
+    { name: "SI", button: siButton, handler: (cb) => handleSILogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+    { name: "Kredinor", button: kredinorButton, handler: (cb) => handleKredinorLogin(getNationalID(), () => sessionState.userName, setupPageHandlersWithDisplay, cb) },
+    { name: "Intrum", button: intrumButton, handler: (cb) => handleIntrumLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+    { name: "PRA Group", button: praGroupButton, handler: (cb) => handlePraGroupLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+    { name: "Zolva AS", button: zolvaButton, handler: (cb) => handleZolvaLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+    { name: "Digipost", button: digipostButton, handler: (cb) => handleDigipostLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+  ];
+  
+  // Filter out Digipost if checkbox is not checked
+  return digipostCheckbox.checked ? allWebsites : allWebsites.filter(site => site.name !== "Digipost");
+};
 
 const visitAllButton = button(
   "Start",
-  async (ev) => {
-    const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
-
-    const validation = validateNationalID(nationalID);
-    if (!validation.valid) {
-      showValidationErrorInDOM(nationalIdInput, nationalIdContainer, validation.error, VALIDATION_ERROR_DISPLAY_MS);
-      return;
-    }
-
-    // Disable button during execution
-    ev.target.disabled = true;
-    ev.target.innerText = "Starter applikasjon...";
-
-    const websites = [
-       
-      {
-        name: "SI",
-        button: siButton,
-        handler: (callbacks) => handleSILogin(nationalID, setupPageHandlers, callbacks),
-      },
-      {
-        name: "Kredinor",
-        button: kredinorButton,
-        handler: (callbacks) =>
-          handleKredinorLogin(nationalID, () => userName, setupPageHandlers, callbacks),
-      },
-      {
-        name: "Intrum",
-        button: intrumButton,
-        handler: (callbacks) => handleIntrumLogin(nationalID, setupPageHandlers, callbacks),
-      },
-      {
-        name: "PRA Group",
-        button: praGroupButton,
-        handler: (callbacks) => handlePraGroupLogin(nationalID, setupPageHandlers, callbacks),
-      },
-      {
-        name: "Zolva AS",
-        button: zolvaButton,
-        handler: (callbacks) => handleZolvaLogin(nationalID, setupPageHandlers, callbacks),
-      },
-      {
-        name: "Digipost",
-        button: digipostButton,
-        handler: (callbacks) => handleDigipostLogin(nationalID, setupPageHandlers, callbacks),
-      },
-    ];
-
-    try {
-      for (let i = 0; i < websites.length; i++) {
-        const site = websites[i];
-        currentWebsite = site.name;
-
-        ev.target.innerText = `Besøker ${site.name} (${i + 1}/${websites.length})...`;
-        console.log(`Starting visit to ${site.name}`);
-
-        // Create a promise that will be resolved when scraping is complete
-        const scrapingPromise = new Promise((resolve) => {
-          scrapingCompleteCallback = resolve;
-        });
-
-        // Create a promise that will be resolved when timeout occurs
-        const timedOutPromise = new Promise((resolve) => {
-          timedOutCallback = resolve;
-        });
-
-        // Wait for scraping to complete (signaled by the callback)
-        console.log(`Waiting for ${site.name} scraping to complete...`);
-
-        // Open the website and do the scraping (pass callbacks object to handler)
-        site.handler({ 
-          onComplete: scrapingCompleteCallback,
-          onTimeout: timedOutCallback 
-        });
-        
-        // Wait for either the callback or a timeout
-        const result = await Promise.race([scrapingPromise, timedOutPromise]);
-        
-        // Handle result and get success status
-        const siteVisitSuccessful = handleScrapingResult(result, site.name, site.button);
-
-
-        // Reset callback
-        scrapingCompleteCallback = null;
-
-        // Close the browser automatically
-        console.log(`Closing ${site.name} browser...`);
-        await PUP.closeBrowser();
-        
-        console.log(`Closed ${site.name} browser.`);
-        // Small delay between websites
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        console.log(`Proceeding to next website...`);
-      }
-
-      alert("Finished visiting all websites!");
-
-    } catch (error) {
-      console.error("Error during website visits:", error);
-      alert("An error occurred. Check console for details.");
-      // Clean up
-      scrapingCompleteCallback = null;
-      try {
-        await PUP.closeBrowser();
-      } catch (e) {
-        console.error("Error closing browser:", e);
-      }
-    } finally {
-      // Re-enable button
-      ev.target.disabled = false;
-      ev.target.innerText = "Start";
-    }
+  (ev) => {
+    const activeWebsites = getActiveWebsites();
+    const handler = createVisitAllButtonHandler(
+      activeWebsites,
+      nationalIdInput,
+      nationalIdContainer,
+      setupPageHandlersWithDisplay
+    );
+    handler(ev);
   },
   "main-start-button"
 );
 
-// Add Enter key listener to nationalIdInput to trigger Visit All Websites button
-nationalIdInput.addEventListener('keypress', (event) => {
-  if (event.key === 'Enter') {
+// Enter key triggers Start button
+nationalIdInput.addEventListener("keypress", (event) => {
+  if (event.key === "Enter") {
     visitAllButton.click();
   }
 });
 
-const nationalIdContainer = div({ class: "national-id-container" });
-nationalIdContainer.append(nationalIdInput);
-nationalIdContainer.append(visitAllButton);
+nationalIdContainer.append(nationalIdInput, visitAllButton);
+
+// CSV export button
+const exportCsvButton = button("Eksporter som CSV", async () => {
+  const personId = nationalIdInput.value.trim();
+  if (!personId) {
+    alert("Skriv inn fødselsnummer før eksport.");
+    return;
+  }
+  const outputPath = `./extracted_data/${personId}/debts_export.csv`;
+  exportCsvButton.disabled = true;
+  exportCsvButton.textContent = "Eksporterer...";
+  try {
+    await exportDebtsAsCSV(personId, outputPath);
+    alert(`CSV eksportert til ${outputPath}`);
+  } catch (err) {
+    alert("Feil ved eksport: " + err.message);
+  }
+  exportCsvButton.disabled = false;
+  exportCsvButton.textContent = "Eksporter som CSV";
+});
+nationalIdContainer.append(exportCsvButton);
+
+const settingsContainer = div({ class: "settings-container" });
+settingsContainer.append(digipostToggleContainer);
 
 const buttonsContainer = div();
-buttonsContainer.append(siButton);
-buttonsContainer.append(kredinorButton);
-buttonsContainer.append(intrumButton);
-buttonsContainer.append(praGroupButton);
-buttonsContainer.append(zolvaButton);
-buttonsContainer.append(digipostButton);
-document.body.append(heading);
-// document.body.append(heading2);
-// document.body.append(hLine1);
-document.body.append(nationalIdHeader);
-document.body.append(nationalIdContainer);
-document.body.append(heading3);
-document.body.append(buttonsContainer);
-document.body.append(hLine2);
+buttonsContainer.append(siButton, kredinorButton, intrumButton, praGroupButton, zolvaButton, digipostButton);
 
-nationalIdInput.focus();
+document.body.append(heading, nationalIdHeader, nationalIdContainer, settingsContainer, heading3, buttonsContainer, hLine2, totalVisualization);
 
-const totalVisualization = visualizeTotalDebts(
-  totalDebtAmount.toLocaleString("no-NO") + " kr"
-);
-document.body.append(totalVisualization);
-
-// Display all detailed debt info sums if available
+// Display detailed debt info if available
 displayDetailedDebtInfo(detailedDebtConfig);
-
-const summaryDiv = div({ class: "summary-container" });
-
-// Function to load and display saved debt data for a person
-const loadSavedDebtData = (personId) => {
-  if (!personId || personId.length !== 11) return;
-  
-  try {
-    const debtData = readAllDebtForPerson(personId);
-    if (debtData.totalDebt > 0) {
-      foundUnpaidDebts.foundCreditors = [];
-      foundUnpaidDebts.totalAmount = debtData.totalDebt;
-      foundUnpaidDebts.debts = {};
-
-      // Update the total debt display
-      const totalDebtElement = document.body.querySelector(".total-debt-amount");
-      if (totalDebtElement) {
-        totalDebtElement.innerText = debtData.totalDebt.toLocaleString('no-NO') + " kr";
-      }
-
-      // Clear summary container
-      summaryDiv.innerHTML = '';
-
-      // Group debts by creditor and display, using new format for each case
-      Object.entries(debtData.debtsByCreditor).forEach(([creditor, totalAmount]) => {
-        const creditorDebts = debtData.detailedDebts.filter(d => d.creditor === creditor);
-        // Map each debt to the new format
-        const standardizedDebts = creditorDebts.map(d => ({
-          caseID: d.id || 'Unknown',
-          totalAmount: d.amount,
-          originalAmount: d.originalAmount ?? null,
-          interestAndFines: d.interestAndFines ?? null,
-          originalDueDate: d.originalDueDate ?? null,
-          debtCollectorName: creditor,
-          originalCreditorName: d.originalCreditorName ?? creditor
-        }));
-        const debtCollection = {
-          debtCollectorName: creditor,
-          isCurrent: true,
-          totalAmount: totalAmount,
-          debts: standardizedDebts
-        };
-
-        foundUnpaidDebts.foundCreditors.push(creditor);
-        foundUnpaidDebts.debts[creditor] = debtCollection;
-
-        const debtVisualization = visualizeDebt(debtCollection);
-        summaryDiv.append(debtVisualization);
-      });
-
-      // Log details to console
-      console.log(`\n=== DEBT ANALYSIS ===`);
-      console.log(`Total Debt: ${debtData.totalDebt.toLocaleString('no-NO')} kr`);
-      console.log('\nBy Creditor:');
-      Object.entries(debtData.debtsByCreditor).forEach(([creditor, amount]) => {
-        console.log(`  ${creditor}: ${amount.toLocaleString('no-NO')} kr`);
-      });
-      console.log(`\nTotal number of debts: ${debtData.detailedDebts.length}`);
-      console.log('=================================\n');
-    }
-  } catch (error) {
-    console.error('Error calculating total debt:', error);
-  }
-};
-
-// Load saved debt data when input changes
-nationalIdInput.addEventListener('blur', () => {
-  loadSavedDebtData(nationalIdInput.value.trim());
-});
-
-// Also trigger on input (with debounce)
-let inputTimeout;
-nationalIdInput.addEventListener('input', () => {
-  clearTimeout(inputTimeout);
-  inputTimeout = setTimeout(() => {
-    const personId = nationalIdInput.value.trim();
-    if (personId.length === 11) {
-      loadSavedDebtData(personId);
-    }
-  }, 500);
-});
-
-if (offlineMode) {
-  const document = offlineSIFile;
-  const data = require(document);
-  const { debts_paid, debts_unpaid } = read_json("SI", data.krav);
-  displayDebtData(debts_unpaid);
-  displayDebtData(debts_paid);
-
-  const document2 = offlineKredinorFile;
-  const { debtList, creditorList, saksnummerList } = require(document2);
-  const debts_unpaid2 = convertListsToJson(
-    debtList,
-    creditorList,
-    saksnummerList,
-    "Ikke-kredinor"
-  );
-  displayDebtData(debts_unpaid2);
-}
 
 document.body.append(summaryDiv);
 
+// Focus on input
+nationalIdInput.focus();
 
+// Setup data load listeners
+setupDataLoadListeners(nationalIdInput, summaryDiv);
+
+// Load offline data if configured
+loadOfflineData(summaryDiv, displayDebtData);

@@ -1,7 +1,8 @@
-import { PUP } from "../scraper.mjs";
-import { digiPost } from "../data.mjs";
+import { PUP } from "../services/scraper.mjs";
+import { digiPost } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { createFoldersAndGetName, createDownloadFoldersAndGetName, waitForNewDownloadedFile } from "../utilities.mjs";
+import { createDownloadFoldersAndGetName, waitForNewDownloadedFile } from "../utils/utilities.mjs";
+import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 
 // Local function to sanitize folder and file names (Windows-safe)
 function safe(name) {
@@ -18,8 +19,6 @@ async function filterIndividualMessages(page) {
   const filterResults = await Promise.all(filterPromises);
   return allLinks.filter((_, index) => filterResults[index]);
 }
-
-import { HANDLER_TIMEOUT_MS } from "../constants.mjs";
 
 /**
  * Handles the Digipost login automation flow
@@ -93,8 +92,6 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
     return { browser, page };
   }
 
-
-  
   // Prepare target folder for organized files
   const safeDigiPostName = safe(digiPost.name);
   const safeNationalID = safe(nationalID);

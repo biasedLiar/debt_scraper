@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const pdfjs = require('pdfjs-dist/legacy/build/pdf.mjs');
-import { DebtSchema } from './schemas.mjs';
+import { DebtSchema } from '../utils/schemas.mjs';
 
 // Configuration
 const DEBUG_LOGGING = process.env.DEBUG_PDF_EXTRACTION === 'true';
