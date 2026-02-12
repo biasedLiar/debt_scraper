@@ -175,6 +175,21 @@ input[type="number"] {
     font-size: 13px;
   }
 
+  & .debt-summary-label {
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 10px;
+    margin-bottom: 2px;
+    color: #2d5a67;
+  }
+
+  & .debt-summary-value {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #1a3d47;
+  }
+
   & .debt-item {
     border-top: 1px solid #eee;
     padding: 10px 0;

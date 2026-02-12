@@ -124,6 +124,45 @@ export const visualizeDebt = (debtData) => {
   innerContainer.appendChild(headerNumber);
   innerContainer.appendChild(headerSubtext);
 
+  // Calculate and show sum of original amounts and interest/fines
+  let totalOriginalAmount = 0;
+  let totalInterestAndFines = 0;
+  let hasOriginalData = false;
+  let hasInterestData = false;
+
+  (debtData.debts || []).forEach((debt) => {
+    if (debt.originalAmount !== undefined && debt.originalAmount !== null) {
+      totalOriginalAmount += debt.originalAmount;
+      hasOriginalData = true;
+    }
+    if (debt.interestAndFines !== undefined && debt.interestAndFines !== null) {
+      totalInterestAndFines += debt.interestAndFines;
+      hasInterestData = true;
+    }
+  });
+
+  // Display original amount sum if available
+  if (hasOriginalData) {
+    const originalAmountLabel = h3(`Opprinnelig beløp (sum):`, "debt-summary-label");
+    const originalAmountValue = h3(
+      `${totalOriginalAmount.toLocaleString("no-NO")} kr`,
+      "debt-summary-value"
+    );
+    innerContainer.appendChild(originalAmountLabel);
+    innerContainer.appendChild(originalAmountValue);
+  }
+
+  // Display interest and fines sum if available
+  if (hasInterestData) {
+    const interestLabel = h3(`Renter og gebyrer (sum):`, "debt-summary-label");
+    const interestValue = h3(
+      `${totalInterestAndFines.toLocaleString("no-NO")} kr`,
+      "debt-summary-value"
+    );
+    innerContainer.appendChild(interestLabel);
+    innerContainer.appendChild(interestValue);
+  }
+
   outerContainer.appendChild(innerContainer);
 
   // Show each case in the new format
