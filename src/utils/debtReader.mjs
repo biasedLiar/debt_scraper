@@ -276,7 +276,12 @@ export function readAllDebtForPerson(personId) {
   // Find the latest date folder
   const dateFolders = fs.readdirSync(extractedDataPath).filter(item => {
     const fullPath = path.join(extractedDataPath, item);
-    return fs.statSync(fullPath).isDirectory() && /^\d{4}_\d{2}_\d{2}$/.test(item);
+    const isDir = fs.statSync(fullPath).isDirectory();
+    const isDateFolder = /^\d{4}_\d{2}_\d{2}$/.test(item);
+    if (isDir && isDateFolder) {
+      console.log(`Found date folder: ${item}`);
+    }
+    return isDir && isDateFolder;
   }).sort().reverse(); // Sort descending to get latest first
 
   if (dateFolders.length === 0) {
