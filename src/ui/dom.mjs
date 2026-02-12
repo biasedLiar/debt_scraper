@@ -134,7 +134,6 @@ export const visualizeDebt = (debtData) => {
       <p>Saks-ID: ${debt.caseID || debt.id || "Ukjent"}</p>
       <p>Opprinnelig beløp: ${debt.originalAmount !== undefined && debt.originalAmount !== null ? debt.originalAmount.toLocaleString("no-NO") + " kr" : "Ukjent"}</p>
       <p>Renter og gebyrer: ${debt.interestAndFines !== undefined && debt.interestAndFines !== null ? debt.interestAndFines.toLocaleString("no-NO") + " kr" : "Ukjent"}</p>
-      <p>Betalingsfrist: ${debt.originalDueDate}</p>
       <p>Opprinnelig forfallsdato: ${debt.originalDueDate ? (typeof debt.originalDueDate === "string" ? debt.originalDueDate.substring(0, 10) : new Date(debt.originalDueDate).toLocaleDateString("no-NO", {dateStyle: "short"})) : "Ukjent"}</p>
       <p>Opprinnelig kreditor: ${debt.originalCreditorName || "Ukjent"}</p>
     `;
