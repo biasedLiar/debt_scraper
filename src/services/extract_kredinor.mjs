@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const pdfjs = require('pdfjs-dist/legacy/build/pdf.mjs');
-import { DebtSchema } from '../utils/schemas.mjs';
+import { DebtSchema, DebtCollectionSchema } from '../utils/schemas.mjs';
 
 // Configuration
 const DEBUG_LOGGING = process.env.DEBUG_PDF_EXTRACTION === 'true';
@@ -281,8 +281,25 @@ export async function extractFields(pdfPath, outputPath) {
       return result.data;
     });
 
-    fs.writeFileSync(outputPath, JSON.stringify(validatedData, null, 2), 'utf-8');
-    console.log(`Results saved to ${outputPath} - ${validatedData.length} case(s) extracted in DebtSchema format`);
+    // Use the grand total from the PDF (more accurate than sum of individual debts)
+    const totalAmount = grandTotalMatch;
+
+    // Wrap in DebtCollectionSchema format
+    const debtCollectionData = {
+      creditSite: 'Kredinor',
+      debts: validatedData,
+      isCurrent: true,
+      totalAmount: totalAmount
+    };
+
+    // Validate against DebtCollectionSchema
+    const finalResult = DebtCollectionSchema.safeParse(debtCollectionData);
+    if (!finalResult.success) {
+      console.warn('DebtCollectionSchema validation warning:', finalResult.error.errors);
+    }
+
+    fs.writeFileSync(outputPath, JSON.stringify(finalResult.success ? finalResult.data : debtCollectionData, null, 2), 'utf-8');
+    console.log(`Results saved to ${outputPath} - ${validatedData.length} case(s) extracted with total: ${totalAmount.toFixed(2)} kr`);
   } catch (error) {
     console.error(`Error extracting PDF from "${pdfPath}":`, error.message);
     throw error;

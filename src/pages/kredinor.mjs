@@ -84,7 +84,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
       return { browser, page };
     }
     
-    await saveValidatedJSON(filePath, data, KredinorManualDebtSchema); 
+    await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);  
 
     // Download PDF report (active or closed cases)
     try {
@@ -94,9 +94,10 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
       );
       
       // Set download path - CDP requires absolute path
+      // Save PDFs to exports/extracted_data/(national_id)/(date)/ folder
       const client = await page.createCDPSession();
-      const pdfFolderRelative = createFoldersAndGetName(kredinor.name, folderName, "KredinorPDF", "", false).replace(/[^\/\\]+$/, '');
-      const pdfFolder = path.resolve(pdfFolderRelative);
+      const currentDate = new Date().toISOString().split('T')[0].replace(/-/g, '_');
+      const pdfFolder = path.resolve(path.join('exports', 'extracted_data', nationalID, currentDate));
       
       // Ensure folder exists using sync fs for directory creation
       if (!fsSync.existsSync(pdfFolder)) {
@@ -123,11 +124,11 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
         // Extract data from the downloaded PDF
         try {
           const pdfPath = path.join(pdfFolder, downloadedFile);
-          const outputPath = path.join(pdfFolder, 'extracted_data.json');
+          const outputPath = path.join(pdfFolder, 'kredinor_extracted_data.json');
           
           console.log(`Extracting data from PDF...`);
           await extractFields(pdfPath, outputPath, nationalID);
-          console.log('PDF extraction completed');
+          console.log(`PDF extraction completed - saved to ${outputPath}`);
         } catch (extractError) {
           console.error('Failed to extract PDF data:', extractError.message);
         }
