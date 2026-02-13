@@ -219,7 +219,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
 
   try {
-    await saveValidatedJSON(filePath, data, IntrumManualDebtSchema);
+    // await saveValidatedJSON(filePath, data, IntrumManualDebtSchema);
     // Also save in DebtSchema format
     await saveIntrumDebtsAsDebtSchema(filePath, debtCases, nationalID);
   } catch (error) {
