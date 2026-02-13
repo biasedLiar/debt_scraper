@@ -97,7 +97,6 @@ async function saveIntrumDebtsAsDebtSchema(filePath, rawDebts, nationalID) {
     isCurrent: true,
     totalAmount
   };
-  console.warn("My debts are " + debtCollectionObj)
   const outPath2 = createExtractedFoldersAndGetName("Intrum", nationalID);
   try {
     const validated = DebtCollectionSchema.parse(debtCollectionObj);

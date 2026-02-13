@@ -49,7 +49,7 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
     
   } else {
     // Should in theory never come here
-    console.warn("No debt found through UI - this should not happen.");
+    console.log("No debt found through UI - this should not happen.");
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
         setTimeout(() => onComplete("UNEXPECTED_STATE"), 10000);
