@@ -141,6 +141,17 @@ export const AddressSchema = z.object({
 });
 
 /**
+ * Schema for individual invoice
+ */
+export const InvoiceSchema = z.object({
+  invoiceNumber: z.string().optional(),
+  invoiceDate: z.string().optional(),
+  dueDate: z.string().optional(),
+  amount: z.number().optional(),
+  description: z.string().optional(),
+});
+
+/**
  * Schema for debtor information
  */
 export const DebtorInfoSchema = z.object({
@@ -166,6 +177,7 @@ export const CaseDetailsSchema = z.object({
   caseStatus: z.string().optional(),
   description: z.string().optional(),
   basisForClaim: z.string().optional(),
+  invoices: z.array(InvoiceSchema).optional(),
   claimType: z.string().optional(),
   notes: z.string().optional(),
 });
