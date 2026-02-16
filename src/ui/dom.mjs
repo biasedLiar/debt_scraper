@@ -129,11 +129,16 @@ export const visualizeDebt = (debtData) => {
   // Show each case in the new format
   (debtData.debts || []).forEach((debt) => {
     const debtDiv = div({ class: "debt-item" });
+    const showBreakdown = debt.originalAmount !== undefined && debt.originalAmount !== null && 
+                          debt.interestAndFees !== undefined && debt.interestAndFees !== null;
+    const breakdownLines = showBreakdown 
+      ? `<p>Opprinnelig beløp: ${debt.originalAmount.toLocaleString("no-NO")} kr</p>
+      <p>Renter og gebyrer: ${debt.interestAndFees.toLocaleString("no-NO")} kr</p>` 
+      : '';
     debtDiv.innerHTML = `
       <h3>Sum: ${(debt.totalAmount ?? debt.amount ?? 0).toLocaleString("no-NO")} kr</h3>
       <p>Saks-ID: ${debt.caseID || debt.id || "Ukjent"}</p>
-      <p>Opprinnelig beløp: ${debt.originalAmount !== undefined && debt.originalAmount !== null ? debt.originalAmount.toLocaleString("no-NO") + " kr" : "Ukjent"}</p>
-      <p>Renter og gebyrer: ${debt.interestAndFines !== undefined && debt.interestAndFines !== null ? debt.interestAndFines.toLocaleString("no-NO") + " kr" : "Ukjent"}</p>
+      ${breakdownLines}
       <p>Opprinnelig forfallsdato: ${debt.originalDueDate ? (typeof debt.originalDueDate === "string" ? debt.originalDueDate.substring(0, 10) : new Date(debt.originalDueDate).toLocaleDateString("no-NO", {dateStyle: "short"})) : "Ukjent"}</p>
       <p>Opprinnelig kreditor: ${debt.originalCreditorName || "Ukjent"}</p>
     `;
