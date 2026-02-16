@@ -81,6 +81,118 @@ export const KredinorFullDebtDetailsSchema = z.object({
   saksnummerList: z.array(z.string()),
 });
 
+// ============================================================================
+// Schemas for Structured Debt Collection Documents (PDF Extraction Format)
+// ============================================================================
+
+/**
+ * Schema for document metadata
+ */
+export const DocumentMetadataSchema = z.object({
+  source: z.string(),
+  documentType: z.string(),
+  extractionDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: "Invalid ISO 8601 datetime string",
+  }),
+  pdfPath: z.string().optional(),
+  pdfLink: z.string().optional(),
+  documentDate: z.string().optional(),
+});
+
+/**
+ * Schema for case identifiers
+ */
+export const CaseIdentifiersSchema = z.object({
+  caseNumber: z.string(),
+  referenceNumber: z.string().optional(),
+  customerNumber: z.string().optional(),
+});
+
+/**
+ * Schema for case amounts breakdown
+ */
+export const CaseAmountsSchema = z.object({
+  totalAmount: z.number(),
+  principalAmount: z.number(),
+  interest: z.number().optional(),
+  fees: z.number().optional(),
+  collectionFees: z.number().optional(),
+  interestOnCosts: z.number().optional(),
+});
+
+/**
+ * Schema for case dates
+ */
+export const CaseDatesSchema = z.object({
+  invoiceDate: z.string().optional(),
+  originalDueDate: z.string().optional(),
+  issuedDate: z.string().optional(),
+  paymentDeadline: z.string().optional(),
+});
+
+/**
+ * Schema for address
+ */
+export const AddressSchema = z.object({
+  street: z.string().optional(),
+  postalCode: z.string().optional(),
+  city: z.string().optional(),
+  country: z.string().optional(),
+});
+
+/**
+ * Schema for debtor information
+ */
+export const DebtorInfoSchema = z.object({
+  name: z.string().optional(),
+  nationalId: z.string().optional(),
+  address: AddressSchema.optional(),
+});
+
+/**
+ * Schema for case parties
+ */
+export const CasePartiesSchema = z.object({
+  debtCollector: z.string(),
+  currentCreditor: z.string().optional(),
+  originalCreditor: z.string().optional(),
+  debtor: DebtorInfoSchema.optional(),
+});
+
+/**
+ * Schema for case details
+ */
+export const CaseDetailsSchema = z.object({
+  caseStatus: z.string().optional(),
+  description: z.string().optional(),
+  basisForClaim: z.string().optional(),
+  claimType: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+/**
+ * Schema for individual debt case in document
+ */
+export const DocumentCaseSchema = z.object({
+  identifiers: CaseIdentifiersSchema,
+  amounts: CaseAmountsSchema,
+  dates: CaseDatesSchema,
+  parties: CasePartiesSchema,
+  details: CaseDetailsSchema.optional(),
+});
+
+/**
+ * Schema for complete structured debt collection document
+ * Use this for validating extracted PDF data
+ */
+export const StructuredDebtDocumentSchema = z.object({
+  documentMetadata: DocumentMetadataSchema,
+  totalAmount: z.number(),
+  numberOfCases: z.number().int(),
+  debtCollector: z.string(),
+  cases: z.array(DocumentCaseSchema),
+});
+
 /**
  * Schema for general saved file metadata
  */
