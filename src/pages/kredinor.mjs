@@ -72,7 +72,6 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
     
     const data = { debtAmount, activeCases, timestamp: new Date().toISOString() };
-    /*
     // Check if no debt found
     if (debtAmount === 0 && activeCases === 0) {
       data.note = "No debt information found on page.";
@@ -84,7 +83,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
       return { browser, page };
     }
     
-    await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);   */
+    await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);
 
     // Download PDF report (active or closed cases)
     try {

@@ -53,7 +53,7 @@ function mapToDebtSchema(rawDebts, debtCollectorName = "Intrum") {
       totalAmount,
       originalAmount,
       interestAndFines,
-      originalDueDate: null, // Not available
+      originalDueDate: undefined, // Not available
       debtCollectorName,
       originalCreditorName: String(originalCreditorName),
       debtType,
@@ -152,7 +152,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
 
     // Check if there are no cases in the system
   try {
-    const noCasesElement = await page.waitForSelector('.warning-message', { visible: true }).catch(() => console.log('No warning message found'));
+    const noCasesElement = await page.waitForSelector('.warning-message, .case-container, .debt-case, [class*="case"]', { visible: true }).catch(() => console.log('No warning message found'));
     if (noCasesElement) {
       const warningText = await page.evaluate(el => el.textContent, noCasesElement);
       if (warningText.includes('Vi finner ingen saker i vårt system.')) {
@@ -203,7 +203,8 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
         caseData.creditorName = creditorEl.textContent.trim();
       }
       
-      if (Object.keys(caseData).length > 0) {
+      // Only include cases that have a total amount (indicating they are valid debt cases)
+      if (caseData.totalAmount) {
         cases.push(caseData);
       }
     });
@@ -218,7 +219,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
 
   try {
-    await saveValidatedJSON(filePath, data, IntrumManualDebtSchema);
+    // await saveValidatedJSON(filePath, data, IntrumManualDebtSchema);
     // Also save in DebtSchema format
     await saveIntrumDebtsAsDebtSchema(filePath, debtCases, nationalID);
   } catch (error) {

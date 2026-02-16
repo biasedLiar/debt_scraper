@@ -174,19 +174,18 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
         return elements.length > 1 ? elements[1].textContent.trim() : null;
       });
     
-      console.log("Amount:", amount);
       
       // Convert amount text to number (remove spaces, replace comma with period, remove 'kr')
       const amountNumber = amount 
         ? parseFloat(amount.replace(/\s/g, '').replace(',', '.').replace('kr', ''))
         : null;
-      
-      console.log("Amount as number:", amountNumber);
     
+      
       // Extract previous owner, current owner, debt collector, and debtor type
-      await account.waitForSelector('.account-content__block > div', { visible: true });
+      await account.waitForSelector('.bar-accordion-item__content > div', { visible: false }).catch(() => console.warn('Account details blocks not found for account element'));
+      
       const accountDetails = await account.evaluate(el => {
-        const blocks = el.querySelectorAll('.account-content__block > div');
+        const blocks = el.querySelectorAll('.bar-accordion-item__content > div');
         const details = {};
         
         blocks.forEach(block => {
@@ -210,8 +209,6 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
         
         return details;
       });
-
-
         
       const data = {
         accountReference,
@@ -220,9 +217,6 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
         accountDetails,
         timestamp: new Date().toISOString()
       };
-      
-
-
       
       const debtItem = {
         caseID: accountReference || "N/A",
@@ -252,7 +246,7 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
   };
 
   // Validate against DebtCollectionSchema
-  const filePath2 = createExtractedFoldersAndGetName("PRA Group", nationalID);
+  const filePath2 = createExtractedFoldersAndGetName("PRA_Group", nationalID);
   try {
     const validatedData = DebtCollectionSchema.parse(formattedData);
     await fs.writeFile(filePath2, JSON.stringify(validatedData, null, 2));

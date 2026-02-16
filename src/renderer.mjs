@@ -88,7 +88,7 @@ const setupPageHandlersWithDisplay = (page, nationalID, onComplete) => {
 
 // Function to create button handlers for each debt collector
 const createHandler = (siteName, handler, options) => 
-  createDebtCollectorButtonHandler(siteName, handler, setupPageHandlersWithDisplay, nationalIdInput, nationalIdContainer, options);
+  createDebtCollectorButtonHandler(siteName, handler, setupPageHandlersWithDisplay, nationalIdInput, nationalIdContainer, summaryDiv, options);
 
 const siButton = button("Statens Innkrevingssentral", createHandler("SI", handleSILogin));
 const digipostButton = button("Digipost", createHandler("Digipost", handleDigipostLogin));
@@ -135,7 +135,8 @@ const visitAllButton = button(
       activeWebsites,
       nationalIdInput,
       nationalIdContainer,
-      setupPageHandlersWithDisplay
+      setupPageHandlersWithDisplay,
+      summaryDiv
     );
     handler(ev);
   },

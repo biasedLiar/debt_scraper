@@ -37,7 +37,7 @@ export function loadSavedDebtData(personId, summaryDiv) {
         
         // Map each debt to standardized format
         const standardizedDebts = creditorDebts.map(d => ({
-          caseID: d.id || 'Unknown',
+          caseID: d.caseID || 'Unknown',
           totalAmount: d.amount,
           originalAmount: d.originalAmount ?? null,
           interestAndFines: d.interestAndFines ?? null,
