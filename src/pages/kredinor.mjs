@@ -2,8 +2,10 @@ import { PUP } from "../services/scraper.mjs";
 import { kredinor } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName, waitForNewDownloadedFile, parseNorwegianAmount, acceptCookies, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
+import { createExtractedDetailedDocumentFoldersAndGetName } from "../utils/fileOperations.mjs";
 import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../utils/schemas.mjs";
 import { extractFields } from "../services/extract_kredinor.mjs";
+import { extractStructuredDebt } from "../services/extract_structured_debt.mjs";
 import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 const fs = require('fs/promises');
 const fsSync = require('fs');
@@ -115,16 +117,31 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
       if (downloadedFile) {
         console.log(`PDF downloaded: ${downloadedFile}`);
         
-        // Extract data from the downloaded PDF
+        // Extract data from the downloaded PDF (minimalist format)
         try {
           const pdfPath = path.join(pdfFolder, downloadedFile);
           const outputPath = extractedDataPath;
           
-          console.log(`Extracting data from PDF...`);
+          console.log(`Extracting data from PDF (minimalist format)...`);
           await extractFields(pdfPath, outputPath, nationalID);
           console.log(`PDF extraction completed - saved to ${outputPath}`);
         } catch (extractError) {
           console.error('Failed to extract PDF data:', extractError.message);
+        }
+        
+        // Extract structured debt document schema
+        try {
+          const pdfPath = path.join(pdfFolder, downloadedFile);
+          const folderName = userName ? userName : nationalID;
+          const detailedOutputPath = createExtractedDetailedDocumentFoldersAndGetName('Kredinor', folderName);
+          
+          console.log(`Extracting structured debt document...`);
+          await extractStructuredDebt(pdfPath, detailedOutputPath, {
+            pdfLink: `file://${pdfPath}`
+          });
+          console.log(`Structured debt document saved to ${detailedOutputPath}`);
+        } catch (structuredError) {
+          console.error('Failed to extract structured debt document:', structuredError.message);
         }
       } else {
         console.warn('PDF download timed out - file not detected in download folder');

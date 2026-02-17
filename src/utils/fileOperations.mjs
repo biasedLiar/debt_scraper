@@ -118,6 +118,24 @@ export function createExtractedFoldersAndGetName(currentWebsite, name) {
 }
 
 /**
+ * Creates folder structure for extracted detailed documents
+ * @param {string} [currentWebsite] - Name of the current website
+ * @param {string} [name] - User identifier or name
+ * @returns {string} - Full path to the extracted detailed document file
+ */
+export function createExtractedDetailedDocumentFoldersAndGetName(currentWebsite, name) {
+  const newDate = getDateString();
+
+  if (!currentWebsite) currentWebsite = "no_page_name";
+  if (!name) name = "Unknown";
+
+  const baseDir = `./extracted_detailed_document/${name}/${newDate}`;
+  fs.mkdirSync(baseDir, { recursive: true });
+
+  return `${baseDir}/${currentWebsite}_detailed_document.json`;
+}
+
+/**
  * Creates folder structure for downloaded files
  * @param {string} [pageName] - Name of the page/section
  * @param {string} [name] - User identifier or name
