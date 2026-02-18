@@ -3,7 +3,8 @@ import { zolva } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 import { createFoldersAndGetName, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
-import { DebtSchema, DebtCollectionSchema } from "../utils/schemas.mjs";
+import { createExtractedDetailedDocumentFoldersAndGetName } from "../utils/fileOperations.mjs";
+import { DebtSchema, DebtCollectionSchema, StructuredDebtDocumentSchema } from "../utils/schemas.mjs";
 const fs = require('fs/promises');
 /**
  * Handles the Zolva AS login automation flow and extracts debt table data
@@ -168,6 +169,69 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, callbacks 
     await fs.writeFile(detailedInfoFilePath, JSON.stringify(tableData, null, 2));
     console.log(`Saved table data to ${detailedInfoFilePath}`);
   
+  // Create structured debt document from scraped data
+  try {
+    const structuredDocument = {
+      documentMetadata: {
+        source: "Zolva AS",
+        documentType: "Debt Collection Statement",
+        extractionDate: new Date().toISOString(),
+        pdfPath: undefined,
+        pdfLink: undefined,
+      },
+      totalAmount: totalAmount,
+      numberOfCases: validatedDebts.length,
+      debtCollector: "Zolva AS",
+      cases: validatedDebts.map(debt => ({
+        identifiers: {
+          caseNumber: debt.caseID,
+          referenceNumber: undefined,
+          customerNumber: undefined,
+        },
+        amounts: {
+          totalAmount: debt.totalAmount,
+          principalAmount: undefined,
+          interest: undefined,
+          fees: undefined,
+          collectionFees: undefined,
+          interestOnCosts: undefined,
+        },
+        dates: {
+          invoiceDate: undefined,
+          originalDueDate: debt.originalDueDate || undefined,
+          issuedDate: undefined,
+        },
+        parties: {
+          debtCollector: "Zolva AS",
+          currentCreditor: debt.originalCreditorName,
+          originalCreditor: debt.originalCreditorName,
+        },
+        details: debt.comment ? {
+          notes: debt.comment,
+        } : undefined,
+      })),
+    };
+
+    // Validate against StructuredDebtDocumentSchema
+    const validationResult = StructuredDebtDocumentSchema.safeParse(structuredDocument);
+    
+    if (!validationResult.success) {
+      console.warn('StructuredDebtDocumentSchema validation failed for Zolva AS:', validationResult.error);
+      
+      // Save unvalidated version for debugging
+      const detailedOutputPath = createExtractedDetailedDocumentFoldersAndGetName('Zolva_AS', nationalID);
+      const unvalidatedPath = detailedOutputPath.replace('.json', '_unvalidated.json');
+      await fs.writeFile(unvalidatedPath, JSON.stringify(structuredDocument, null, 2));
+      console.log(`Saved unvalidated structured debt document to ${unvalidatedPath}`);
+    } else {
+      const detailedOutputPath = createExtractedDetailedDocumentFoldersAndGetName('Zolva_AS', nationalID);
+      await fs.writeFile(detailedOutputPath, JSON.stringify(validationResult.data, null, 2));
+      console.log(`Structured debt document saved to ${detailedOutputPath}`);
+    }
+  } catch (structuredError) {
+    console.error('Failed to create structured debt document:', structuredError.message);
+  }
+
   if (timeoutTimer) clearTimeout(timeoutTimer);
   if (onComplete) {
     setTimeout(() => onComplete('DEBT_FOUND'), 1000);
