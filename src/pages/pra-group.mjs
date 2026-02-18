@@ -2,8 +2,9 @@ import { PUP } from "../services/scraper.mjs";
 import { praGroup } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
+import { createExtractedDetailedDocumentFoldersAndGetName } from "../utils/fileOperations.mjs";
 import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
-import { DebtCollectionSchema } from "../utils/schemas.mjs";
+import { DebtCollectionSchema, StructuredDebtDocumentSchema } from "../utils/schemas.mjs";
 const fs = require('fs/promises');
 
 /**
@@ -263,6 +264,67 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
 
 
   console.log('PRA Group data saved successfully');
+
+  // Create structured debt document from scraped data
+  try {
+    const structuredDocument = {
+      documentMetadata: {
+        source: "PRA Group",
+        documentType: "Debt Collection Statement",
+        extractionDate: new Date().toISOString(),
+        pdfPath: undefined,
+        pdfLink: undefined,
+      },
+      totalAmount: totalAmount,
+      numberOfCases: debt_items.length,
+      debtCollector: "PRA Group",
+      cases: debt_items.map(debt => ({
+        identifiers: {
+          caseNumber: debt.caseID,
+          referenceNumber: undefined,
+          customerNumber: undefined,
+        },
+        amounts: {
+          totalAmount: debt.totalAmount,
+          principalAmount: undefined,
+          interest: undefined,
+          fees: undefined,
+          collectionFees: undefined,
+          interestOnCosts: undefined,
+        },
+        dates: {
+          invoiceDate: undefined,
+          originalDueDate: undefined,
+          issuedDate: undefined,
+        },
+        parties: {
+          debtCollector: "PRA Group",
+          currentCreditor: debt.originalCreditorName,
+          originalCreditor: debt.originalCreditorName,
+        },
+        details: undefined,
+      })),
+    };
+
+    // Validate against StructuredDebtDocumentSchema
+    const validationResult = StructuredDebtDocumentSchema.safeParse(structuredDocument);
+    
+    if (!validationResult.success) {
+      console.warn('StructuredDebtDocumentSchema validation failed for PRA Group:', validationResult.error);
+      
+      // Save unvalidated version for debugging
+      const detailedOutputPath = createExtractedDetailedDocumentFoldersAndGetName('PRA_Group', nationalID);
+      const unvalidatedPath = detailedOutputPath.replace('.json', '_unvalidated.json');
+      await fs.writeFile(unvalidatedPath, JSON.stringify(structuredDocument, null, 2));
+      console.log(`Saved unvalidated structured debt document to ${unvalidatedPath}`);
+    } else {
+      const detailedOutputPath = createExtractedDetailedDocumentFoldersAndGetName('PRA_Group', nationalID);
+      await fs.writeFile(detailedOutputPath, JSON.stringify(validationResult.data, null, 2));
+      console.log(`Structured debt document saved to ${detailedOutputPath}`);
+    }
+  } catch (structuredError) {
+    console.error('Failed to create structured debt document:', structuredError.message);
+  }
 
   // Gjøre manually found debt om til zod-formatert gjeld.
 
