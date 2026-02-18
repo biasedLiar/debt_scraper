@@ -38,20 +38,21 @@ export function setupPageHandlers(page, nationalID, displayDebtData, onComplete)
       return;
     }
 
+    let pageTitle;
     try {
-      await page.title();
+      pageTitle = await page.title();
     } catch (e) {
       console.log("Could not get page title:", e);
       return;
     }
 
-    if (!(await page.title())) {
-      console.error("Current website not set, cannot save page");
+    if (!pageTitle) {
+      console.log("Current website not set due to moving on to new site before file was saved. URL:", r.url());
       return;
     }
     
-    console.log("Page name for saving:", (await page.title()));
-    var pageName = (await page.title())
+    console.log("Page name for saving:", pageTitle);
+    var pageName = pageTitle
       .replace(/\s+/g, "_")
       .replace(/[<>:"/\\|?*]/g, "_")
       .toLowerCase();
@@ -74,7 +75,7 @@ export function setupPageHandlers(page, nationalID, displayDebtData, onComplete)
           isJsonResult
         );
 
-        console.log("Response data length:", data);
+        console.log("Response data:", data);
         fs.writeFile(filename, data, function (err) {
           if (err) {
             console.log(err);
