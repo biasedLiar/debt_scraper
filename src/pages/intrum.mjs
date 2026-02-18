@@ -2,7 +2,8 @@ import { PUP } from "../services/scraper.mjs";
 import { intrum } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName, parseNorwegianAmount, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
-import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema, DebtCollectionSchema } from "../utils/schemas.mjs";
+import { createExtractedDetailedDocumentFoldersAndGetName } from "../utils/fileOperations.mjs";
+import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema, DebtCollectionSchema, StructuredDebtDocumentSchema } from "../utils/schemas.mjs";
 import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 
 const fs = require('fs/promises');
@@ -317,6 +318,70 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
     console.log(`Saved detailed info for ${structuredDetailedData.length} cases to ${detailedInfoFilePath}`);
   } catch (error) {
     console.error(`Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`, error);
+  }
+
+  // Create structured debt document from scraped data
+  try {
+    const mappedDebts = mapToDebtSchema(debtCases);
+    const totalAmount = mappedDebts.reduce((sum, d) => sum + (d.totalAmount || 0), 0);
+    
+    const structuredDocument = {
+      documentMetadata: {
+        source: "Intrum",
+        documentType: "Debt Collection Statement",
+        extractionDate: new Date().toISOString(),
+        pdfPath: undefined,
+        pdfLink: undefined,
+      },
+      totalAmount: totalAmount,
+      numberOfCases: mappedDebts.length,
+      debtCollector: "Intrum",
+      cases: mappedDebts.map(debt => ({
+        identifiers: {
+          caseNumber: debt.caseID,
+          referenceNumber: undefined,
+          customerNumber: undefined,
+        },
+        amounts: {
+          totalAmount: debt.totalAmount,
+          principalAmount: debt.originalAmount || undefined,
+          interest: debt.interestAndFines || undefined,
+          fees: undefined,
+          collectionFees: undefined,
+          interestOnCosts: undefined,
+        },
+        dates: {
+          invoiceDate: undefined,
+          originalDueDate: debt.originalDueDate || undefined,
+          issuedDate: undefined,
+        },
+        parties: {
+          debtCollector: "Intrum",
+          currentCreditor: debt.originalCreditorName,
+          originalCreditor: debt.originalCreditorName,
+        },
+        details: undefined,
+      })),
+    };
+
+    // Validate against StructuredDebtDocumentSchema
+    const validationResult = StructuredDebtDocumentSchema.safeParse(structuredDocument);
+    
+    if (!validationResult.success) {
+      console.warn('StructuredDebtDocumentSchema validation failed for Intrum:', validationResult.error);
+      
+      // Save unvalidated version for debugging
+      const detailedOutputPath = createExtractedDetailedDocumentFoldersAndGetName('Intrum', nationalID);
+      const unvalidatedPath = detailedOutputPath.replace('.json', '_unvalidated.json');
+      await fs.writeFile(unvalidatedPath, JSON.stringify(structuredDocument, null, 2));
+      console.log(`Saved unvalidated structured debt document to ${unvalidatedPath}`);
+    } else {
+      const detailedOutputPath = createExtractedDetailedDocumentFoldersAndGetName('Intrum', nationalID);
+      await fs.writeFile(detailedOutputPath, JSON.stringify(validationResult.data, null, 2));
+      console.log(`Structured debt document saved to ${detailedOutputPath}`);
+    }
+  } catch (structuredError) {
+    console.error('Failed to create structured debt document:', structuredError.message);
   }
 
   if (timeoutTimer) clearTimeout(timeoutTimer);
