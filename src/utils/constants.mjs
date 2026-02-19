@@ -7,6 +7,7 @@
  * If a handler doesn't complete within this time, onTimeout will be called
  */
 export const HANDLER_TIMEOUT_MS = 300000; // 300 seconds
+export const INTRUM_HANDLER_TIMEOUT_MS = 3000000; // 3000 seconds
 
 /**
  * File download polling configuration

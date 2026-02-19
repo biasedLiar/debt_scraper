@@ -3,7 +3,7 @@ import { intrum } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName, parseNorwegianAmount, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
 import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema, DebtCollectionSchema } from "../utils/schemas.mjs";
-import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { INTRUM_HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 
 const fs = require('fs/promises');
 
@@ -142,12 +142,12 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
-  // Start 60-second timeout timer after BankID login
+  // Start 50-minute timeout timer after BankID login
   if (onTimeout) {
     timeoutTimer = setTimeout(() => {
-      console.log('Intrum handler timed out after ' + (HANDLER_TIMEOUT_MS / 1000) + ' seconds');
+      console.log('Intrum handler timed out after ' + (INTRUM_HANDLER_TIMEOUT_MS / 1000) + ' seconds');
       onTimeout('HANDLER_TIMEOUT');
-    }, HANDLER_TIMEOUT_MS);
+    }, INTRUM_HANDLER_TIMEOUT_MS);
   }
 
     // Check if there are no cases in the system
@@ -181,10 +181,11 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
     // Find all case containers - using broad selector as Intrum's structure varies
     const caseElements = document.querySelectorAll('.case-container, .debt-case, [class*="case"]');
     
-    caseElements.forEach(caseEl => {
+    caseElements.forEach(async caseEl => {
       const caseData = {};
       
       // Extract case number
+      const ready = await caseEl.waitForSelector('.label', { visible: true }).catch(() => console.log('No case number element found for a case'));
       const caseNumberEl = caseEl.querySelector('.label');
       if (caseNumberEl) {
         const match = caseNumberEl.textContent.match(/Saksnummer\s+(\d+)/);
