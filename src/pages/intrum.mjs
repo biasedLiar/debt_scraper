@@ -181,11 +181,10 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
     // Find all case containers - using broad selector as Intrum's structure varies
     const caseElements = document.querySelectorAll('.case-container, .debt-case, [class*="case"]');
     
-    caseElements.forEach(async caseEl => {
+    caseElements.forEach(caseEl => {
       const caseData = {};
       
       // Extract case number
-      const ready = await caseEl.waitForSelector('.label', { visible: true }).catch(() => console.log('No case number element found for a case'));
       const caseNumberEl = caseEl.querySelector('.label');
       if (caseNumberEl) {
         const match = caseNumberEl.textContent.match(/Saksnummer\s+(\d+)/);
@@ -205,7 +204,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
       }
       
       // Only include cases that have a total amount (indicating they are valid debt cases)
-      if (caseData.totalAmount) {
+      if (caseData.totalAmount && caseData.caseNumber) {
         cases.push(caseData);
       }
     });
