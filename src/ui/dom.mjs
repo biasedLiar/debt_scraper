@@ -132,9 +132,10 @@ export const visualizeDebt = (debtData) => {
     const showBreakdown = debt.originalAmount !== undefined && debt.originalAmount !== null && 
                           debt.interestAndFines !== undefined && debt.interestAndFines !== null;
     const breakdownLines = showBreakdown 
-      ? `<p>Opprinnelig beløp: ${debt.originalAmount.toLocaleString("no-NO")} kr</p>
-      <p>Renter og gebyrer: ${debt.interestAndFines.toLocaleString("no-NO")} kr</p>` 
+      ? `<p>Opprinnelig beløp: <span class="small-debt-number">${debt.originalAmount.toLocaleString("no-NO")} kr</span></p>
+      <p>Renter og gebyrer: <span class="small-debt-number">${debt.interestAndFines.toLocaleString("no-NO")} kr</span></p>` 
       : '';
+    // Log a warning if the breakdown does not add up to the total amount (allowing for small rounding differences)
     if (showBreakdown && Math.abs(debt.totalAmount - debt.originalAmount - debt.interestAndFines) >= 2) {
       console.warn(`Beløpssammensetning mismatch for caseID ${debt.caseID}: originalAmount (${debt.originalAmount}) + interestAndFines (${debt.interestAndFines}) != totalAmount (${debt.totalAmount})`);
     }
