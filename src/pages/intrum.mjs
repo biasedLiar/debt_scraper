@@ -203,7 +203,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
         caseData.creditorName = creditorEl.textContent.trim();
       }
       
-      // Only include cases that have a total amount (indicating they are valid debt cases)
+      // Only include cases that have a total amount and a case number
       if (caseData.totalAmount && caseData.caseNumber) {
         cases.push(caseData);
       }

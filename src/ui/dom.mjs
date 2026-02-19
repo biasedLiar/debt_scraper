@@ -132,7 +132,7 @@ export const visualizeDebt = (debtData) => {
     const showBreakdown = debt.originalAmount !== undefined && debt.originalAmount !== null && 
                           debt.interestAndFines !== undefined && debt.interestAndFines !== null;
     const breakdownLines = showBreakdown 
-      ? `<p>Opprinnelig beløp: <span class="small-debt-number">${debt.originalAmount.toLocaleString("no-NO")} kr</span></p>
+      ? `<p>Rest hovedstol: <span class="small-debt-number">${debt.originalAmount.toLocaleString("no-NO")} kr</span></p>
       <p>Renter og gebyrer: <span class="small-debt-number">${debt.interestAndFines.toLocaleString("no-NO")} kr</span></p>` 
       : '';
     // Log a warning if the breakdown does not add up to the total amount (allowing for small rounding differences)
