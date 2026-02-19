@@ -135,7 +135,7 @@ export const visualizeDebt = (debtData) => {
       ? `<p>Opprinnelig beløp: ${debt.originalAmount.toLocaleString("no-NO")} kr</p>
       <p>Renter og gebyrer: ${debt.interestAndFines.toLocaleString("no-NO")} kr</p>` 
       : '';
-    if (showBreakdown && debt.originalAmount + debt.interestAndFines !== debt.totalAmount) {
+    if (showBreakdown && Math.abs(debt.totalAmount - debt.originalAmount - debt.interestAndFines) >= 2) {
       console.warn(`Beløpssammensetning mismatch for caseID ${debt.caseID}: originalAmount (${debt.originalAmount}) + interestAndFines (${debt.interestAndFines}) != totalAmount (${debt.totalAmount})`);
     }
     debtDiv.innerHTML = `
