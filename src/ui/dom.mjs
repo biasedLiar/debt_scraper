@@ -130,11 +130,14 @@ export const visualizeDebt = (debtData) => {
   (debtData.debts || []).forEach((debt) => {
     const debtDiv = div({ class: "debt-item" });
     const showBreakdown = debt.originalAmount !== undefined && debt.originalAmount !== null && 
-                          debt.interestAndFees !== undefined && debt.interestAndFees !== null;
+                          debt.interestAndFines !== undefined && debt.interestAndFines !== null;
     const breakdownLines = showBreakdown 
       ? `<p>Opprinnelig beløp: ${debt.originalAmount.toLocaleString("no-NO")} kr</p>
-      <p>Renter og gebyrer: ${debt.interestAndFees.toLocaleString("no-NO")} kr</p>` 
+      <p>Renter og gebyrer: ${debt.interestAndFines.toLocaleString("no-NO")} kr</p>` 
       : '';
+    if (showBreakdown && debt.originalAmount + debt.interestAndFines !== debt.totalAmount) {
+      console.warn(`Beløpssammensetning mismatch for caseID ${debt.caseID}: originalAmount (${debt.originalAmount}) + interestAndFines (${debt.interestAndFines}) != totalAmount (${debt.totalAmount})`);
+    }
     debtDiv.innerHTML = `
       <h3>Sum: ${(debt.totalAmount ?? debt.amount ?? 0).toLocaleString("no-NO")} kr</h3>
       <p>Saks-ID: ${debt.caseID || debt.id || "Ukjent"}</p>
