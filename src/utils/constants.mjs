@@ -7,7 +7,9 @@
  * If a handler doesn't complete within this time, onTimeout will be called
  */
 export const HANDLER_TIMEOUT_MS = 300000; // 300 seconds
-export const INTRUM_HANDLER_TIMEOUT_MS = 3000000; // 3000 seconds
+
+// Intrum visits each site and extracts data sequentially, so needs a longer timeout to accommodate the full process
+export const INTRUM_HANDLER_TIMEOUT_MS = 3000000; 
 
 /**
  * File download polling configuration
