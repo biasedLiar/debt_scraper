@@ -3,7 +3,7 @@ import { intrum } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName, parseNorwegianAmount, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
 import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema, DebtCollectionSchema } from "../utils/schemas.mjs";
-import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { INTRUM_HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 
 const fs = require('fs/promises');
 
@@ -142,12 +142,12 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
-  // Start 60-second timeout timer after BankID login
+  // Start 50-minute timeout timer after BankID login
   if (onTimeout) {
     timeoutTimer = setTimeout(() => {
-      console.log('Intrum handler timed out after ' + (HANDLER_TIMEOUT_MS / 1000) + ' seconds');
+      console.log('Intrum handler timed out after ' + (INTRUM_HANDLER_TIMEOUT_MS / 1000) + ' seconds');
       onTimeout('HANDLER_TIMEOUT');
-    }, HANDLER_TIMEOUT_MS);
+    }, INTRUM_HANDLER_TIMEOUT_MS);
   }
 
     // Check if there are no cases in the system
@@ -203,8 +203,8 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
         caseData.creditorName = creditorEl.textContent.trim();
       }
       
-      // Only include cases that have a total amount (indicating they are valid debt cases)
-      if (caseData.totalAmount) {
+      // Only include cases that have a total amount and a case number
+      if (caseData.totalAmount && caseData.caseNumber) {
         cases.push(caseData);
       }
     });
