@@ -21,20 +21,20 @@ import { showInfoBox } from "../ui/uiNotifications.mjs";
 export function setupPageHandlers(page, nationalID, displayDebtData, onComplete) {
   // @ts-ignore
   page.on("request", (r) => {
-    console.log(r.url());
+    // console.log(r.url());
   });
   
   // @ts-ignore
   page.on("response", async (r) => {
-    console.log(r.url());
-    console.log(r.ok());
+    // console.log(r.url());
+    //console.log(r.ok());
     
     // Get response text once and store it
     let data;
     try {
       data = await r.text();
     } catch (e) {
-      console.log("Could not get text:", e);
+      // console.log("Could not get text:", e);
       return;
     }
 
@@ -51,7 +51,7 @@ export function setupPageHandlers(page, nationalID, displayDebtData, onComplete)
       return;
     }
     
-    console.log("Page name for saving:", pageTitle);
+    // console.log("Page name for saving:", pageTitle);
     var pageName = pageTitle
       .replace(/\s+/g, "_")
       .replace(/[<>:"/\\|?*]/g, "_")
@@ -61,7 +61,7 @@ export function setupPageHandlers(page, nationalID, displayDebtData, onComplete)
       try {
         // Skip requests that don't have a body (OPTIONS, failed requests, etc.)
         if (r.request().method() === "OPTIONS" || !r.ok()) {
-          console.log("Skipping non-OK or OPTIONS request");
+          // console.log("Skipping non-OK or OPTIONS request");
           return;
         }
         
@@ -75,10 +75,11 @@ export function setupPageHandlers(page, nationalID, displayDebtData, onComplete)
           isJsonResult
         );
 
-        console.log("Response data:", data);
+        // console.log("Response data:", data);
         fs.writeFile(filename, data, function (err) {
+
           if (err) {
-            console.log(err);
+            // console.log(err);
           }
         });
 

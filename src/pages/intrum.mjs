@@ -63,6 +63,38 @@ function mapToDebtSchema(rawDebts, debtCollectorName = "Intrum") {
 }
 
 /**
+ * Combines Intrum overview debt cases with detailed case info.
+ * Preserves overview fallback values when detailed values are missing.
+ *
+ * @param {Array<Object>} debtCases
+ * @param {Array<{caseNumber: string, details: Object}>} structuredDetailedData
+ * @returns {Array<Object>}
+ */
+function mergeDebtCasesWithDetailedInfo(debtCases, structuredDetailedData) {
+  const detailedByCaseNumber = new Map(
+    (structuredDetailedData || []).map((entry) => [String(entry.caseNumber || ""), entry.details || {}])
+  );
+
+  return (debtCases || []).map((debtCase) => {
+    const caseNumber = String(debtCase.caseNumber || "");
+    const details = detailedByCaseNumber.get(caseNumber) || {};
+
+    return {
+      caseNumber,
+      creditorName: debtCase.creditorName || "",
+      totalAmount: details["Total saldo"] ?? debtCase.totalAmount ?? 0,
+      Hovedkrav: details["Hovedkrav"] ?? 0,
+      Omkostninger: details["Omkostninger"] ?? 0,
+      Salær: details["Salær"] ?? 0,
+      "Rettslig gebyr": details["Rettslig gebyr"] ?? 0,
+      ...Object.fromEntries(
+        Object.entries(details).filter(([key]) => key.toLowerCase().startsWith("forsinkelsesrenter"))
+      ),
+    };
+  });
+}
+
+/**
  * Validates and saves Intrum debts in standardized DebtSchema format
  * Filters out invalid entries and saves to a separate _DebtSchema.json file
  * @param {string} filePath - Base path for saving the file (will be modified to add _DebtSchema suffix)
@@ -170,16 +202,20 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
 
   // Wait for debt case containers to appear
   // Using multiple selectors as fallback since Intrum's class names may vary
-  await page.waitForSelector('.case-container, .debt-case, [class*="case"]', { visible: true }).catch(() => {
+  await page.waitForSelector('.case-container, .debt-case', { visible: true }).catch(() => {
     console.log('No debt cases found or page took too long to load');
   });
+
+  //console.warn('Starting debt case extraction from Intrum main page');
 
   // Extract initial debt case overview from the main page
   const debtCases = await page.evaluate(() => {
     const cases = [];
     
     // Find all case containers - using broad selector as Intrum's structure varies
-    const caseElements = document.querySelectorAll('.case-container, .debt-case, [class*="case"]');
+    const caseElements = document.querySelectorAll('.case-container, .debt-case');
+
+    //console.warn(`Found ${caseElements.length} case elements on the page for extraction`);  
     
     caseElements.forEach(caseEl => {
       const caseData = {};
@@ -206,25 +242,21 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
       // Only include cases that have a total amount and a case number
       if (caseData.totalAmount && caseData.caseNumber) {
         cases.push(caseData);
+        // console.warn('Extracted case data:', caseData);
+      } else {
+        console.warn('Skipping case due to missing case number or total amount:', caseData);
       }
     });
     
     return cases;
   });
+
+  // console.warn(`Completed initial debt case extraction. Total valid cases extracted: ${debtCases.length}`);
   
   console.log('Extracted debt cases:', debtCases);
 
   const filePath = createFoldersAndGetName(intrum.name, nationalID, "Intrum", "ManuallyFoundDebt", true);
-  const data = { debtCases, timestamp: new Date().toISOString() };
-  console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
-
-  try {
-    // await saveValidatedJSON(filePath, data, IntrumManualDebtSchema);
-    // Also save in DebtSchema format
-    await saveIntrumDebtsAsDebtSchema(filePath, debtCases, nationalID);
-  } catch (error) {
-    console.error('Error writing debt data from Intrum to file:', error);
-  }
+  console.log(`Will save merged debt data to ${filePath}\n\n\n----------------`);
  
 
   // Find all "Detaljer på sak" buttons and process each one
@@ -317,6 +349,13 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
     console.log(`Saved detailed info for ${structuredDetailedData.length} cases to ${detailedInfoFilePath}`);
   } catch (error) {
     console.error(`Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`, error);
+  }
+
+  try {
+    const mergedDebtCases = mergeDebtCasesWithDetailedInfo(debtCases, structuredDetailedData);
+    await saveIntrumDebtsAsDebtSchema(filePath, mergedDebtCases, nationalID);
+  } catch (error) {
+    console.error('Error writing merged debt data from Intrum to file:', error);
   }
 
   if (timeoutTimer) clearTimeout(timeoutTimer);
