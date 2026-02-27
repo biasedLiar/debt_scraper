@@ -31,7 +31,6 @@ export function savePage(pageName) {
   if (unsavedPages.includes(pageName)) {
     return false;
   }
-  console.log("Saving page:", pageName);
   return true;
 }
 

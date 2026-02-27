@@ -3,6 +3,8 @@
  * @param {any} page - Puppeteer page object
  * @param {string} nationalID - The national identity number to use for login
  */
+import { HEAVY_LOGGING } from "../utils/constants.mjs";
+
 export async function loginWithBankID(page, nationalID) {
   // Wait for and click the BankID link
   try {
@@ -12,7 +14,9 @@ export async function loginWithBankID(page, nationalID) {
     await page.click('a[href="/authorize/bankid"]');
     console.log("Clicked BankID link");
   } catch (e) {
-    console.log("Could not find/click BankID link:", e);
+    if (HEAVY_LOGGING) {
+      console.log("Could not find/click BankID link:", e);
+    }
   }
 
   // Wait for and fill in the national identity number input
@@ -50,7 +54,9 @@ export async function loginWithBankID(page, nationalID) {
       console.log('Bekreft innlogging button not found, skipping');
     } 
   } catch (e) {
-    console.log('Could not find/click Bekreft innlogging button: (not critical)', e);
+    if (HEAVY_LOGGING) {
+      console.log('Could not find/click Bekreft innlogging button: (not critical)', e);
+    }
   }
 
 
