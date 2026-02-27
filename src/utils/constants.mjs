@@ -29,3 +29,8 @@ export const DEFAULT_TIMEOUT_MS = 180000; // 3 minutes
  */
 export const ERROR_MESSAGE_DISPLAY_MS = 60000; // 60 seconds - How long error messages stay visible
 export const VALIDATION_ERROR_DISPLAY_MS = 4000; // 4 seconds - How long validation errors stay visible
+
+/**
+ * Enables verbose debug logging for response/request handling and scraping internals
+ */
+export const HEAVY_LOGGING = false;
