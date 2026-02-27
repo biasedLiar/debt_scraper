@@ -206,8 +206,6 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
     console.log('No debt cases found or page took too long to load');
   });
 
-  //console.warn('Starting debt case extraction from Intrum main page');
-
   // Extract initial debt case overview from the main page
   const debtCases = await page.evaluate(() => {
     const cases = [];
@@ -215,8 +213,6 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
     // Find all case containers - using broad selector as Intrum's structure varies
     const caseElements = document.querySelectorAll('.case-container, .debt-case');
 
-    //console.warn(`Found ${caseElements.length} case elements on the page for extraction`);  
-    
     caseElements.forEach(caseEl => {
       const caseData = {};
       
@@ -242,17 +238,11 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
       // Only include cases that have a total amount and a case number
       if (caseData.totalAmount && caseData.caseNumber) {
         cases.push(caseData);
-        // console.warn('Extracted case data:', caseData);
-      } else {
-        console.warn('Skipping case due to missing case number or total amount:', caseData);
       }
     });
     
     return cases;
   });
-
-  // console.warn(`Completed initial debt case extraction. Total valid cases extracted: ${debtCases.length}`);
-  
   console.log('Extracted debt cases:', debtCases);
 
   const filePath = createFoldersAndGetName(intrum.name, nationalID, "Intrum", "ManuallyFoundDebt", true);
