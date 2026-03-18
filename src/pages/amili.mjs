@@ -33,41 +33,14 @@ export async function handleAmiliLogin(nationalID, setupPageHandlers, callbacks 
       setupPageHandlers(page, nationalID);
     }
 
-    // Click the Amili BankID login button by matching a nested <p> with expected text.
+    // Click the Amili BankID login button directly via known class.
     try {
-      await page.waitForSelector("button p", { visible: true });
-      const buttons = await page.$$("button");
-      let clicked = false;
-
-      for (const button of buttons) {
-        console.log("Checking button for BankID text...");
-        const hasBankIdText = await button.evaluate((el) => {
-          const pElements = Array.from(el.querySelectorAll("p"));
-          return pElements.some((p) =>
-            (p.textContent || "").includes("Logg inn med BankID")
-          );
-        });
-
-        if (hasBankIdText) {
-          await button.click();
-
-          try {
-            // Sometimes button doesn't register the first click (and it not because the page hasn't loaded)
-            await button.click();
-            await button.click();
-          } catch (error) {
-            console.log("Additional click attempt unnecessary:");
-          }
-          console.log(button);
-          clicked = true;
-          console.log('Clicked "Logg inn med BankID" button');
-          break;
-        }
-      }
-
-      if (!clicked) {
-        console.warn('Did not find a button containing p text "Logg inn med BankID"');
-      }
+      await page.waitForSelector("button.css-1ea8c4f", { visible: true });
+      const button = await page.$("button.css-1ea8c4f");
+      
+      await page.bringToFront()
+      await button.click();
+      console.log('Clicked "Logg inn med BankID" button');
     } catch (e) {
       console.error("Could not find/click Amili BankID button:", e);
     }
@@ -123,6 +96,17 @@ export async function handleAmiliLogin(nationalID, setupPageHandlers, callbacks 
     }
 
     console.warn("Amili login successful, waiting for main page to load...");
+
+
+    await page.waitForSelector(".css-1ohpwqt", {visible: true});
+    const totalAmount = await page.$eval(".css-1ohpwqt", (el) => el.textContent);
+    console.error("Amili - totalAmount element found:", totalAmount);
+
+
+
+
+    
+
 
     await page.waitForFunction(() => {
       const h1Elements = Array.from(document.querySelectorAll("h1"));
