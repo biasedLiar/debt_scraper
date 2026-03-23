@@ -9,7 +9,15 @@ import { DebtCollectionSchema } from "../utils/schemas.mjs";
 import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 
 const fs = require("fs/promises");
-const TEMP_DEV_EXIT_DELAY_MS = 5 * 60 * 1000; // Remove after development
+const CASE_CONTAINER_SELECTOR = "table.css-qxn47u tbody tr";
+
+function extractAmountFromText(text) {
+  if (!text) {
+    return "";
+  }
+  const amountMatch = String(text).match(/-?\d[\d .]*,\d{2}\s*(kr|nok)?/i);
+  return amountMatch ? amountMatch[0] : "";
+}
 
 function buildCollection(debts) {
   const totalAmount = debts.reduce((sum, debt) => sum + (debt.totalAmount || 0), 0);
@@ -115,7 +123,6 @@ export async function handleAmiliLogin(nationalID, setupPageHandlers, callbacks 
       );
     });
 
-    await page.waitForSelector("div.css-11h1f6b, .insert_css_selector_for_debt_rows");
 
 
     const hasNoDebtMessage = await page.evaluate(() => {
@@ -124,47 +131,71 @@ export async function handleAmiliLogin(nationalID, setupPageHandlers, callbacks 
 
     console.error("Amili - hasNoDebtMessage:", hasNoDebtMessage);
 
-    const rawRows = hasNoDebtMessage
-      ? []
-      : await page.evaluate(() => {
-          const rowSelectors = [
-            "table tbody tr",
-            ".debt-card",
-            ".case-container",
-            ".account",
-          ];
+    const rawRows = [];
 
-          const rows = [];
-          const visited = new Set();
+    if (!hasNoDebtMessage) {
+      // Extract debt data directly from the main page without clicking into individual cases
+      const pageRows = await page.evaluate(() => {
+        const rowSelectors = [
+          "table tbody tr",
+          ".debt-card",
+          ".case-container",
+          ".account",
+        ];
 
-          for (const selector of rowSelectors) {
-            const elements = document.querySelectorAll(selector);
-            for (const element of elements) {
-              if (visited.has(element)) {
-                continue;
-              }
-              visited.add(element);
+        const rows = [];
+        const visited = new Set();
 
-              const text = (element.textContent || "").replace(/\s+/g, " ").trim();
-              const amountMatch = text.match(/-?\d[\d .]*,\d{2}\s*(kr|nok)?/i);
-
-              rows.push({
-                caseID:
-                  element.getAttribute("data-case-id") ||
-                  element.querySelector("[data-case-id]")?.getAttribute("data-case-id") ||
-                  element.querySelector("td")?.textContent?.trim() ||
-                  "N/A",
-                amountText: amountMatch ? amountMatch[0] : "",
-                creditorName:
-                  element.querySelector(".creditor-name")?.textContent?.trim() ||
-                  element.querySelector("[data-creditor]")?.getAttribute("data-creditor") ||
-                  "Unknown",
-              });
+        for (const selector of rowSelectors) {
+          const elements = document.querySelectorAll(selector);
+          for (const element of elements) {
+            if (visited.has(element)) {
+              continue;
             }
-          }
+            visited.add(element);
 
-          return rows;
-        });
+            const rawText = element.innerText || element.textContent || "";
+            const text = rawText.replace(/\s+/g, " ").trim();
+
+            const sakSplit = rawText.split("Sak #");
+            const creditorNameFromSak =
+              sakSplit.length > 1
+                ? (sakSplit[0] || "").replace(/\s+/g, " ").trim() || "Unknown"
+                : "";
+            const caseIdFromSak =
+              sakSplit.length > 1
+                ? (() => {
+                    const afterSakLines = (sakSplit[1] || "")
+                      .split("\n")
+                      .map((line) => line.trim())
+                      .filter(Boolean);
+                    const firstLine = afterSakLines[0] || "";
+                    return firstLine || "";
+                  })()
+                : "";
+
+            rows.push({
+              caseID:
+                caseIdFromSak ||
+                "N/A",
+              amountText: text,
+              creditorName:
+                creditorNameFromSak ||
+                "Unknown",
+            });
+          }
+        }
+
+        return rows;
+      });
+
+      rawRows.push(
+        ...pageRows.map((row) => ({
+          ...row,
+          amountText: extractAmountFromText(row.amountText),
+        }))
+      );
+    }
 
     const debts = rawRows
       .map((row) => ({
@@ -191,11 +222,6 @@ export async function handleAmiliLogin(nationalID, setupPageHandlers, callbacks 
     if (timeoutTimer) {
       clearTimeout(timeoutTimer);
     }
-
-    console.warn(
-      `Temporary development delay: waiting ${TEMP_DEV_EXIT_DELAY_MS / 1000} seconds before exit.`
-    );
-    await new Promise((resolve) => setTimeout(resolve, TEMP_DEV_EXIT_DELAY_MS));
 
     if (onComplete) {
       setTimeout(() => onComplete(debts.length > 0 ? "DEBT_FOUND" : "NO_DEBT_FOUND"), 1000);

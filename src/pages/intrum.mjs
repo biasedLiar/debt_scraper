@@ -215,7 +215,13 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
 
     caseElements.forEach(caseEl => {
       const caseData = {};
-      
+
+      // Skip cases where details are explicitly unavailable
+      const noDetails = caseEl.querySelector('.details-not-available');
+      if (noDetails) {
+        return;
+      }
+
       // Extract case number
       const caseNumberEl = caseEl.querySelector('.label');
       if (caseNumberEl) {
@@ -245,6 +251,16 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   });
   console.log('Extracted debt cases:', debtCases);
 
+  if (!Array.isArray(debtCases) || debtCases.length === 0) {
+    console.log('No valid debt cases extracted from Intrum page. Finishing execution.');
+    if (timeoutTimer) clearTimeout(timeoutTimer);
+    if (onComplete) {
+      setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
+    }
+    return { browser, page };
+  }
+  
+
   const filePath = createFoldersAndGetName(intrum.name, nationalID, "Intrum", "ManuallyFoundDebt", true);
   console.log(`Will save merged debt data to ${filePath}\n\n\n----------------`);
  
@@ -257,8 +273,14 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
     const detailButtons = [];
     
     for (const button of buttons) {
-      const text = await button.evaluate(el => el.textContent.trim());
-      if (text === 'Detaljer på sak') {
+      const buttonInfo = await button.evaluate((el) => {
+        const text = (el.textContent || '').trim();
+        const caseContainer = el.closest('.case-container, .debt-case, [class*="case"]');
+        const hasNoDetails = !!caseContainer?.querySelector('.details-not-available');
+        return { text, hasNoDetails };
+      });
+
+      if (buttonInfo.text === 'Detaljer på sak' && !buttonInfo.hasNoDetails) {
         detailButtons.push(button);
       }
     }
