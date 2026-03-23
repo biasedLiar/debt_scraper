@@ -19,6 +19,7 @@ import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
 import { handleIntrumLogin } from "./pages/intrum.mjs";
+import { handleAmiliLogin } from "./pages/amili.mjs";
 import { handlePraGroupLogin } from "./pages/pra-group.mjs";
 import { handleZolvaLogin } from "./pages/zolva-as.mjs";
 
@@ -78,6 +79,7 @@ const createHandler = (siteName, handler, options) =>
 const siButton = button("Statens Innkrevingssentral", createHandler("SI", handleSILogin));
 const digipostButton = button("Nedlast fra Digipost", createHandler("Digipost", handleDigipostLogin));
 const intrumButton = button("Intrum", createHandler("Intrum", handleIntrumLogin));
+const amiliButton = button("Amili", createHandler("Amili", handleAmiliLogin));
 const kredinorButton = button("Kredinor", createHandler("Kredinor", handleKredinorLogin, { requiresUserName: true }));
 const praGroupButton = button("PRA Group", createHandler("PRA Group", handlePraGroupLogin));
 const zolvaButton = button("Zolva AS", createHandler("Zolva AS", handleZolvaLogin));
@@ -89,6 +91,7 @@ const getActiveWebsites = () => {
     { name: "SI", button: siButton, handler: (cb) => handleSILogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
     { name: "Kredinor", button: kredinorButton, handler: (cb) => handleKredinorLogin(getNationalID(), () => sessionState.userName, setupPageHandlersWithDisplay, cb) },
     { name: "Intrum", button: intrumButton, handler: (cb) => handleIntrumLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+    { name: "Amili", button: amiliButton, handler: (cb) => handleAmiliLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
     { name: "PRA Group", button: praGroupButton, handler: (cb) => handlePraGroupLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
     { name: "Zolva AS", button: zolvaButton, handler: (cb) => handleZolvaLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
     { name: "Digipost", button: digipostButton, handler: (cb) => handleDigipostLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
@@ -145,7 +148,7 @@ const exportCsvButton = button("Eksporter som CSV", async () => {
 });
 
 const buttonsContainer = div();
-buttonsContainer.append(siButton, kredinorButton, intrumButton, praGroupButton, zolvaButton);
+buttonsContainer.append(siButton, kredinorButton, intrumButton, amiliButton, praGroupButton, zolvaButton);
 
 const exportHeader = h2("Andre tjenester:", "main-subheading");
 
