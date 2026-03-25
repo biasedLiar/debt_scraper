@@ -34,3 +34,8 @@ export const VALIDATION_ERROR_DISPLAY_MS = 4000; // 4 seconds - How long validat
  * Enables verbose debug logging for response/request handling and scraping internals
  */
 export const HEAVY_LOGGING = false;
+
+/**
+ * Makes user manually enter BankId flow to increase sense of agency
+ */
+export const SLOW_DOWN_BANK_ID = true;
