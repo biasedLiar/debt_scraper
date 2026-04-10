@@ -176,7 +176,7 @@ export const errorBox = (header, message) => {
   const outerContainer = div({ class: `error-box` });
 
   const headerNumber = h1(header, "debt-small-header");
-  const headerSubtext = h2(message, "total-debt-amount");
+  const headerSubtext = h2(message, "error-message-text");
   outerContainer.appendChild(headerNumber);
   outerContainer.appendChild(headerSubtext);
   return outerContainer;
@@ -192,7 +192,7 @@ export const infoBox = (header, message) => {
   const outerContainer = div({ class: `info-box` });
 
   const headerNumber = h1(header, "debt-small-header");
-  const headerSubtext = h2(message, "total-debt-amount");
+  const headerSubtext = h2(message, "info-message-text");
   outerContainer.appendChild(headerNumber);
   outerContainer.appendChild(headerSubtext);
   return outerContainer;

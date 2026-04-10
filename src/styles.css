@@ -260,9 +260,23 @@ input[type="number"] {
   padding: 15px;
   margin-top: 20px;
   border-radius: 8px;
+  margin-left: 0;
+  margin-right: 0;
 
   & h1{
     color: black;
+  }
+
+  & .debt-small-header,
+  & .error-message-text {
+    margin: 0;
+  }
+
+  & .error-message-text {
+    margin-top: 8px;
+    font-size: 18px;
+    line-height: 1.4;
+    word-break: break-word;
   }
 }
 
@@ -273,8 +287,22 @@ input[type="number"] {
   padding: 15px;
   margin-top: 20px;
   border-radius: 8px;
+  margin-left: 0;
+  margin-right: 0;
 
   & h1{ 
     color: black;
+  }
+
+  & .debt-small-header,
+  & .info-message-text {
+    margin: 0;
+  }
+
+  & .info-message-text {
+    margin-top: 8px;
+    font-size: 18px;
+    line-height: 1.4;
+    word-break: break-word;
   }
 }
