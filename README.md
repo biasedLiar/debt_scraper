@@ -154,6 +154,21 @@ Applikasjonen bruker **Zod**-skjemaer for å sikre at alle lagrede data oppretth
 - Valideringsfeil logges med detaljert informasjon om hva som feilet
 - Skjemaer er definert i [src/schemas.mjs](src/schemas.mjs)
 
+### Norsk dataskjema for inkassodokumenter (idé, ikke implementert)
+
+Prosjektet inneholder et forslag til et mer detaljert norsk dataskjema i [src/utils/debtorDocumentSchemaNorsk.mjs](src/utils/debtorDocumentSchemaNorsk.mjs).
+
+Dette skjemaet er forelopig kun en idé for videre utvikling, og er ikke implementert i dagens datainnsamling, valideringsflyt eller lagringsformat.
+
+Målet med skjemaet er å standardisere struktur for:
+
+- Dokumentmetadata (kilde, dokumenttype, uttrekksdato)
+- Saker med identifikatorer, beløp, datoer og status
+- Parter (inkassoselskap, fordringshaver, skyldner)
+- Fakturaer, innbetalinger og andre saksdetaljer
+
+Ved eventuell implementering senere kan dette brukes som grunnlag for mer konsistent parsing av PDF- og dokumentbasert gjeldsdata.
+
 ### Validerte Dataformater
 
 - **Intrum**: Manuelle gjeldssaker med saksnumre, beløp og kreditornavn

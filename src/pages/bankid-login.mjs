@@ -3,15 +3,15 @@
  * @param {any} page - Puppeteer page object
  * @param {string} nationalID - The national identity number to use for login
  */
-import { HEAVY_LOGGING } from "../utils/constants.mjs";
+import { HEAVY_LOGGING, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
 
 export async function loginWithBankID(page, nationalID) {
   // Wait for and click the BankID link
   try {
-    await page.waitForSelector('a[href="/authorize/bankid"]', {
-      timeout: 2000
+    await page.waitForSelector('a[href="/authorize/bankid"], input#nnin', {
+      timeout: SLOW_DOWN_BANK_ID ? 120000 : 2000
     });
-    await page.click('a[href="/authorize/bankid"]');
+    await page.click('a[href="/authorize/bankid"]', {timeout: 2000});
     console.log("Clicked BankID link");
   } catch (e) {
     if (HEAVY_LOGGING) {

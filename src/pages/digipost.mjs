@@ -2,7 +2,7 @@ import { PUP } from "../services/scraper.mjs";
 import { digiPost } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createDownloadFoldersAndGetName, waitForNewDownloadedFile } from "../utils/utilities.mjs";
-import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { HANDLER_TIMEOUT_MS, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
 
 // Local function to sanitize folder and file names (Windows-safe)
 function safe(name) {
@@ -40,17 +40,19 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
   }
 
   // Wait for and click the login button
-  try {
-    await page.waitForSelector(
-      "button.dds-button.dds-button--primary.dds-button--size-large",
-      { timeout: 5000 }
-    );
-    await page.click(
-      "button.dds-button.dds-button--primary.dds-button--size-large"
-    );
-    console.log("Clicked login button");
-  } catch (e) {
-    console.error("Could not find/click button:", e);
+  if (!SLOW_DOWN_BANK_ID) {
+    try {
+      await page.waitForSelector(
+        "button.dds-button.dds-button--primary.dds-button--size-large",
+        { timeout: 5000 }
+      );
+      await page.click(
+        "button.dds-button.dds-button--primary.dds-button--size-large"
+      );
+      console.log("Clicked login button");
+    } catch (e) {
+      console.error("Could not find/click button:", e);
+    }
   }
 
   // Use shared BankID login flow

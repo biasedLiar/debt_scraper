@@ -1,7 +1,7 @@
 import { PUP } from "../services/scraper.mjs";
 import { zolva } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { HANDLER_TIMEOUT_MS, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
 import { createFoldersAndGetName, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
 import { DebtSchema, DebtCollectionSchema } from "../utils/schemas.mjs";
 const fs = require('fs/promises');
@@ -25,17 +25,19 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, callbacks 
   }
 
   // Wait for and click the login button
-  try {
-    await page.waitForSelector(
-      "button.c-btn.c-btn--variant-nets.mb-1",
-      { visible: true  }
-    );
-    await page.click(
-      "button.c-btn.c-btn--variant-nets.mb-1"
-    );
-    console.log("Clicked BankID login button");
-  } catch (e) {
-    console.error("Could not find/click button:", e);
+  if (!SLOW_DOWN_BANK_ID) {
+    try {
+      await page.waitForSelector(
+        "button.c-btn.c-btn--variant-nets.mb-1",
+        { visible: true  }
+      );
+      await page.click(
+        "button.c-btn.c-btn--variant-nets.mb-1"
+      );
+      console.log("Clicked BankID login button");
+    } catch (e) {
+      console.error("Could not find/click button:", e);
+    }
   }
 
   // Use shared BankID login flow

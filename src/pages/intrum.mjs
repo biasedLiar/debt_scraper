@@ -3,7 +3,7 @@ import { intrum } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName, parseNorwegianAmount, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
 import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema, DebtCollectionSchema } from "../utils/schemas.mjs";
-import { INTRUM_HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { INTRUM_HANDLER_TIMEOUT_MS, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
 
 const fs = require('fs/promises');
 
@@ -159,16 +159,17 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
     setupPageHandlers(page, nationalID);
   }
 
-
-  try {
-      // Click the "Logg inn" button with id="signicatOIDC"
-      await page.waitForSelector('#signicatOIDC', { visible: true });
-      await page.click('#signicatOIDC');
-      console.log('Clicked "Logg inn" button');
-    } catch (error) {
-      console.error('Error clicking "Logg inn" button:', error);
-      throw error;
-    }
+  if (!SLOW_DOWN_BANK_ID) {
+    try {
+        // Click the "Logg inn" button with id="signicatOIDC"
+        await page.waitForSelector('#signicatOIDC', { visible: true });
+        await page.click('#signicatOIDC');
+        console.log('Clicked "Logg inn" button');
+      } catch (error) {
+        console.error('Error clicking "Logg inn" button:', error);
+        throw error;
+      }
+  }
 
 
   // Use shared BankID login flow

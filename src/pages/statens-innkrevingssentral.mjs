@@ -1,7 +1,7 @@
 import { si } from "../services/data.mjs";
 import { PUP } from "../services/scraper.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { HANDLER_TIMEOUT_MS, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
 
 /**
  * Handles the Statens Innkrevingssentral login automation flow
@@ -13,16 +13,18 @@ import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {}) {
   const { onComplete, onTimeout } = callbacks;
   let timeoutTimer = null;
-  const { browser, page } = await PUP.openPage(si.url);
 
-  console.log(`Opened ${si.name} at ${si.url}`);
+  const startUrl = SLOW_DOWN_BANK_ID ? "https://skatteetaten.no" : si.url;
+  const { browser, page } = await PUP.openPage(startUrl);
+
+  console.log(`Opened ${si.name} at ${startUrl}`);
 
   // Setup page handlers for saving responses
   if (setupPageHandlers) {
     setupPageHandlers(page, nationalID, onComplete);
   }
 
-  // Use shared BankID login flow
+  
   await loginWithBankID(page, nationalID);
 
   // Start 60-second timeout timer after BankID login
@@ -31,6 +33,11 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
       console.log('SI handler timed out after ' + (HANDLER_TIMEOUT_MS / 1000) + ' seconds');
       onTimeout('HANDLER_TIMEOUT');
     }, HANDLER_TIMEOUT_MS);
+  }
+
+  if (SLOW_DOWN_BANK_ID) {
+    await page.waitForSelector("aria/Krav og betaling", { visible: true, timeout: 120000 });
+    await page.click("aria/Krav og betaling");
   }
 
   // FInds the element containing the debt information after login to know if the user has debt or not. 
