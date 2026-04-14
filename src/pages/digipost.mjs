@@ -41,17 +41,19 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
   }
 
   // Wait for and click the login button
-  try {
-    await page.waitForSelector(
-      "button.dds-button.dds-button--primary.dds-button--size-large",
-      { timeout: 5000 }
-    );
-    await page.click(
-      "button.dds-button.dds-button--primary.dds-button--size-large"
-    );
-    console.log("Clicked login button");
-  } catch (e) {
-    console.error("Could not find/click button:", e);
+  if (!SLOW_DOWN_BANK_ID) {
+    try {
+      await page.waitForSelector(
+        "button.dds-button.dds-button--primary.dds-button--size-large",
+        { timeout: 5000 }
+      );
+      await page.click(
+        "button.dds-button.dds-button--primary.dds-button--size-large"
+      );
+      console.log("Clicked login button");
+    } catch (e) {
+      console.error("Could not find/click button:", e);
+    }
   }
 
   // Use shared BankID login flow

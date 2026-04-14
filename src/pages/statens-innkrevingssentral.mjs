@@ -24,7 +24,7 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
     setupPageHandlers(page, nationalID, onComplete);
   }
 
-
+  
   await loginWithBankID(page, nationalID);
 
   // Start 60-second timeout timer after BankID login

@@ -43,15 +43,29 @@ export async function handleAmiliLogin(nationalID, setupPageHandlers, callbacks 
     }
 
     // Click the Amili BankID login button directly via known class.
-    try {
-      await page.waitForSelector("button.css-1ea8c4f", { visible: true });
-      const button = await page.$("button.css-1ea8c4f");
-      
-      await page.bringToFront()
-      await button.click();
-      console.log('Clicked "Logg inn med BankID" button');
-    } catch (e) {
-      console.error("Could not find/click Amili BankID button:", e);
+    // The site requires two real clicks (same behaviour observed when visiting manually).
+    if (!SLOW_DOWN_BANK_ID) {
+      try {
+        await page.bringToFront();
+        await page.waitForSelector("button.css-1ea8c4f", { visible: true });
+
+        // First click – activates/focuses the button
+        await page.click("button.css-1ea8c4f");
+        console.log("Amili: first click on BankID login button");
+
+        // Brief pause then second click – actually triggers the navigation
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        try{
+          await page.click("button.css-1ea8c4f");
+          console.log("Amili: second click on BankID login button");
+        } catch (e) {
+          console.log("Secondary click not necessary.");
+        }
+
+        // BankID opens in the same tab; wait for navigation to complete
+      } catch (e) {
+        console.error("Could not find/click Amili BankID button:", e);
+      }
     }
 
     await loginWithBankID(page, nationalID);
@@ -106,18 +120,9 @@ export async function handleAmiliLogin(nationalID, setupPageHandlers, callbacks 
       }, HANDLER_TIMEOUT_MS);
     }
 
-    console.warn("Amili login successful, waiting for main page to load...");
-
-
     await page.waitForSelector(".css-1ohpwqt", {visible: true});
     const totalAmount = await page.$eval(".css-1ohpwqt", (el) => el.textContent);
-    console.error("Amili - totalAmount element found:", totalAmount);
-
-
-
-
-    
-
+    console.log("Amili - totalAmount element found:", totalAmount);
 
     await page.waitForFunction(() => {
       const h1Elements = Array.from(document.querySelectorAll("h1"));
@@ -132,7 +137,7 @@ export async function handleAmiliLogin(nationalID, setupPageHandlers, callbacks 
       return document.querySelector("div.css-11h1f6b") !== null;
     });
 
-    console.error("Amili - hasNoDebtMessage:", hasNoDebtMessage);
+    console.log("Amili - hasNoDebtMessage:", hasNoDebtMessage);
 
     const rawRows = [];
 

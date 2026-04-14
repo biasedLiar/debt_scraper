@@ -6,7 +6,7 @@ import { createExtractedDetailedDocumentFoldersAndGetName } from "../utils/fileO
 import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSchema } from "../utils/schemas.mjs";
 import { extractFields } from "../services/extract_kredinor.mjs";
 import { extractStructuredDebt } from "../services/extract_structured_debt.mjs";
-import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { HANDLER_TIMEOUT_MS, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
 import { waitForContinue } from "../utils/pageHelpers.mjs";
 const fs = require('fs/promises');
 const fsSync = require('fs');
@@ -40,12 +40,14 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     // Accept cookies if banner present
     await acceptCookies(page);
     
-    try {
-      await page.waitForSelector('button.login-button', { visible: true});
-      await page.click('button.login-button');
-    } catch (error) {
-      console.error('Error clicking login button:', error.message);
-      throw new Error('Failed to find or click login button');
+    if (!SLOW_DOWN_BANK_ID) {
+      try {
+        await page.waitForSelector('button.login-button', { visible: true});
+        await page.click('button.login-button');
+      } catch (error) {
+        console.error('Error clicking login button:', error.message);
+        throw new Error('Failed to find or click login button');
+      }
     }
     
     await loginWithBankID(page, nationalID);

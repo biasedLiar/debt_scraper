@@ -149,7 +149,7 @@ export function setupPageHandlers(page, nationalID, displayDebtData, onComplete)
               // SI often finds debt via json so fast it seems as if the site has crashed.
               // So info box is displayed to show that scraping is complete with no debt found.
               console.log("Scraping complete, signaling callback...");
-              showInfoBox("Ingen gjeld", `Det er ingen gjeld hos ${sessionState.currentWebsite}.`);
+              //showInfoBox("Ingen gjeld", `Det er ingen gjeld hos ${sessionState.currentWebsite}.`);
               setTimeout(() => onComplete('NO_DEBT_FOUND'), 500);
             }
           }

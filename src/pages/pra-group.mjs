@@ -2,7 +2,7 @@ import { PUP } from "../services/scraper.mjs";
 import { praGroup } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
-import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { HANDLER_TIMEOUT_MS, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
 import { waitForContinue } from "../utils/pageHelpers.mjs";
 import { DebtCollectionSchema } from "../utils/schemas.mjs";
 const fs = require('fs/promises');
@@ -27,12 +27,14 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
   }
 
   // Wait for and click the login button
-  try {
-    await page.waitForSelector("#loginButtonId", { visible: true });
-    await page.click("#loginButtonId");
-    console.log("Clicked BankID login button");
-  } catch (e) {
-    console.error("Could not find/click button:", e);
+  if (!SLOW_DOWN_BANK_ID) {
+    try {
+      await page.waitForSelector("#loginButtonId", { visible: true });
+      await page.click("#loginButtonId");
+      console.log("Clicked BankID login button");
+    } catch (e) {
+      console.error("Could not find/click button:", e);
+    }
   }
 
   // Use shared BankID login flow
