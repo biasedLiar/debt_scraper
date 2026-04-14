@@ -7,6 +7,7 @@ import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSch
 import { extractFields } from "../services/extract_kredinor.mjs";
 import { extractStructuredDebt } from "../services/extract_structured_debt.mjs";
 import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { waitForContinue } from "../utils/pageHelpers.mjs";
 const fs = require('fs/promises');
 const fsSync = require('fs');
 const path = require('path');
@@ -48,6 +49,8 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     }
     
     await loginWithBankID(page, nationalID);
+
+    await waitForContinue(`Paused after BankID login on ${kredinor.name}`);
 
     // Start 60-second timeout timer after BankID login
     if (onTimeout) {

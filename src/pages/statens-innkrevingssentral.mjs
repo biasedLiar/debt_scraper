@@ -1,7 +1,7 @@
 import { si } from "../services/data.mjs";
 import { PUP } from "../services/scraper.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
-import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { HANDLER_TIMEOUT_MS, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
 
 /**
  * Handles the Statens Innkrevingssentral login automation flow
@@ -13,16 +13,18 @@ import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {}) {
   const { onComplete, onTimeout } = callbacks;
   let timeoutTimer = null;
-  const { browser, page } = await PUP.openPage(si.url);
 
-  console.log(`Opened ${si.name} at ${si.url}`);
+  const startUrl = SLOW_DOWN_BANK_ID ? "https://skatteetaten.no" : si.url;
+  const { browser, page } = await PUP.openPage(startUrl);
+
+  console.log(`Opened ${si.name} at ${startUrl}`);
 
   // Setup page handlers for saving responses
   if (setupPageHandlers) {
     setupPageHandlers(page, nationalID, onComplete);
   }
 
-  // Use shared BankID login flow
+
   await loginWithBankID(page, nationalID);
 
   // Start 60-second timeout timer after BankID login
@@ -32,29 +34,29 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
       onTimeout('HANDLER_TIMEOUT');
     }, HANDLER_TIMEOUT_MS);
   }
-
-  // FInds the element containing the debt information after login to know if the user has debt or not. 
-  // The actual data is retrieved from json files saved by the page handlers, 
-  // waitForSelector ensures the program waits until the json has been saved.
-  const debtElement = await page.waitForSelector("p:has-text('totalt skylder du')", { visible: true }).catch(() => null);
   
-  if (debtElement) {
-    const debtText = await page.evaluate((el) => el.textContent, debtElement);
-    console.log(`Found debt through UI, not JSON as expected: ${debtText}`);
-    if (timeoutTimer) clearTimeout(timeoutTimer);
-    if (onComplete) {
-      const result = debtText.includes("du 0 kroner") ? "NO_DEBT_FOUND" : "DEBT_FOUND";
-      setTimeout(() => onComplete(result), 10000);
+  // Note: waitForContinue is not used here — SI's page handlers capture data via
+  // network responses, and the browser may close before the Continue button can be
+  // interacted with, causing errors.
+
+  if (SLOW_DOWN_BANK_ID) {
+    try {
+      await page.waitForSelector("aria/Krav og betaling", { visible: true, timeout: 120000 });
+      await page.click("aria/Krav og betaling");
+      await page.waitForSelector(".NavigationTile-module_title__ezDhE", { visible: true, timeout: 120000 });
+      await page.evaluate(() => {
+        const links = document.querySelectorAll('a');
+        for (const link of links) {
+          if (link.textContent.includes('Bøter, erstatningskrav eller andre krav')) {
+            link.click();
+            return;
+          }
+        }
+      });
+    } catch (err) {
+      console.log('SI navigation interrupted (browser may have closed after data capture):', err.message);
     }
-    
-  } else {
-    // Should in theory never come here
-    console.log("No debt found through UI - this should not happen.");
-    if (timeoutTimer) clearTimeout(timeoutTimer);
-    if (onComplete) {
-        setTimeout(() => onComplete("UNEXPECTED_STATE"), 10000);
-    }
-  }
+  } 
 
   return { browser, page };
 }

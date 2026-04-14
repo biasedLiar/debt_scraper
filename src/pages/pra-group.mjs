@@ -3,6 +3,7 @@ import { praGroup } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
 import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { waitForContinue } from "../utils/pageHelpers.mjs";
 import { DebtCollectionSchema } from "../utils/schemas.mjs";
 const fs = require('fs/promises');
 
@@ -36,6 +37,8 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
 
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
+
+  await waitForContinue(`Paused after BankID login on ${praGroup.name}`);
 
   // Start 60-second timeout timer after BankID login
   if (onTimeout) {

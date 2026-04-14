@@ -4,6 +4,7 @@ import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName, parseNorwegianAmount, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
 import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema, DebtCollectionSchema } from "../utils/schemas.mjs";
 import { INTRUM_HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { waitForContinue } from "../utils/pageHelpers.mjs";
 
 const fs = require('fs/promises');
 
@@ -174,6 +175,8 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
+  await waitForContinue(`Paused after BankID login on ${intrum.name}`);
+
   // Start 50-minute timeout timer after BankID login
   if (onTimeout) {
     timeoutTimer = setTimeout(() => {
@@ -294,6 +297,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   const allDetailedInfo = [];
 
   for (let i = 0; i < totalCases; i++) {
+    await waitForContinue(`Intrum: Ready to process case ${i + 1}/${totalCases}`);
     console.log(`Processing case ${i + 1}/${totalCases}`);
     
     try {

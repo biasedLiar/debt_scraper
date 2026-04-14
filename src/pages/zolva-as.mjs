@@ -2,6 +2,7 @@ import { PUP } from "../services/scraper.mjs";
 import { zolva } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { waitForContinue } from "../utils/pageHelpers.mjs";
 import { createFoldersAndGetName, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
 import { DebtSchema, DebtCollectionSchema } from "../utils/schemas.mjs";
 const fs = require('fs/promises');
@@ -40,6 +41,8 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, callbacks 
 
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
+
+  await waitForContinue(`Paused after BankID login on ${zolva.name}`);
 
   // Start 60-second timeout timer after BankID login
   if (onTimeout) {

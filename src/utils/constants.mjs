@@ -34,3 +34,15 @@ export const VALIDATION_ERROR_DISPLAY_MS = 4000; // 4 seconds - How long validat
  * Enables verbose debug logging for response/request handling and scraping internals
  */
 export const HEAVY_LOGGING = false;
+
+/**
+ * Used to not automatically enter bank id login side
+ */
+export const SLOW_DOWN_BANK_ID = false;
+
+/**
+ * When enabled, pauses scraping after BankID login and shows a "Continue" button
+ * in the Electron UI. For Intrum, also pauses between each case.
+ * Allows manual interaction with the browser before the scraper proceeds.
+ */
+export const STEP_THROUGH_MODE = true;

@@ -7,6 +7,7 @@ import {
 } from "../utils/utilities.mjs";
 import { DebtCollectionSchema } from "../utils/schemas.mjs";
 import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { waitForContinue } from "../utils/pageHelpers.mjs";
 
 const fs = require("fs/promises");
 const CASE_CONTAINER_SELECTOR = "table.css-qxn47u tbody tr";
@@ -54,6 +55,8 @@ export async function handleAmiliLogin(nationalID, setupPageHandlers, callbacks 
     }
 
     await loginWithBankID(page, nationalID);
+
+    await waitForContinue(`Paused after BankID login on ${amili.name}`);
 
     // Handle GDPR modal shown after BankID login.
     try {

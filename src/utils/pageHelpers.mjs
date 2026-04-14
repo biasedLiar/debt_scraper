@@ -5,7 +5,7 @@
 
 const fs = require("fs");
 const path = require("path");
-import { FILE_DOWNLOAD_MAX_ATTEMPTS, FILE_DOWNLOAD_POLL_INTERVAL_MS, FILE_DOWNLOAD_FINALIZE_DELAY_MS } from "./constants.mjs";
+import { FILE_DOWNLOAD_MAX_ATTEMPTS, FILE_DOWNLOAD_POLL_INTERVAL_MS, FILE_DOWNLOAD_FINALIZE_DELAY_MS, STEP_THROUGH_MODE } from "./constants.mjs";
 
 /**
  * Attempts to accept cookie consent banner if present on page
@@ -89,4 +89,35 @@ export async function waitForNewDownloadedFile(
   }
   
   return null;
+}
+
+/**
+ * If STEP_THROUGH_MODE is enabled, shows a "Continue" button and status message
+ * in the Electron renderer UI and waits until the user clicks it.
+ * If STEP_THROUGH_MODE is disabled, resolves immediately.
+ * @param {string} [message] - Optional status message to display
+ * @returns {Promise<void>}
+ */
+export function waitForContinue(message = "Paused — interact with the browser, then click Continue") {
+  if (!STEP_THROUGH_MODE) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    const container = document.createElement("div");
+    container.className = "step-through-container";
+
+    const msg = document.createElement("p");
+    msg.className = "step-through-message";
+    msg.textContent = message;
+
+    const btn = document.createElement("button");
+    btn.className = "btn step-through-continue-btn";
+    btn.textContent = "Continue";
+    btn.addEventListener("click", () => {
+      container.remove();
+      resolve();
+    });
+
+    container.append(msg, btn);
+    document.body.append(container);
+  });
 }
