@@ -175,6 +175,34 @@ function transformToDebtSchema(allCases) {
 }
 
 /**
+ * Removes entries that have both:
+ * 1) duplicate caseID, and
+ * 2) null originalDueDate
+ *
+ * @param {Array<Object>} debts
+ * @returns {Array<Object>}
+ */
+function removeDuplicateCaseIdWithNullDueDate(debts) {
+  const caseIdCounts = new Map();
+
+  for (const debt of debts) {
+    const caseId = (debt.caseID || '').trim();
+    if (!caseId) continue;
+    caseIdCounts.set(caseId, (caseIdCounts.get(caseId) || 0) + 1);
+  }
+
+  return debts.filter((debt) => {
+    const caseId = (debt.caseID || '').trim();
+    if (!caseId) return true;
+
+    const isDuplicateCaseId = (caseIdCounts.get(caseId) || 0) > 1;
+    const hasNullDueDate = debt.originalDueDate === null;
+
+    return !(isDuplicateCaseId && hasNullDueDate);
+  });
+}
+
+/**
  * Main extraction function
  * @param {string} pdfPath - Path to PDF file
  * @param {string} outputPath - Path for output JSON file
@@ -270,9 +298,16 @@ export async function extractFields(pdfPath, outputPath) {
 
     // Transform to DebtSchema format
     const debtSchemaData = transformToDebtSchema(allCases);
+    const filteredDebtSchemaData = removeDuplicateCaseIdWithNullDueDate(debtSchemaData);
+
+    if (DEBUG_LOGGING && filteredDebtSchemaData.length !== debtSchemaData.length) {
+      console.log(
+        `Filtered out ${debtSchemaData.length - filteredDebtSchemaData.length} duplicated case(s) with null due date`
+      );
+    }
 
     // Validate each entry against DebtSchema
-    const validatedData = debtSchemaData.map((debt, index) => {
+    const validatedData = filteredDebtSchemaData.map((debt, index) => {
       const result = DebtSchema.safeParse(debt);
       if (!result.success) {
         console.warn(`Validation warning for case ${index + 1} (caseID: ${debt.caseID || 'N/A'}):`, result.error.errors);

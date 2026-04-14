@@ -9,15 +9,18 @@ import { VALIDATION_ERROR_DISPLAY_MS } from "../utils/constants.mjs";
 import { handleError, ErrorType, ErrorSeverity } from "../utils/errorHandler.mjs";
 import { showScrapeDebtError, showInfoBox } from "../ui/uiNotifications.mjs";
 import { sessionState } from "../ui/uiState.mjs";
+import { loadSavedDebtData } from "./dataLoader.mjs";
 
 /**
  * Handles the result from a scraping operation
  * @param {string} result - The result status ('DEBT_FOUND', 'NO_DEBT_FOUND', 'HANDLER_TIMEOUT', etc.)
  * @param {string} siteName - The name of the site being scraped
  * @param {HTMLElement} [buttonElement] - Optional button element to update
+ * @param {string} [personId] - Optional person ID to load saved debt data
+ * @param {HTMLElement} [summaryDiv] - Optional summary container for displaying debt
  * @returns {boolean} - Whether the visit was successful
  */
-export function handleScrapingResult(result, siteName, buttonElement = null) {
+export function handleScrapingResult(result, siteName, buttonElement = null, personId = null, summaryDiv = null) {
   let isSuccessful = false;
   
   switch (result) {
@@ -28,6 +31,10 @@ export function handleScrapingResult(result, siteName, buttonElement = null) {
     case 'DEBT_FOUND':
       console.info(`${siteName} scraping completed successfully, found debt.`);
       isSuccessful = true;
+      // Load saved debt data if personId and summaryDiv are provided
+      if (personId && summaryDiv) {
+        loadSavedDebtData(personId, summaryDiv);
+      }
       break;
     case 'NO_DEBT_FOUND':
       console.info(`${siteName} scraping completed successfully, found no debt.`);
@@ -81,6 +88,7 @@ export function handleScrapingResult(result, siteName, buttonElement = null) {
  * @param {Function} setupPageHandlers - Function to setup page handlers
  * @param {HTMLInputElement} nationalIdInput - The national ID input element
  * @param {HTMLElement} nationalIdContainer - The national ID container for validation errors
+ * @param {HTMLElement} summaryDiv - The summary container for displaying debt
  * @param {Object} [options] - Optional configuration
  * @param {boolean} [options.requiresUserName=false] - Whether handler needs userName parameter
  * @returns {Function} Click handler function
@@ -91,6 +99,7 @@ export function createDebtCollectorButtonHandler(
   setupPageHandlers,
   nationalIdInput,
   nationalIdContainer,
+  summaryDiv,
   options = {}
 ) {
   return async (ev) => {
@@ -140,7 +149,7 @@ export function createDebtCollectorButtonHandler(
       const result = await Promise.race([completePromise, timeoutPromise]);
 
       // Handle result
-      handleScrapingResult(result, siteName, ev.target);
+      handleScrapingResult(result, siteName, ev.target, nationalID, summaryDiv);
     } catch (error) {
       handleError(error, ErrorType.UNKNOWN, ErrorSeverity.ERROR, { 
         siteName, 
@@ -168,13 +177,15 @@ export function createDebtCollectorButtonHandler(
  * @param {HTMLInputElement} nationalIdInput - National ID input element
  * @param {HTMLElement} nationalIdContainer - Container for validation errors
  * @param {Function} setupPageHandlers - Function to setup page handlers
+ * @param {HTMLElement} summaryDiv - The summary container for displaying debt
  * @returns {Function} Click handler function
  */
 export function createVisitAllButtonHandler(
   websites, 
   nationalIdInput, 
   nationalIdContainer,
-  setupPageHandlers
+  setupPageHandlers,
+  summaryDiv
 ) {
   return async (ev) => {
     const nationalID = nationalIdInput ? nationalIdInput.value.trim() : "";
@@ -223,7 +234,7 @@ export function createVisitAllButtonHandler(
         const result = await Promise.race([scrapingPromise, timedOutPromise]);
         
         // Handle result
-        handleScrapingResult(result, site.name, site.button);
+        handleScrapingResult(result, site.name, site.button, nationalID, summaryDiv);
 
         // Reset callback
         sessionState.scrapingCompleteCallback = null;
@@ -233,7 +244,7 @@ export function createVisitAllButtonHandler(
         console.log(`Closing ${site.name} browser...`);
         await PUP.closeBrowser();
         console.log(`Closed ${site.name} browser.`);
-        
+
         // Delay between websites
         await new Promise((resolve) => setTimeout(resolve, 2000));
         console.log(`Proceeding to next website...`);

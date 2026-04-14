@@ -19,6 +19,7 @@ import { handleDigipostLogin } from "./pages/digipost.mjs";
 import { handleSILogin } from "./pages/statens-innkrevingssentral.mjs";
 import { handleKredinorLogin } from "./pages/kredinor.mjs";
 import { handleIntrumLogin } from "./pages/intrum.mjs";
+import { handleAmiliLogin } from "./pages/amili.mjs";
 import { handlePraGroupLogin } from "./pages/pra-group.mjs";
 import { handleZolvaLogin } from "./pages/zolva-as.mjs";
 
@@ -56,21 +57,6 @@ const nationalIdInput = input(
   "number"
 );
 
-// Digipost toggle checkbox
-const digipostCheckbox = document.createElement("input");
-digipostCheckbox.type = "checkbox";
-digipostCheckbox.id = "digipostToggle";
-digipostCheckbox.checked = false; // Disabled by default for privacy
-digipostCheckbox.className = "digipost-toggle-checkbox";
-
-const digipostLabel = document.createElement("label");
-digipostLabel.htmlFor = "digipostToggle";
-digipostLabel.textContent = "Inkluder Digipost (kan inneholde sensitiv data)";
-digipostLabel.className = "digipost-toggle-label";
-
-const digipostToggleContainer = div({ class: "digipost-toggle-container" });
-digipostToggleContainer.append(digipostCheckbox, digipostLabel);
-
 const nationalIdContainer = div({ class: "national-id-container" });
 
 // Create summary and visualization containers
@@ -88,28 +74,15 @@ const setupPageHandlersWithDisplay = (page, nationalID, onComplete) => {
 
 // Function to create button handlers for each debt collector
 const createHandler = (siteName, handler, options) => 
-  createDebtCollectorButtonHandler(siteName, handler, setupPageHandlersWithDisplay, nationalIdInput, nationalIdContainer, options);
+  createDebtCollectorButtonHandler(siteName, handler, setupPageHandlersWithDisplay, nationalIdInput, nationalIdContainer, summaryDiv, options);
 
 const siButton = button("Statens Innkrevingssentral", createHandler("SI", handleSILogin));
-const digipostButton = button("Digipost", createHandler("Digipost", handleDigipostLogin));
+const digipostButton = button("Nedlast fra Digipost", createHandler("Digipost", handleDigipostLogin));
 const intrumButton = button("Intrum", createHandler("Intrum", handleIntrumLogin));
+const amiliButton = button("Amili", createHandler("Amili", handleAmiliLogin));
 const kredinorButton = button("Kredinor", createHandler("Kredinor", handleKredinorLogin, { requiresUserName: true }));
 const praGroupButton = button("PRA Group", createHandler("PRA Group", handlePraGroupLogin));
 const zolvaButton = button("Zolva AS", createHandler("Zolva AS", handleZolvaLogin));
-
-// Update Digipost button state based on checkbox
-const updateDigipostButtonState = () => {
-  if (digipostCheckbox.checked) {
-    digipostButton.disabled = false;
-    digipostButton.style.opacity = "1";
-  } else {
-    digipostButton.disabled = true;
-    digipostButton.style.opacity = "0.5";
-  }
-};
-
-digipostCheckbox.addEventListener("change", updateDigipostButtonState);
-updateDigipostButtonState(); // Set initial state
 
 // Website configuration for Visit All button
 const getNationalID = () => nationalIdInput.value.trim();
@@ -118,13 +91,15 @@ const getActiveWebsites = () => {
     { name: "SI", button: siButton, handler: (cb) => handleSILogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
     { name: "Kredinor", button: kredinorButton, handler: (cb) => handleKredinorLogin(getNationalID(), () => sessionState.userName, setupPageHandlersWithDisplay, cb) },
     { name: "Intrum", button: intrumButton, handler: (cb) => handleIntrumLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+    { name: "Amili", button: amiliButton, handler: (cb) => handleAmiliLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
     { name: "PRA Group", button: praGroupButton, handler: (cb) => handlePraGroupLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
     { name: "Zolva AS", button: zolvaButton, handler: (cb) => handleZolvaLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
     { name: "Digipost", button: digipostButton, handler: (cb) => handleDigipostLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
   ];
   
   // Filter out Digipost if checkbox is not checked
-  return digipostCheckbox.checked ? allWebsites : allWebsites.filter(site => site.name !== "Digipost");
+  // return digipostCheckbox.checked ? allWebsites : allWebsites.filter(site => site.name !== "Digipost");
+  return allWebsites.filter(site => site.name !== "Digipost");
 };
 
 const visitAllButton = button(
@@ -135,7 +110,8 @@ const visitAllButton = button(
       activeWebsites,
       nationalIdInput,
       nationalIdContainer,
-      setupPageHandlersWithDisplay
+      setupPageHandlersWithDisplay,
+      summaryDiv
     );
     handler(ev);
   },
@@ -170,15 +146,13 @@ const exportCsvButton = button("Eksporter som CSV", async () => {
   exportCsvButton.disabled = false;
   exportCsvButton.textContent = "Eksporter som CSV";
 });
-nationalIdContainer.append(exportCsvButton);
-
-const settingsContainer = div({ class: "settings-container" });
-settingsContainer.append(digipostToggleContainer);
 
 const buttonsContainer = div();
-buttonsContainer.append(siButton, kredinorButton, intrumButton, praGroupButton, zolvaButton, digipostButton);
+buttonsContainer.append(siButton, kredinorButton, intrumButton, amiliButton, praGroupButton, zolvaButton);
 
-document.body.append(heading, nationalIdHeader, nationalIdContainer, settingsContainer, heading3, buttonsContainer, hLine2, totalVisualization);
+const exportHeader = h2("Andre tjenester:", "main-subheading");
+
+document.body.append(heading, nationalIdHeader, nationalIdContainer, /* settingsContainer, */ heading3, buttonsContainer, exportHeader, exportCsvButton, digipostButton, hLine2, totalVisualization);
 
 // Display detailed debt info if available
 displayDetailedDebtInfo(detailedDebtConfig);

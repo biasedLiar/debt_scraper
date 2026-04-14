@@ -8,6 +8,9 @@
  */
 export const HANDLER_TIMEOUT_MS = 300000; // 300 seconds
 
+// Intrum visits each site and extracts data sequentially, so needs a longer timeout to accommodate the full process
+export const INTRUM_HANDLER_TIMEOUT_MS = 3000000; // 3000 seconds (50 minutes)
+
 /**
  * File download polling configuration
  */
@@ -26,3 +29,8 @@ export const DEFAULT_TIMEOUT_MS = 180000; // 3 minutes
  */
 export const ERROR_MESSAGE_DISPLAY_MS = 60000; // 60 seconds - How long error messages stay visible
 export const VALIDATION_ERROR_DISPLAY_MS = 4000; // 4 seconds - How long validation errors stay visible
+
+/**
+ * Enables verbose debug logging for response/request handling and scraping internals
+ */
+export const HEAVY_LOGGING = false;

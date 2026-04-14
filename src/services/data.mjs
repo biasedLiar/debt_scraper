@@ -115,6 +115,8 @@ const kredinor = createTargetPage("https://minside.kredinor.no", "Kredinor");
 //This website url is found in intrums page
 const intrum = createTargetPage("https://minesider.intrum.no/", "Intrum");
 
+const amili = createTargetPage("https://mypage.amili.no/login/private/", "Amili");
+
 
 const praGroup = createTargetPage("https://mypage.pragroup.no/", "PRA Group");
 
@@ -128,7 +130,8 @@ Object.freeze(si);
 Object.freeze(digiPost);
 Object.freeze(kredinor);
 Object.freeze(intrum);
+Object.freeze(amili);
 Object.freeze(praGroup);
 Object.freeze(zolva);
 
-export { si, digiPost, kredinor, intrum, praGroup, zolva };
+export { si, digiPost, kredinor, intrum, amili, praGroup, zolva };

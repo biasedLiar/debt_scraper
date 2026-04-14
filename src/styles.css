@@ -192,6 +192,10 @@ input[type="number"] {
   & p {
     font-size: 13px;
   }
+
+  & .small-debt-number {
+    font-weight: bold;
+  }
 }
 
 .total-debt-container {

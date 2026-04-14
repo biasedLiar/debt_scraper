@@ -3,7 +3,7 @@ import { intrum } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName, parseNorwegianAmount, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
 import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema, DebtCollectionSchema } from "../utils/schemas.mjs";
-import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { INTRUM_HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
 
 const fs = require('fs/promises');
 
@@ -53,11 +53,43 @@ function mapToDebtSchema(rawDebts, debtCollectorName = "Intrum") {
       totalAmount,
       originalAmount,
       interestAndFines,
-      originalDueDate: null, // Not available
+      originalDueDate: undefined, // Not available
       debtCollectorName,
       originalCreditorName: String(originalCreditorName),
       debtType,
       comment,
+    };
+  });
+}
+
+/**
+ * Combines Intrum overview debt cases with detailed case info.
+ * Preserves overview fallback values when detailed values are missing.
+ *
+ * @param {Array<Object>} debtCases
+ * @param {Array<{caseNumber: string, details: Object}>} structuredDetailedData
+ * @returns {Array<Object>}
+ */
+function mergeDebtCasesWithDetailedInfo(debtCases, structuredDetailedData) {
+  const detailedByCaseNumber = new Map(
+    (structuredDetailedData || []).map((entry) => [String(entry.caseNumber || ""), entry.details || {}])
+  );
+
+  return (debtCases || []).map((debtCase) => {
+    const caseNumber = String(debtCase.caseNumber || "");
+    const details = detailedByCaseNumber.get(caseNumber) || {};
+
+    return {
+      caseNumber,
+      creditorName: debtCase.creditorName || "",
+      totalAmount: details["Total saldo"] ?? debtCase.totalAmount ?? 0,
+      Hovedkrav: details["Hovedkrav"] ?? 0,
+      Omkostninger: details["Omkostninger"] ?? 0,
+      Salær: details["Salær"] ?? 0,
+      "Rettslig gebyr": details["Rettslig gebyr"] ?? 0,
+      ...Object.fromEntries(
+        Object.entries(details).filter(([key]) => key.toLowerCase().startsWith("forsinkelsesrenter"))
+      ),
     };
   });
 }
@@ -142,17 +174,17 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
-  // Start 60-second timeout timer after BankID login
+  // Start 50-minute timeout timer after BankID login
   if (onTimeout) {
     timeoutTimer = setTimeout(() => {
-      console.log('Intrum handler timed out after ' + (HANDLER_TIMEOUT_MS / 1000) + ' seconds');
+      console.log('Intrum handler timed out after ' + (INTRUM_HANDLER_TIMEOUT_MS / 1000) + ' seconds');
       onTimeout('HANDLER_TIMEOUT');
-    }, HANDLER_TIMEOUT_MS);
+    }, INTRUM_HANDLER_TIMEOUT_MS);
   }
 
     // Check if there are no cases in the system
   try {
-    const noCasesElement = await page.waitForSelector('.warning-message', { visible: true }).catch(() => console.log('No warning message found'));
+    const noCasesElement = await page.waitForSelector('.warning-message, .case-container, .debt-case, [class*="case"]', { visible: true }).catch(() => console.log('No warning message found'));
     if (noCasesElement) {
       const warningText = await page.evaluate(el => el.textContent, noCasesElement);
       if (warningText.includes('Vi finner ingen saker i vårt system.')) {
@@ -170,7 +202,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
 
   // Wait for debt case containers to appear
   // Using multiple selectors as fallback since Intrum's class names may vary
-  await page.waitForSelector('.case-container, .debt-case, [class*="case"]', { visible: true }).catch(() => {
+  await page.waitForSelector('.case-container, .debt-case', { visible: true }).catch(() => {
     console.log('No debt cases found or page took too long to load');
   });
 
@@ -179,11 +211,17 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
     const cases = [];
     
     // Find all case containers - using broad selector as Intrum's structure varies
-    const caseElements = document.querySelectorAll('.case-container, .debt-case, [class*="case"]');
-    
+    const caseElements = document.querySelectorAll('.case-container, .debt-case');
+
     caseElements.forEach(caseEl => {
       const caseData = {};
-      
+
+      // Skip cases where details are explicitly unavailable
+      const noDetails = caseEl.querySelector('.details-not-available');
+      if (noDetails) {
+        return;
+      }
+
       // Extract case number
       const caseNumberEl = caseEl.querySelector('.label');
       if (caseNumberEl) {
@@ -203,27 +241,28 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
         caseData.creditorName = creditorEl.textContent.trim();
       }
       
-      if (Object.keys(caseData).length > 0) {
+      // Only include cases that have a total amount and a case number
+      if (caseData.totalAmount && caseData.caseNumber) {
         cases.push(caseData);
       }
     });
     
     return cases;
   });
-  
   console.log('Extracted debt cases:', debtCases);
 
-  const filePath = createFoldersAndGetName(intrum.name, nationalID, "Intrum", "ManuallyFoundDebt", true);
-  const data = { debtCases, timestamp: new Date().toISOString() };
-  console.log(`Saving debt data to ${filePath}\n\n\n----------------`);
-
-  try {
-    await saveValidatedJSON(filePath, data, IntrumManualDebtSchema);
-    // Also save in DebtSchema format
-    await saveIntrumDebtsAsDebtSchema(filePath, debtCases, nationalID);
-  } catch (error) {
-    console.error('Error writing debt data from Intrum to file:', error);
+  if (!Array.isArray(debtCases) || debtCases.length === 0) {
+    console.log('No valid debt cases extracted from Intrum page. Finishing execution.');
+    if (timeoutTimer) clearTimeout(timeoutTimer);
+    if (onComplete) {
+      setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
+    }
+    return { browser, page };
   }
+  
+
+  const filePath = createFoldersAndGetName(intrum.name, nationalID, "Intrum", "ManuallyFoundDebt", true);
+  console.log(`Will save merged debt data to ${filePath}\n\n\n----------------`);
  
 
   // Find all "Detaljer på sak" buttons and process each one
@@ -234,8 +273,14 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
     const detailButtons = [];
     
     for (const button of buttons) {
-      const text = await button.evaluate(el => el.textContent.trim());
-      if (text === 'Detaljer på sak') {
+      const buttonInfo = await button.evaluate((el) => {
+        const text = (el.textContent || '').trim();
+        const caseContainer = el.closest('.case-container, .debt-case, [class*="case"]');
+        const hasNoDetails = !!caseContainer?.querySelector('.details-not-available');
+        return { text, hasNoDetails };
+      });
+
+      if (buttonInfo.text === 'Detaljer på sak' && !buttonInfo.hasNoDetails) {
         detailButtons.push(button);
       }
     }
@@ -316,6 +361,13 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
     console.log(`Saved detailed info for ${structuredDetailedData.length} cases to ${detailedInfoFilePath}`);
   } catch (error) {
     console.error(`Failed to write detailed Intrum info to file "${detailedInfoFilePath}" for nationalID ${nationalID}:`, error);
+  }
+
+  try {
+    const mergedDebtCases = mergeDebtCasesWithDetailedInfo(debtCases, structuredDetailedData);
+    await saveIntrumDebtsAsDebtSchema(filePath, mergedDebtCases, nationalID);
+  } catch (error) {
+    console.error('Error writing merged debt data from Intrum to file:', error);
   }
 
   if (timeoutTimer) clearTimeout(timeoutTimer);
