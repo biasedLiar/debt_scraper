@@ -2,6 +2,7 @@ node_modules
 .idea
 exports/
 extracted_data/
+extracted_detailed_document/
 src/detailedDebtConfig.js
 src/kladd
 src/structure
