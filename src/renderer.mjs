@@ -91,8 +91,8 @@ const getActiveWebsites = () => {
     { name: "SI", button: siButton, handler: (cb) => handleSILogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
     { name: "Kredinor", button: kredinorButton, handler: (cb) => handleKredinorLogin(getNationalID(), () => sessionState.userName, setupPageHandlersWithDisplay, cb) },
     { name: "Intrum", button: intrumButton, handler: (cb) => handleIntrumLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
-    // { name: "Amili", button: amiliButton, handler: (cb) => handleAmiliLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
     { name: "PRA Group", button: praGroupButton, handler: (cb) => handlePraGroupLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
+    // { name: "Amili", button: amiliButton, handler: (cb) => handleAmiliLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
     // { name: "Zolva AS", button: zolvaButton, handler: (cb) => handleZolvaLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
     { name: "Digipost", button: digipostButton, handler: (cb) => handleDigipostLogin(getNationalID(), setupPageHandlersWithDisplay, cb) },
   ];
@@ -152,8 +152,8 @@ buttonsContainer.append(
   siButton,
   kredinorButton,
   intrumButton,
-  // amiliButton,
   praGroupButton,
+  // amiliButton,
   // zolvaButton
 );
 
