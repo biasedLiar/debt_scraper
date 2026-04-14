@@ -73,6 +73,8 @@
  * @property {string} [grunnlagForKrav] - Grunnlaget for saken
  * @property {Faktura[]} [sendteFakturaer] - Liste over fakturaer som er sendt
  * @property {Innbetaling[]} [innbetalinger] - Liste over innbetalinger som er registrert
+ * @property {string} [mottakerKonto] - Mottakers kontonummer for betaling
+ * @property {string} [KID] - KID-nummer for betaling
  * @property {string} [kravtype] - Type krav (faktura, kontrakt, lån, osv.)
  * @property {string} [notater] - Tilleggsnotater eller kommentarer
  */
