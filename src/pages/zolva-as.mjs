@@ -44,8 +44,6 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, callbacks 
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
-  await waitForContinue(`Paused after BankID login on ${zolva.name}`);
-
   // Start 60-second timeout timer after BankID login
   if (onTimeout) {
     timeoutTimer = setTimeout(() => {
@@ -172,7 +170,9 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, callbacks 
     const detailedInfoFilePath = createFoldersAndGetName("Zolva", nationalID, "Zolva", "DetailedDebtInfo", true);
     await fs.writeFile(detailedInfoFilePath, JSON.stringify(tableData, null, 2));
     console.log(`Saved table data to ${detailedInfoFilePath}`);
-  
+
+  await waitForContinue(`Paused after operations on ${zolva.name}`);
+
   if (timeoutTimer) clearTimeout(timeoutTimer);
   if (onComplete) {
     setTimeout(() => onComplete('DEBT_FOUND'), 1000);

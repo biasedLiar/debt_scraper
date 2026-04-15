@@ -59,8 +59,6 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
-  await waitForContinue(`Paused after BankID login on ${digiPost.name}`);
-
   // Start 60-second timeout timer after BankID login
   if (onTimeout) {
     timeoutTimer = setTimeout(() => {
@@ -240,6 +238,8 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
   }
 
   console.log('Digipost operations completed successfully');
+
+  await waitForContinue(`Paused after operations on ${digiPost.name}`);
 
   // Clean up request interception to prevent memory leaks
   page.off('request', requestHandler);

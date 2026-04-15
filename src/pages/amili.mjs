@@ -70,8 +70,6 @@ export async function handleAmiliLogin(nationalID, setupPageHandlers, callbacks 
 
     await loginWithBankID(page, nationalID);
 
-    await waitForContinue(`Paused after BankID login on ${amili.name}`);
-
     // Handle GDPR modal shown after BankID login.
     try {
       await page.waitForFunction(
@@ -226,6 +224,8 @@ export async function handleAmiliLogin(nationalID, setupPageHandlers, callbacks 
 
     await fs.writeFile(outputPath, JSON.stringify(dataToWrite, null, 2), "utf-8");
     console.log(`Saved Amili extracted data to ${outputPath}`);
+
+    await waitForContinue(`Paused after operations on ${amili.name}`);
 
     if (timeoutTimer) {
       clearTimeout(timeoutTimer);

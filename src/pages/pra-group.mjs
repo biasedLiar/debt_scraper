@@ -40,8 +40,6 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
   // Use shared BankID login flow
   await loginWithBankID(page, nationalID);
 
-  await waitForContinue(`Paused after BankID login on ${praGroup.name}`);
-
   // Start 60-second timeout timer after BankID login
   if (onTimeout) {
     timeoutTimer = setTimeout(() => {
@@ -74,6 +72,7 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
       const hasText1 = await page.evaluate(el => el.textContent.includes('For mange mislykkede påloggingsforsøk.'), element);
       if (hasText1) {
         console.log("Detected too many failed login attempts message. Ending execution.");
+        await waitForContinue(`Paused after operations on ${praGroup.name}`);
         if (timeoutTimer) clearTimeout(timeoutTimer);
         if (onComplete) {
           setTimeout(() => onComplete("TOO_MANY_FAILED_ATTEMPTS"), 1000);
@@ -83,6 +82,7 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
       const hasText2 = await page.evaluate(el => el.textContent.includes('Opplysningene du har oppgitt stemmer ikke med våre'), element);
       if (hasText2) {
         console.log("No account exists for profile.");
+        await waitForContinue(`Paused after operations on ${praGroup.name}`);
         if (timeoutTimer) clearTimeout(timeoutTimer);
         if (onComplete) {
           setTimeout(() => onComplete("NO_DEBT_FOUND"), 1000);
@@ -268,6 +268,8 @@ export async function handlePraGroupLogin(nationalID, setupPageHandlers, callbac
 
 
   console.log('PRA Group data saved successfully');
+
+  await waitForContinue(`Paused after operations on ${praGroup.name}`);
 
   // Gjøre manually found debt om til zod-formatert gjeld.
 

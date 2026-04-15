@@ -20,17 +20,11 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
 
   console.log(`Opened ${si.name} at ${startUrl}`);
 
-  // Register handlers before login so responses during the BankID flow are
-  // captured. onComplete is deferred: if it fires during the pause it is held
-  // and only forwarded after the user clicks Continue.
-  let continueClicked = false;
+  // Defer onComplete until after the user clicks Continue, so the browser
+  // isn't closed by the caller while we're still waiting at the pause.
   let pendingComplete = null;
   const deferredOnComplete = (result) => {
-    if (continueClicked) {
-      onComplete && onComplete(result);
-    } else {
-      pendingComplete = result;
-    }
+    pendingComplete = result;
   };
 
   if (setupPageHandlers) {
@@ -38,14 +32,6 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
   }
 
   await loginWithBankID(page, nationalID);
-
-  await waitForContinue(`Paused after BankID login on ${si.name}`);
-  continueClicked = true;
-
-  // Fire any completion that arrived while paused
-  if (pendingComplete !== null) {
-    setTimeout(() => onComplete && onComplete(pendingComplete), 500);
-  }
 
   // Start 60-second timeout timer after BankID login
   if (onTimeout) {
@@ -72,7 +58,13 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
     } catch (err) {
       console.log('SI navigation interrupted (browser may have closed after data capture):', err.message);
     }
-  } 
+  }
+
+  await waitForContinue(`Paused after operations on ${si.name}`);
+
+  if (pendingComplete !== null) {
+    setTimeout(() => onComplete && onComplete(pendingComplete), 500);
+  }
 
   return { browser, page };
 }
