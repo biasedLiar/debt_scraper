@@ -2,6 +2,7 @@ import { si } from "../services/data.mjs";
 import { PUP } from "../services/scraper.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { HANDLER_TIMEOUT_MS, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
+import { waitForContinue } from "../utils/pageHelpers.mjs";
 
 /**
  * Handles the Statens Innkrevingssentral login automation flow
@@ -19,13 +20,32 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
 
   console.log(`Opened ${si.name} at ${startUrl}`);
 
-  // Setup page handlers for saving responses
+  // Register handlers before login so responses during the BankID flow are
+  // captured. onComplete is deferred: if it fires during the pause it is held
+  // and only forwarded after the user clicks Continue.
+  let continueClicked = false;
+  let pendingComplete = null;
+  const deferredOnComplete = (result) => {
+    if (continueClicked) {
+      onComplete && onComplete(result);
+    } else {
+      pendingComplete = result;
+    }
+  };
+
   if (setupPageHandlers) {
-    setupPageHandlers(page, nationalID, onComplete);
+    setupPageHandlers(page, nationalID, deferredOnComplete);
   }
 
-  
   await loginWithBankID(page, nationalID);
+
+  await waitForContinue(`Paused after BankID login on ${si.name}`);
+  continueClicked = true;
+
+  // Fire any completion that arrived while paused
+  if (pendingComplete !== null) {
+    setTimeout(() => onComplete && onComplete(pendingComplete), 500);
+  }
 
   // Start 60-second timeout timer after BankID login
   if (onTimeout) {
@@ -34,10 +54,6 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
       onTimeout('HANDLER_TIMEOUT');
     }, HANDLER_TIMEOUT_MS);
   }
-  
-  // Note: waitForContinue is not used here — SI's page handlers capture data via
-  // network responses, and the browser may close before the Continue button can be
-  // interacted with, causing errors.
 
   if (SLOW_DOWN_BANK_ID) {
     try {
