@@ -6,7 +6,8 @@ import {
   parseNorwegianAmount,
 } from "../utils/utilities.mjs";
 import { DebtCollectionSchema } from "../utils/schemas.mjs";
-import { HANDLER_TIMEOUT_MS, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
+import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { waitForContinue } from "../utils/pageHelpers.mjs";
 
 const fs = require("fs/promises");
 const CASE_CONTAINER_SELECTOR = "table.css-qxn47u tbody tr";
@@ -223,6 +224,8 @@ export async function handleAmiliLogin(nationalID, setupPageHandlers, callbacks 
 
     await fs.writeFile(outputPath, JSON.stringify(dataToWrite, null, 2), "utf-8");
     console.log(`Saved Amili extracted data to ${outputPath}`);
+
+    await waitForContinue(`Paused after operations on ${amili.name}`);
 
     if (timeoutTimer) {
       clearTimeout(timeoutTimer);

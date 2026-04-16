@@ -198,6 +198,36 @@ input[type="number"] {
   }
 }
 
+.step-through-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #fff9e6;
+  border: 2px solid #f5d576;
+  border-radius: 8px;
+  padding: 16px 24px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.step-through-message {
+  font-size: 14px;
+  color: #5a5a5a;
+  margin: 0;
+}
+
+.step-through-continue-btn {
+  background-color: #37c9ab;
+  font-weight: bold;
+
+  &:hover {
+    background-color: #01e2b5;
+  }
+}
+
 .total-debt-container {
   border: 5px solid mediumslateblue;
   background-color: rgb(206, 200, 240);

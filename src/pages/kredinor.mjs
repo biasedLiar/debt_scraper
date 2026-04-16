@@ -7,6 +7,7 @@ import { saveValidatedJSON, KredinorManualDebtSchema, KredinorFullDebtDetailsSch
 import { extractFields } from "../services/extract_kredinor.mjs";
 import { extractStructuredDebt } from "../services/extract_structured_debt.mjs";
 import { HANDLER_TIMEOUT_MS, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
+import { waitForContinue } from "../utils/pageHelpers.mjs";
 const fs = require('fs/promises');
 const fsSync = require('fs');
 const path = require('path');
@@ -50,6 +51,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     }
     
     await loginWithBankID(page, nationalID);
+
     // Start 60-second timeout timer after BankID login
     if (onTimeout) {
       timeoutTimer = setTimeout(() => {
@@ -79,6 +81,7 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
     if (debtAmount === 0 && activeCases === 0) {
       data.note = "No debt information found on page.";
       await saveValidatedJSON(filePath, data, KredinorManualDebtSchema);
+      await waitForContinue(`Paused after operations on ${kredinor.name}`);
       if (timeoutTimer) clearTimeout(timeoutTimer);
       if (onComplete) {
         setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
@@ -151,12 +154,14 @@ export async function handleKredinorLogin(nationalID, getUserName, setupPageHand
       console.log('Could not download closed cases PDF:', error);
     }
 
+    await waitForContinue(`Paused after operations on ${kredinor.name}`);
+
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
       setTimeout(() => onComplete('DEBT_FOUND'), 1000);
     }
     return { browser, page };
-    
+
   } catch (error) {
     console.error('Error in Kredinor handler:', error);
     if (timeoutTimer) clearTimeout(timeoutTimer);

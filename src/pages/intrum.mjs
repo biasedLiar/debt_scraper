@@ -4,6 +4,7 @@ import { loginWithBankID } from "./bankid-login.mjs";
 import { createFoldersAndGetName, parseNorwegianAmount, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
 import { saveValidatedJSON, IntrumManualDebtSchema, DebtSchema, DebtCollectionSchema } from "../utils/schemas.mjs";
 import { INTRUM_HANDLER_TIMEOUT_MS, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
+import { waitForContinue } from "../utils/pageHelpers.mjs";
 
 const fs = require('fs/promises');
 
@@ -190,6 +191,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
       const warningText = await page.evaluate(el => el.textContent, noCasesElement);
       if (warningText.includes('Vi finner ingen saker i vårt system.')) {
         console.log('No cases found in Intrum system. Finishing execution.');
+        await waitForContinue(`Paused after operations on ${intrum.name}`);
         if (timeoutTimer) clearTimeout(timeoutTimer);
         if (onComplete) {
           setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
@@ -254,6 +256,7 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
 
   if (!Array.isArray(debtCases) || debtCases.length === 0) {
     console.log('No valid debt cases extracted from Intrum page. Finishing execution.');
+    await waitForContinue(`Paused after operations on ${intrum.name}`);
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
       setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
@@ -370,6 +373,8 @@ export async function handleIntrumLogin(nationalID, setupPageHandlers, callbacks
   } catch (error) {
     console.error('Error writing merged debt data from Intrum to file:', error);
   }
+
+  await waitForContinue(`Paused after all operations on ${intrum.name}`);
 
   if (timeoutTimer) clearTimeout(timeoutTimer);
   if (onComplete) {

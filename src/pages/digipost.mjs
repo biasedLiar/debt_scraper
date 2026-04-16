@@ -2,7 +2,8 @@ import { PUP } from "../services/scraper.mjs";
 import { digiPost } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { createDownloadFoldersAndGetName, waitForNewDownloadedFile } from "../utils/utilities.mjs";
-import { HANDLER_TIMEOUT_MS, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
+import { HANDLER_TIMEOUT_MS } from "../utils/constants.mjs";
+import { waitForContinue } from "../utils/pageHelpers.mjs";
 
 // Local function to sanitize folder and file names (Windows-safe)
 function safe(name) {
@@ -74,6 +75,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
     await page.waitForSelector('.message-list-item__info', { visible: true});
   } catch (error) {
     console.warn('Failed to load Digipost inbox - message list not found:', error.message);
+    await waitForContinue(`Paused after operations on ${digiPost.name}`);
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
       setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
@@ -87,6 +89,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
 
   if (messageLinks.length === 0) {
     console.log('No individual messages found in inbox');
+    await waitForContinue(`Paused after operations on ${digiPost.name}`);
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
       setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
@@ -118,6 +121,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
     });
   } catch (error) {
     console.error('Failed to set up download behavior:', error.message);
+    await waitForContinue(`Paused after operations on ${digiPost.name}`);
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
       setTimeout(() => onComplete('HANDLER_TIMEOUT'), 1000);
@@ -237,6 +241,8 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
   }
 
   console.log('Digipost operations completed successfully');
+
+  await waitForContinue(`Paused after operations on ${digiPost.name}`);
 
   // Clean up request interception to prevent memory leaks
   page.off('request', requestHandler);

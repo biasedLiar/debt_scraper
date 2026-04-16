@@ -2,6 +2,7 @@ import { PUP } from "../services/scraper.mjs";
 import { zolva } from "../services/data.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { HANDLER_TIMEOUT_MS, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
+import { waitForContinue } from "../utils/pageHelpers.mjs";
 import { createFoldersAndGetName, createExtractedFoldersAndGetName } from "../utils/utilities.mjs";
 import { DebtSchema, DebtCollectionSchema } from "../utils/schemas.mjs";
 const fs = require('fs/promises');
@@ -61,6 +62,7 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, callbacks 
     
     if (errorMessage === 'Ingen debitor funnet for SSN-nummer') {
       console.log('No debitor found for this SSN number');
+      await waitForContinue(`Paused after operations on ${zolva.name}`);
       if (timeoutTimer) clearTimeout(timeoutTimer);
       if (onComplete) {
         setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
@@ -90,6 +92,7 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, callbacks 
 
     if (hasNoData) {
       console.log('Table shows "Ingen data å vise" - no debt data available');
+      await waitForContinue(`Paused after operations on ${zolva.name}`);
       if (timeoutTimer) clearTimeout(timeoutTimer);
       if (onComplete) {
         setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
@@ -169,7 +172,9 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, callbacks 
     const detailedInfoFilePath = createFoldersAndGetName("Zolva", nationalID, "Zolva", "DetailedDebtInfo", true);
     await fs.writeFile(detailedInfoFilePath, JSON.stringify(tableData, null, 2));
     console.log(`Saved table data to ${detailedInfoFilePath}`);
-  
+
+  await waitForContinue(`Paused after operations on ${zolva.name}`);
+
   if (timeoutTimer) clearTimeout(timeoutTimer);
   if (onComplete) {
     setTimeout(() => onComplete('DEBT_FOUND'), 1000);

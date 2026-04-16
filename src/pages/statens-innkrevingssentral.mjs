@@ -2,6 +2,7 @@ import { si } from "../services/data.mjs";
 import { PUP } from "../services/scraper.mjs";
 import { loginWithBankID } from "./bankid-login.mjs";
 import { HANDLER_TIMEOUT_MS, SLOW_DOWN_BANK_ID } from "../utils/constants.mjs";
+import { waitForContinue } from "../utils/pageHelpers.mjs";
 
 /**
  * Handles the Statens Innkrevingssentral login automation flow
@@ -19,12 +20,20 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
 
   console.log(`Opened ${si.name} at ${startUrl}`);
 
-  // Setup page handlers for saving responses
+  // Defer onComplete until after the user clicks Continue, so the browser
+  // isn't closed by the caller while we're still waiting at the pause.
+  let pendingComplete = null;
+  let resolveResponse;
+  const responseReceived = new Promise((resolve) => { resolveResponse = resolve; });
+  const deferredOnComplete = (result) => {
+    pendingComplete = result;
+    resolveResponse();
+  };
+
   if (setupPageHandlers) {
-    setupPageHandlers(page, nationalID, onComplete);
+    setupPageHandlers(page, nationalID, deferredOnComplete);
   }
 
-  
   await loginWithBankID(page, nationalID);
 
   // Start 60-second timeout timer after BankID login
@@ -35,33 +44,32 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
     }, HANDLER_TIMEOUT_MS);
   }
 
+  // Run navigation in the background — don't block on it, wait for the response instead
   if (SLOW_DOWN_BANK_ID) {
-    await page.waitForSelector("aria/Krav og betaling", { visible: true, timeout: 120000 });
-    await page.click("aria/Krav og betaling");
+    (async () => {
+      try {
+        console.log('SI: waiting for "Krav og betaling" link...');
+        await page.waitForSelector("aria/Krav og betaling", { visible: true, timeout: 120000 });
+        console.log('SI: clicking "Krav og betaling"');
+        await page.click("aria/Krav og betaling");
+        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {});
+        console.log('SI: waiting for NavigationTile...');
+        await page.waitForSelector("aria/Bøter, erstatningskrav eller andre krav", { visible: true, timeout: 120000 });
+        console.log('SI: looking for "Bøter, erstatningskrav eller andre krav" link...');
+        await page.click("aria/Bøter, erstatningskrav eller andre krav");
+        console.log('SI: link clicked:', clicked);
+      } catch (err) {
+        console.log('SI navigation error:', err.message);
+      }
+    })();
   }
 
-  // FInds the element containing the debt information after login to know if the user has debt or not. 
-  // The actual data is retrieved from json files saved by the page handlers, 
-  // waitForSelector ensures the program waits until the json has been saved.
-  const debtElement = await page.waitForSelector("p:has-text('totalt skylder du')", { visible: true }).catch(() => null);
-  
-  if (debtElement) {
-    const debtText = await page.evaluate((el) => el.textContent, debtElement);
-    console.log(`Found debt through UI, not JSON as expected: ${debtText}`);
-    if (timeoutTimer) clearTimeout(timeoutTimer);
-    if (onComplete) {
-      const result = debtText.includes("du 0 kroner") ? "NO_DEBT_FOUND" : "DEBT_FOUND";
-      setTimeout(() => onComplete(result), 10000);
-    }
-    
-  } else {
-    // Should in theory never come here
-    console.log("No debt found through UI - this should not happen.");
-    if (timeoutTimer) clearTimeout(timeoutTimer);
-    if (onComplete) {
-        setTimeout(() => onComplete("UNEXPECTED_STATE"), 10000);
-    }
-  }
+  // Wait for the response, then show the continue button
+  await responseReceived;
+
+  await waitForContinue(`Paused after operations on ${si.name}`);
+
+  setTimeout(() => onComplete && onComplete(pendingComplete), 500);
 
   return { browser, page };
 }
