@@ -23,8 +23,11 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
   // Defer onComplete until after the user clicks Continue, so the browser
   // isn't closed by the caller while we're still waiting at the pause.
   let pendingComplete = null;
+  let resolveResponse;
+  const responseReceived = new Promise((resolve) => { resolveResponse = resolve; });
   const deferredOnComplete = (result) => {
     pendingComplete = result;
+    resolveResponse();
   };
 
   if (setupPageHandlers) {
@@ -32,6 +35,10 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
   }
 
   await loginWithBankID(page, nationalID);
+
+  // Pause here — for SLOW_DOWN_BANK_ID the user navigates manually while paused,
+  // the response fires and is held by deferredOnComplete until continue is clicked.
+  await waitForContinue(`Paused after BankID login on ${si.name}`);
 
   // Start 60-second timeout timer after BankID login
   if (onTimeout) {
@@ -41,30 +48,41 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
     }, HANDLER_TIMEOUT_MS);
   }
 
+  // Run navigation in the background — don't block on it, wait for the response instead
   if (SLOW_DOWN_BANK_ID) {
-    try {
-      await page.waitForSelector("aria/Krav og betaling", { visible: true, timeout: 120000 });
-      await page.click("aria/Krav og betaling");
-      await page.waitForSelector(".NavigationTile-module_title__ezDhE", { visible: true, timeout: 120000 });
-      await page.evaluate(() => {
-        const links = document.querySelectorAll('a');
-        for (const link of links) {
-          if (link.textContent.includes('Bøter, erstatningskrav eller andre krav')) {
-            link.click();
-            return;
+    (async () => {
+      try {
+        console.log('SI: waiting for "Krav og betaling" link...');
+        await page.waitForSelector("aria/Krav og betaling", { visible: true, timeout: 120000 });
+        console.log('SI: clicking "Krav og betaling"');
+        await page.click("aria/Krav og betaling");
+        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {});
+        console.log('SI: waiting for NavigationTile...');
+        await page.waitForSelector(".NavigationTile-module_title__ezDhE", { visible: true, timeout: 120000 });
+        console.log('SI: looking for "Bøter, erstatningskrav eller andre krav" link...');
+        const clicked = await page.evaluate(() => {
+          const links = document.querySelectorAll('a');
+          for (const link of links) {
+            if (link.textContent.includes('Bøter, erstatningskrav eller andre krav')) {
+              link.click();
+              return true;
+            }
           }
-        }
-      });
-    } catch (err) {
-      console.log('SI navigation interrupted (browser may have closed after data capture):', err.message);
-    }
+          return false;
+        });
+        console.log('SI: link clicked:', clicked);
+      } catch (err) {
+        console.log('SI navigation error:', err.message);
+      }
+    })();
   }
+
+  // Wait for the response, then show the continue button
+  await responseReceived;
 
   await waitForContinue(`Paused after operations on ${si.name}`);
 
-  if (pendingComplete !== null) {
-    setTimeout(() => onComplete && onComplete(pendingComplete), 500);
-  }
+  setTimeout(() => onComplete && onComplete(pendingComplete), 500);
 
   return { browser, page };
 }

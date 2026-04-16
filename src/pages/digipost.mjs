@@ -75,6 +75,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
     await page.waitForSelector('.message-list-item__info', { visible: true});
   } catch (error) {
     console.warn('Failed to load Digipost inbox - message list not found:', error.message);
+    await waitForContinue(`Paused after operations on ${digiPost.name}`);
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
       setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
@@ -88,6 +89,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
 
   if (messageLinks.length === 0) {
     console.log('No individual messages found in inbox');
+    await waitForContinue(`Paused after operations on ${digiPost.name}`);
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
       setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
@@ -119,6 +121,7 @@ export async function handleDigipostLogin(nationalID, setupPageHandlers, callbac
     });
   } catch (error) {
     console.error('Failed to set up download behavior:', error.message);
+    await waitForContinue(`Paused after operations on ${digiPost.name}`);
     if (timeoutTimer) clearTimeout(timeoutTimer);
     if (onComplete) {
       setTimeout(() => onComplete('HANDLER_TIMEOUT'), 1000);

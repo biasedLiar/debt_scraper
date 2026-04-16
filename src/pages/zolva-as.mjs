@@ -62,6 +62,7 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, callbacks 
     
     if (errorMessage === 'Ingen debitor funnet for SSN-nummer') {
       console.log('No debitor found for this SSN number');
+      await waitForContinue(`Paused after operations on ${zolva.name}`);
       if (timeoutTimer) clearTimeout(timeoutTimer);
       if (onComplete) {
         setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);
@@ -91,6 +92,7 @@ export async function handleZolvaLogin(nationalID, setupPageHandlers, callbacks 
 
     if (hasNoData) {
       console.log('Table shows "Ingen data å vise" - no debt data available');
+      await waitForContinue(`Paused after operations on ${zolva.name}`);
       if (timeoutTimer) clearTimeout(timeoutTimer);
       if (onComplete) {
         setTimeout(() => onComplete('NO_DEBT_FOUND'), 1000);

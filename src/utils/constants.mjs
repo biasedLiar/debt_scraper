@@ -38,7 +38,7 @@ export const HEAVY_LOGGING = false;
 /**
  * Used to not automatically enter bank id login side
  */
-export const SLOW_DOWN_BANK_ID = false;
+export const SLOW_DOWN_BANK_ID =  true;
 
 /**
  * When enabled, pauses scraping after BankID login and shows a "Continue" button
