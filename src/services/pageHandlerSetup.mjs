@@ -115,7 +115,7 @@ export function setupPageHandlers(page, nationalID, displayDebtData, onComplete)
           );
         }
 
-        if (isJsonResult && JSON.parse(data).krav !== undefined) {
+        if (isJsonResult && JSON.parse(data).krav !== undefined && JSON.parse(data).reskontroVisningsListe === undefined  ) {
           const { debts_paid, debts_unpaid } = read_json_for_si(
             sessionState.currentWebsite,
             JSON.parse(data).krav

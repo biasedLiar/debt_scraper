@@ -36,10 +36,6 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
 
   await loginWithBankID(page, nationalID);
 
-  // Pause here — for SLOW_DOWN_BANK_ID the user navigates manually while paused,
-  // the response fires and is held by deferredOnComplete until continue is clicked.
-  await waitForContinue(`Paused after BankID login on ${si.name}`);
-
   // Start 60-second timeout timer after BankID login
   if (onTimeout) {
     timeoutTimer = setTimeout(() => {
@@ -58,18 +54,9 @@ export async function handleSILogin(nationalID, setupPageHandlers, callbacks = {
         await page.click("aria/Krav og betaling");
         await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {});
         console.log('SI: waiting for NavigationTile...');
-        await page.waitForSelector(".NavigationTile-module_title__ezDhE", { visible: true, timeout: 120000 });
+        await page.waitForSelector("aria/Bøter, erstatningskrav eller andre krav", { visible: true, timeout: 120000 });
         console.log('SI: looking for "Bøter, erstatningskrav eller andre krav" link...');
-        const clicked = await page.evaluate(() => {
-          const links = document.querySelectorAll('a');
-          for (const link of links) {
-            if (link.textContent.includes('Bøter, erstatningskrav eller andre krav')) {
-              link.click();
-              return true;
-            }
-          }
-          return false;
-        });
+        await page.click("aria/Bøter, erstatningskrav eller andre krav");
         console.log('SI: link clicked:', clicked);
       } catch (err) {
         console.log('SI navigation error:', err.message);
