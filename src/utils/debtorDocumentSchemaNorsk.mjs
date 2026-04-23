@@ -44,7 +44,7 @@
  * @property {Faktura[]} [sendteFakturaer] - Liste over fakturaer som er sendt
  * @property {number} [totalBetalt] - Totalt betalt beløp
  * @property {Innbetaling[]} [innbetalinger] - Liste over innbetalinger som er registrert
- * @property {Rentebetalinger} [rentebetalinger] - Fjorårets betalte renter for skattemeldingen
+ * @property {Rentebetalinger} [rentebetalinger] - Fjorårets betalte renter (brukt for skattemeldingen)
  */
 
 
@@ -77,6 +77,9 @@
 /**
  * @typedef {Object} Faktura
  * @property {number} belop - Fakturabeløp
+ * @property {number} [opprinneligKrav] - Opprinnelig kravbeløp
+ * @property {number} [fakturaRenteSats] - Rentesats knyttet til denne fakturaen
+ * @property {number} [fakturaRenter] - Renter knyttet til denne fakturaen
  * @property {string} [fakturanummer] - Fakturanummer
  * @property {string} [fakturadato] - Fakturadato (format: DD.MM.YYYY)
  * @property {string} [forfallsdato] - Forfallsdato (format: DD.MM.YYYY)
