@@ -96,6 +96,7 @@
  * @property {Faktura[]} [sendteFakturaer] - Liste over fakturaer som er sendt
  * @property {Innbetaling[]} [innbetalinger] - Liste over innbetalinger som er registrert
  * @property {Aktivitet[]} [aktiviteter] - Liste over aktiviteter knyttet til saken
+ * @property {Historikkinnslag[]} [historikk] - Liste over historikkinnslag knyttet til saken
  */
 
 /**
@@ -106,6 +107,15 @@
  * @property {number} [gebyrer] - Gebyrer knyttet til denne aktiviteten
  * @property {number} [utestaendeHovedstol] - Utestående hovedstol etter aktiviteten
  * @property {number} [renter] - Renter knyttet til denne aktiviteten
+ */
+
+/**
+ * @typedef {Object} Historikkinnslag
+ * @property {string} type - Type innslag (f.eks. "Brev", "Betaling", "Notat")
+ * @property {string} overskrift - Overskrift for historikkinnslaget
+ * @property {string} tekst - Tekstinnhold i historikkinnslaget
+ * @property {string} dato - Dato for innslaget (format: DD.MM.YYYY)
+ * @property {string} [fil] - Lenke eller filnavn til tilknyttet fil
  */
 
 /**
