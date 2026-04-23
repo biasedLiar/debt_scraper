@@ -69,6 +69,7 @@
  * @property {string} [opprinneligForfallsdato] - Opprinnelig forfallsdato (format: DD.MM.YYYY)
  * @property {string} [utstedtDato] - Utstedt dato
  * @property {string} [betalingsfrist] - Betalingsfrist
+ * @property {string} [avslutningsdato] - Avslutningsdato for saken (format: DD.MM.YYYY)
  */
 
 /**
@@ -76,6 +77,8 @@
  * @property {string} inkassoselskap - Nåværende inkassoselskap som håndterer saken
  * @property {string} [Fordringshaver] - Nåværende fordringshaver / oppdragsgiver
  * @property {string} [opprinneligFordringshaver] - Opprinnelig fordringshaver
+ * @property {string} [Saksbehandler] - Saksbehandler eller kontaktperson hos inkassoselskapet
+ * @property {string} [skyldnerType] - Type skyldner (f.eks. "Hovedskyldner")
  * @property {Skyldnerinfo} [skyldner] - Informasjon om skyldner
  */
 
@@ -84,20 +87,33 @@
  * @property {string} sakStatus - Nåværende status (f.eks. "Aktiv", "Avsluttet", "Betalt", "Avdragsordning")
  * @property {string} [beskrivelse] - Beskrivelse eller kommentar til saken
  * @property {string} [grunnlagForKrav] - Grunnlaget for saken
- * @property {Faktura[]} [sendteFakturaer] - Liste over fakturaer som er sendt
- * @property {Innbetaling[]} [innbetalinger] - Liste over innbetalinger som er registrert
+ * @property {number} [totalBetalt] - Totalt betalt beløp
  * @property {string} [mottakerKonto] - Mottakers kontonummer for betaling
  * @property {string} [KID] - KID-nummer for betaling
  * @property {string} [kravtype] - Type krav (faktura, kontrakt, lån, osv.)
  * @property {string} [notater] - Tilleggsnotater eller kommentarer
  * @property {Rentebetalinger} [rentebetalinger] - Betalte renter for fjoråret
+ * @property {Faktura[]} [sendteFakturaer] - Liste over fakturaer som er sendt
+ * @property {Innbetaling[]} [innbetalinger] - Liste over innbetalinger som er registrert
+ * @property {Aktivitet[]} [aktiviteter] - Liste over aktiviteter knyttet til saken
  */
 
 /**
- * @typedef {Object} Rentebetalinger // OBS, er uklart om det 3. feltet er summen av de første 2 eller ikke.
+ * @typedef {Object} Aktivitet
+ * @property {string} [registreringsdato] - Dato aktiviteten ble registrert (format: DD.MM.YYYY)
+ * @property {string} [handling] - Beskrivelse av handlingen som ble utført
+ * @property {number} [betalt] - Betalt beløp ved denne aktiviteten
+ * @property {number} [gebyrer] - Gebyrer knyttet til denne aktiviteten
+ * @property {number} [utestaendeHovedstol] - Utestående hovedstol etter aktiviteten
+ * @property {number} [renter] - Renter knyttet til denne aktiviteten
+ */
+
+/**
+ * @typedef {Object} Rentebetalinger 
  * @property {number} [betalteRenterOpprinneligBelop] - Betalte renter for fjoråret på opprinnelig beløp
  * @property {number} [betalteRenterOmkostninger] - Betalte renter for fjoråret på omkostninger
  * @property {number} [betalteRenterSkattemelding] - Betalte renter for fjoråret som man kan få skattemelding på
+ * // OBS, det er uklart om det 3. feltet er summen av de første 2 eller ikke.
  */
 
 /**
@@ -111,10 +127,12 @@
 
 /**
  * @typedef {Object} Faktura
+ * @property {number} belop - Fakturabeløp
  * @property {string} [fakturanummer] - Fakturanummer
  * @property {string} [fakturadato] - Fakturadato (format: DD.MM.YYYY)
  * @property {string} [forfallsdato] - Forfallsdato (format: DD.MM.YYYY)
- * @property {number} belop - Fakturabeløp
+ * @property {number} [restHovedstol] - Rest hovedstol på fakturaen
+ * @property {number} [rentesaldo] - Rentesaldo på fakturaen
  * @property {string} [beskrivelse] - Beskrivelse av fakturaen
  */
 
