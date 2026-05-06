@@ -51,27 +51,34 @@
 /**
  * @typedef {Object} Saksbelop
  * @property {number} totalbelop - Totalt utestående beløp (Totalbeløp)
- * @property {number} [restHovedstol] - Rest hovedstol
- * @property {number} [opprinneligBelop] - Opprinnelig beløp
+ * @property {Hovedstol} [hovedstol] - Hovedstol
  * @property {Renter} [renter] - Renter
  * @property {Gebyrer} [gebyrer] - Gebyrer
  * @property {number} [inkassosalear] - Inkassosalær / omkostninger
  */
 
 
+/**
+ * @typedef {Object} Hovedstol
+ * @property {number} opprinneligBelop - Opprinnelig beløp
+ * @property {number} restHovedstol - Rest hovedstol
+ * @property {number} [betaltHovedstol] - Betalt hovedstol
+ */
 
 /**
  * @typedef {Object} Renter
- * @property {number} totalRente - Total rente
+ * @property {number} gjenståendeRente - Gjenstående rente
  * @property {number} [renterAvOpprinneligBelop] - Renter av opprinnelig beløp
  * @property {number} [renterAvOmkostninger] - Renter av omkostninger
+ * @property {number} [betaltRente] - Total betalt rente
  */
 
 /**
  * @typedef {Object} Gebyrer
- * @property {number} totalGebyrer - Totale gebyrer
+ * @property {number} gjenståendeGebyrer - Gjenstående gebyrer
  * @property {number} [rettsligeGebyrer] - Rettslige gebyrer
  * @property {number} [andreGebyrer] - Andre gebyrer
+ * @property {number} [betalteGebyrer] - Betalte gebyrer
  */
 
 /**
@@ -94,6 +101,8 @@
  * @property {number} belop - Innbetalt beløp
  * @property {string} [referanse] - Referanse for innbetalingen
  * @property {string} [kommentar] - Valgfri kommentar
+ * @property {string} [betaltAv] - Hvem som har foretatt betalingen (f.eks. skyldner, tredjepart)
+ * // OBS enestene verdiene sett på betaltAv er "undefined" og blank felt
  */
 
 /**
@@ -142,12 +151,16 @@
 /**
  * @typedef {Object} Saksdetaljer
  * @property {string} sakStatus - Nåværende status (f.eks. "Aktiv", "Avsluttet", "Betalt", "Avdragsordning")
- * @property {string} KID - KID-nummer for betaling
  * @property {string} [beskrivelse] - Beskrivelse eller kommentar til saken
+ * @property {string} [overskrift] - Overskrift for saken
  * @property {string} [grunnlagForKrav] - Grunnlaget for saken
  * @property {string} [mottakerKonto] - Mottakers kontonummer for betaling
+ * @property {string} [KID] - KID-nummer for betaling
+ * @property {string} [SWIFT] - SWIFT-kode for betaling fra utlandet
+ * @property {string} [IBAN] - IBAN-nummer for betaling fra utlandet
  * @property {string} [kravtype] - Type krav (faktura, kontrakt, lån, osv.)
  * @property {string} [notater] - Tilleggsnotater eller kommentarer
+ * @property {string} [subsidiaerStraff] - Antall dager i fengsel om krav ikke kan betales
  * @property {Aktivitet[]} [aktiviteter] - Liste over aktiviteter knyttet til saken
  * @property {Historikkinnslag[]} [historikk] - Liste over historikkinnslag knyttet til saken
  */
