@@ -7,108 +7,174 @@
 /**
  * @typedef {Object} Inkassodokument
  * @property {DokumentMetadata} dokumentMetadata - Metadata om dokumentet
- * @property {number} totalbelop - Totalt utestående beløp (Totalbeløp)
- * @property {number} antallSaker - Totalt antall aktive saker
- * @property {string} inkassoselskap - Navn på inkassoselskap
  * @property {Gjeldssak[]} saker - Array av individuelle gjeldssaker
- */
-
-/**
- * @typedef {Object} Gjeldssak
- * @property {Saksidentifikatorer} identifikatorer - Saksidentifikasjon
- * @property {Saksbelop} belop - Beløpsfordeling
- * @property {number} [rente] - Rente knyttet til saken
- * @property {Saksdatoer} datoer - Viktige datoer knyttet til saken
- * @property {SakParter} parter - Parter involvert i saken
- * @property {Saksdetaljer} detaljer - Ytterligere saksdetaljer
  */
 
 /**
  * @typedef {Object} DokumentMetadata
  * @property {string} kilde - Kilde for dokumentet (f.eks. "Kredinor", "Intrum", "PRA Group")
  * @property {string} dokumenttype - Type dokument (f.eks. "Inkassooversikt")
- * @property {string} uttrekkDato - ISO 8601 dato/tid for når data ble hentet ut
+ * @property {string} uttrekkDato - dato/tid for når data ble hentet ut
  * @property {string} [pdfLenke] - Valgfri URL eller lenke til PDF-dokumentet
  * @property {string} [dokumentDato] - Dato på dokumentet hvis tilgjengelig
  */
 
 /**
+ * @typedef {Object} Gjeldssak
+ * @property {Saksidentifikatorer} identifikatorer - Saksidentifikasjon
+ * @property {KravOgBetalinger} kravOgBetalinger - Krav og betalingsinformasjon
+ * @property {Saksdatoer} datoer - Viktige datoer knyttet til saken
+ * @property {SakParter} parter - Parter involvert i saken
+ * @property {Saksdetaljer} detaljer - Ytterligere saksdetaljer
+ */
+
+/**
  * @typedef {Object} Saksidentifikatorer
- * @property {string} Saksnummer - Saksnummer (f.eks. "12345/23")
- * @property {string} [referansenummer] - Referanse til oppdragsgiver
+ * @property {string} Saksnummer - Saksnummer (f.eks. "12345/23") hos inkassoselskapet
+ * @property {string} [referansenummer] - Referansenummer fra oppdragsgiver
  * @property {string} [kundenummer] - Kundenummer
  */
 
 /**
+ * @typedef {Object} KravOgBetalinger
+ * @property {Saksbelop} belop - Beløpsfordeling
+ * @property {Faktura[]} [sendteFakturaer] - Liste over fakturaer som er sendt
+ * @property {number | Innbetaling[]} betalt - Totalt betalt beløp
+ * @property {Rentebetalinger} [rentebetalinger] - Fjorårets betalte renter (brukt for skattemeldingen)
+ */
+
+
+/**
  * @typedef {Object} Saksbelop
  * @property {number} totalbelop - Totalt utestående beløp (Totalbeløp)
- * @property {number} [restHovedstol] - Rest hovedstol
- * @property {number} [opprinneligBelop] - Opprinnelig beløp
- * @property {number} [renter] - Renter
- * @property {number} [gebyrer] - Gebyrer
+ * @property {Hovedstol} [hovedstol] - Hovedstol
+ * @property {Renter} [renter] - Renter
+ * @property {Gebyrer} [gebyrer] - Gebyrer
  * @property {number} [inkassosalear] - Inkassosalær / omkostninger
+ */
+
+
+/**
+ * @typedef {Object} Hovedstol
+ * @property {number} opprinneligBelop - Opprinnelig beløp
+ * @property {number} [restHovedstol] - Rest hovedstol
+ * @property {number} [betaltHovedstol] - Betalt hovedstol
+ */
+
+/**
+ * @typedef {Object} Renter
+ * @property {number} gjenståendeRente - Gjenstående rente
+ * @property {number} [renterAvOpprinneligBelop] - Renter av opprinnelig beløp
  * @property {number} [renterAvOmkostninger] - Renter av omkostninger
+ * @property {number} [betaltRente] - Total betalt rente
+ */
+
+/**
+ * @typedef {Object} Gebyrer
+ * @property {number} gjenståendeGebyrer - Gjenstående gebyrer
+ * @property {number} [rettsligeGebyrer] - Rettslige gebyrer
+ * @property {number} [andreGebyrer] - Andre gebyrer
+ * @property {number} [betalteGebyrer] - Betalte gebyrer
+ */
+
+/**
+ * @typedef {Object} Faktura
+ * @property {number} belop - Fakturabeløp
+ * @property {string} fakturanummer - Fakturanummer
+ * @property {string} fakturadato - Fakturadato (format: DD.MM.YYYY)
+ * @property {string} forfallsdato - Forfallsdato (format: DD.MM.YYYY)
+ * @property {number} [opprinneligKrav] - Opprinnelig kravbeløp
+ * @property {number} [fakturaRenteSats] - Rentesats knyttet til denne fakturaen
+ * @property {number} [fakturaRenter] - Renter knyttet til denne fakturaen
+ * @property {number} [restHovedstol] - Rest hovedstol på fakturaen
+ * @property {number} [rentesaldo] - Rentesaldo på fakturaen
+ * @property {string} [beskrivelse] - Beskrivelse av fakturaen
+ */
+
+/**
+ * @typedef {Object} Innbetaling
+ * @property {number} belop - Innbetalt beløp
+ * @property {string} betalingsdato - Dato for innbetaling (format: DD.MM.YYYY)
+ * @property {string} [referanse] - Referanse for innbetalingen
+ * @property {string} [kommentar] - Valgfri kommentar
+ * @property {number} [utestaendeHovedstol] - Utestående hovedstol etter innbetalingen
+ * @property {string} [betaltAv] - Hvem som har foretatt betalingen (f.eks. skyldner, tredjepart)
+ * // OBS enestene verdiene funnet i betaltAv er "undefined" og blank felt, så det er ikke klart hva som faktisk skal komme her
+ */
+
+/**
+ * @typedef {Object} Rentebetalinger 
+ * @property {number} [betalteRenterOpprinneligBelop] - Betalte renter for fjoråret på opprinnelig beløp
+ * @property {number} [betalteRenterOmkostninger] - Betalte renter for fjoråret på omkostninger
+ * @property {number} [betalteRenterSkattemelding] - Betalte renter for fjoråret som man kan få skattemelding på
+ * // OBS, det er uklart om det 3. feltet er summen av de første 2 eller ikke.
  */
 
 /**
  * @typedef {Object} Saksdatoer
- * @property {string} [fakturadato] - Fakturadato (format: DD.MM.YYYY)
  * @property {string} [opprinneligForfallsdato] - Opprinnelig forfallsdato (format: DD.MM.YYYY)
  * @property {string} [utstedtDato] - Utstedt dato
  * @property {string} [betalingsfrist] - Betalingsfrist
+ * @property {string} [avslutningsdato] - Avslutningsdato for saken (format: DD.MM.YYYY)
  */
 
 /**
  * @typedef {Object} SakParter
  * @property {string} inkassoselskap - Nåværende inkassoselskap som håndterer saken
+ * @property {Skyldnerinfo} skyldner - Informasjon om skyldner
  * @property {string} [Fordringshaver] - Nåværende fordringshaver / oppdragsgiver
- * @property {string} [opprinneligFordringshaver] - Opprinnelig fordringshaver
- * @property {Skyldnerinfo} [skyldner] - Informasjon om skyldner
- */
-
-/**
- * @typedef {Object} Saksdetaljer
- * @property {string} [sakStatus] - Nåværende status (f.eks. "Aktiv", "Avsluttet", "Betalt", "Avdragsordning")
- * @property {string} [beskrivelse] - Beskrivelse eller kommentar til saken
- * @property {string} [grunnlagForKrav] - Grunnlaget for saken
- * @property {Faktura[]} [sendteFakturaer] - Liste over fakturaer som er sendt
- * @property {Innbetaling[]} [innbetalinger] - Liste over innbetalinger som er registrert
- * @property {string} [mottakerKonto] - Mottakers kontonummer for betaling
- * @property {string} [KID] - KID-nummer for betaling
- * @property {string} [kravtype] - Type krav (faktura, kontrakt, lån, osv.)
- * @property {string} [notater] - Tilleggsnotater eller kommentarer
+ * @property {string} [opprinneligFordringshaver] - Opprinnelig fordringshaver / oppdragsgiver
+ * @property {string} [Saksbehandler] - Saksbehandler eller kontaktperson hos inkassoselskapet
+ * @property {string} [skyldnerType] - Type skyldner (f.eks. "Hovedskyldner")
  */
 
 /**
  * @typedef {Object} Skyldnerinfo
- * @property {string} [navn] - Skyldners fulle navn
- * @property {string} [fodselsnummer] - Fødselsnummer (kan være delvis maskert)
+ * @property {string} navn - Skyldners fulle navn
+ * @property {string} fodselsnummer - Fødselsnummer (kan være delvis maskert)
  * @property {string} [telefonnummer] - Telefonnummer til skyldner
  * @property {string} [epostadresse] - E-postadresse til skyldner
  * @property {Adresse} [adresse] - Skyldners adresse
  */
 
 /**
- * @typedef {Object} Faktura
- * @property {string} [fakturanummer] - Fakturanummer
- * @property {string} [fakturadato] - Fakturadato (format: DD.MM.YYYY)
- * @property {string} [forfallsdato] - Forfallsdato (format: DD.MM.YYYY)
- * @property {number} belop - Fakturabeløp
- * @property {string} [beskrivelse] - Beskrivelse av fakturaen
- */
-
-/**
- * @typedef {Object} Innbetaling
- * @property {string} [betalingsdato] - Dato for innbetaling (format: DD.MM.YYYY)
- * @property {number} belop - Innbetalt beløp
- * @property {string} [referanse] - Referanse for innbetalingen
- * @property {string} [kommentar] - Valgfri kommentar
- */
-
-/**
  * @typedef {Object} Adresse
- * @property {string} [gateadresse] - Gateadresse
- * @property {string} [postnummer] - Postnummer
- * @property {string} [poststed] - Poststed
- * @property {string} [land] - Land
+ * @property {string} gateadresse - Gateadresse
+ * @property {string} postnummer - Postnummer
+ * @property {string} poststed - Poststed
+ * @property {string} land - Land
  */
+
+/**
+ * @typedef {Object} Saksdetaljer
+ * @property {string} sakStatus - Nåværende status (f.eks. "Aktiv", "Avsluttet", "Betalt", "Avdragsordning")
+ * @property {string} [overskrift] - Overskrift for saken
+ * @property {string} [beskrivelse] - Beskrivelse eller kommentar til saken
+ * @property {string} [grunnlagForKrav] - Grunnlaget for saken
+ * @property {string} [mottakerKonto] - Mottakers kontonummer for betaling
+ * @property {string} [KID] - KID-nummer for betaling
+ * @property {string} [SWIFT] - SWIFT-kode for betaling fra utlandet
+ * @property {string} [IBAN] - IBAN-nummer for betaling fra utlandet
+ * @property {string} [kravtype] - Type krav (faktura, kontrakt, lån, osv.)
+ * @property {string} [notater] - Tilleggsnotater eller kommentarer
+ * @property {string} [subsidiaerStraff] - Antall dager i fengsel om krav ikke kan betales
+ * @property {Historikkinnslag[]} [historikk] - Liste over historikkinnslag knyttet til saken
+ */
+
+/**
+ * @typedef {Object} Historikkinnslag
+ * @property {string} type - Type innslag (f.eks. "Brev", "Betaling", "Notat")
+ * @property {string} overskrift - Overskrift for historikkinnslaget
+ * @property {string} tekst - Tekstinnhold i historikkinnslaget
+ * @property {string} dato - Dato for innslaget (format: DD.MM.YYYY)
+ * @property {string} [fil] - Lenke eller filnavn til tilknyttet fil
+ */
+
+
+
+
+
+
+
+
+
